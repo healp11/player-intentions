@@ -8,6 +8,7 @@ In watching tennis matches, we know that players make some shots with a lot of r
 
 The purpose of this project is to use statistical models and cutting-edge tracking data to get more insight into player risk-taking and shot intentions.
 
+What a shot!
 
 ![tough-shot](http://cdn-foxsportsasia.365.co.za/wp-content/uploads/2016/06/26132419/1022.6666666666666x767__origin__0x0_Raonic.jpg)
 
