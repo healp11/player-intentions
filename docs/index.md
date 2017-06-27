@@ -13,7 +13,7 @@ The purpose of this project is to use statistical models and cutting-edge tracki
 
 ## Project Goals
 
-The student will use tracking data and Hidden Markov Models to model when players are looking to end a point versus keep the ball in play.
+The student will use tracking data and Hidden Markov Models to model when players are looking to end a point versus keep the ball in play. This means there are two hidden states.
 
 ## Specific Activities
 
