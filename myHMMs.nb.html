@@ -172,20 +172,139 @@ $(document).ready(function () {
 
 
 <!-- rnb-text-begin -->
-<p>This is an <a href="http://rmarkdown.rstudio.com">R Markdown</a> Notebook. When you execute code within the notebook, the results appear beneath the code.</p>
-<p>Try executing this chunk by clicking the <em>Run</em> button within the chunk or by placing your cursor inside it and pressing <em>Cmd+Shift+Enter</em>.</p>
+<div id="setting-up" class="section level2">
+<h2>Setting Up</h2>
+<p>depmixS4 provides methods to fit hidden (latent) Markov models.</p>
+<p>We observe an m-variate time series, meaning each at each time t we observe m characteristics of the process.</p>
+<p>Underpinning this are n hidden states, and at the time of each observation the process is in one of the n states. We want to find which of these states we are in at any time t.</p>
+<p>To estimate the parameters, depmixS4 uses Expectation-Minimizer (EM) method for unconstrained models (via Newton Raphson), and uses Direct Optimization for general linear (in)equality constraints.</p>
+<p>Missing data is not a problem, as depmixS4 estimates the latent state probabilities for the missing time t with the data from times 1,…,t-1.</p>
+</div>
+<div id="example---speed" class="section level1">
+<h1>Example - Speed</h1>
+<p>Here is an example using the dataset ‘speed’.</p>
+<p>This data is from a psychological experiment where a person is observed answering questions over time.</p>
+<p>This contains three time series with three variables: response time (rt), correct (corr), and payoff (Pacc) which is a covariate for the relative reward for the speed and accuracy of the response. The payoff at time t is known to the person before the question is given.</p>
+<p>There are 439 observations, and the data also includes previous answer (prev).</p>
+<p>The aim is of this test is to see if there are two distinct states (latent) for the person answering - a slow response state and a fast response state - rather than a continuous trade-off between speed and accuracy</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxvdChjYXJzKVxuYGBgIn0= -->
-<pre class="r"><code>plot(cars)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3BlZWRcbmxpYnJhcnkoXCJkZXBtaXhTNFwiKVxuZGF0YShcInNwZWVkXCIpXG5zdHIoc3BlZWQpXG5cbiNGb3IgaW5pdGlhbCB2YWx1ZXNcbnNldC5zZWVkKDEpXG5cbiNJbml0aWFsIG1vZGVsIC0gd2l0aCByYW5kb20gc3RhcnQgdmFsdWVzXG5tb2QgPC0gZGVwbWl4KHJlc3Bzb25zZSA9IHJ0IH4gMSwgZGF0YSA9IHNwZWVkLCBuc3RhdGVzID0gMiwgdHJzdGFydCA9IHJ1bmlmKDQpKVxuXG4jRml0IG1vZGVsIGFuZCBwcmludCByZXN1bHRzXG4jQ29udHJvbHMgRU0gYWxnb3JpdGhtIGZvciBzdGFydCB2YWx1ZXMgbm90IHRvIGJlIGdlbmVyYXRlZFxuZm0gPC0gZml0KG1vZCwgZW1jPWVtLmNvbnRyb2wocmFuZD1GQUxTRSkpXG5cbiNQcmludCBmb3IgaW5mbyBvbiBjb252ZXJnZW5jZSBhbmQgQUlDICsgQklDIHZhbHVlc1xuZm1cbnN1bW1hcnkoZm0pXG5gYGAifQ== -->
+<pre class="speed"><code>library(&quot;depmixS4&quot;)
+data(&quot;speed&quot;)
+str(speed)
+
+#For initial values
+set.seed(1)
+
+#Initial model - with random start values
+mod &lt;- depmix(respsonse = rt ~ 1, data = speed, nstates = 2, trstart = runif(4))
+
+#Fit model and print results
+#Controls EM algorithm for start values not to be generated
+fm &lt;- fit(mod, emc=em.control(rand=FALSE))
+
+#Print for info on convergence and AIC + BIC values
+fm
+summary(fm)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-<p>Add a new chunk by clicking the <em>Insert Chunk</em> button on the toolbar or by pressing <em>Cmd+Option+I</em>.</p>
-<p>When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the <em>Preview</em> button or press <em>Cmd+Shift+K</em> to preview the HTML file).</p>
+<p>This display shows us: - Initial state proabilities - Transition probabilities - Response parameters - dependent on state - mean and sd</p>
+<p>Now we are adding in the covariate of Pacc (payoff) which will be allowed to affect both initial and transition probabilities.</p>
 <!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2V0LnNlZWQoMSlcbm1vZCA8LSBkZXBtaXgocnQgfiAxLCBkYXRhID0gc3BlZWQsIG5zdGF0ZXMgPSAyLCBmYW1pbHkgPSBnYXVzc2lhbigpLCB0cmFuc2l0aW9uID0gfiBzY2FsZShQYWNjKSwgaW5zdGFydCA9IHJ1bmlmKDIpKVxuZm0gPC0gZml0KG1vZCwgdmVyYm9zZSA9IEZBTFNFLCBlbWM9ZW0uY29udHJvbChyYW5kPUZBTFNFKSlcblxuc3VtbWFyeShmbSwgd2hpY2ggPSBcInRyYW5zaXRpb25cIilcbmBgYCJ9 -->
+<pre class="r"><code>set.seed(1)
+mod &lt;- depmix(rt ~ 1, data = speed, nstates = 2, family = gaussian(), transition = ~ scale(Pacc), instart = runif(2))
+fm &lt;- fit(mod, verbose = FALSE, emc=em.control(rand=FALSE))
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiVGVzdGluZyBITU1zIgpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sKLS0tCgpUaGlzIGlzIGFuIFtSIE1hcmtkb3duXShodHRwOi8vcm1hcmtkb3duLnJzdHVkaW8uY29tKSBOb3RlYm9vay4gV2hlbiB5b3UgZXhlY3V0ZSBjb2RlIHdpdGhpbiB0aGUgbm90ZWJvb2ssIHRoZSByZXN1bHRzIGFwcGVhciBiZW5lYXRoIHRoZSBjb2RlLiAKClRyeSBleGVjdXRpbmcgdGhpcyBjaHVuayBieSBjbGlja2luZyB0aGUgKlJ1biogYnV0dG9uIHdpdGhpbiB0aGUgY2h1bmsgb3IgYnkgcGxhY2luZyB5b3VyIGN1cnNvciBpbnNpZGUgaXQgYW5kIHByZXNzaW5nICpDbWQrU2hpZnQrRW50ZXIqLiAKCmBgYHtyfQpwbG90KGNhcnMpCmBgYAoKQWRkIGEgbmV3IGNodW5rIGJ5IGNsaWNraW5nIHRoZSAqSW5zZXJ0IENodW5rKiBidXR0b24gb24gdGhlIHRvb2xiYXIgb3IgYnkgcHJlc3NpbmcgKkNtZCtPcHRpb24rSSouCgpXaGVuIHlvdSBzYXZlIHRoZSBub3RlYm9vaywgYW4gSFRNTCBmaWxlIGNvbnRhaW5pbmcgdGhlIGNvZGUgYW5kIG91dHB1dCB3aWxsIGJlIHNhdmVkIGFsb25nc2lkZSBpdCAoY2xpY2sgdGhlICpQcmV2aWV3KiBidXR0b24gb3IgcHJlc3MgKkNtZCtTaGlmdCtLKiB0byBwcmV2aWV3IHRoZSBIVE1MIGZpbGUpLgo=</div>
+summary(fm, which = &quot;transition&quot;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>This now shows us the transition models for each state, with state 1 as the base category for the logit model. This means that the output is showing the coefficients for: log(Pr(StX)/Pr(St1)) = (intercept) + (slope)*Pacc.</p>
+<p>Set value of covariate: Transition probabilities are found by plugging in Pacc = Y and solving simeltaneously with Pr(St2)+Pr(St1)=1</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>To obtain the transition probabilities</p>
+</div>
+<div id="multivariate-data" class="section level1">
+<h1>Multivariate data</h1>
+<p>Now using multivariate data - seeing how the state affects response time and how it affects accuracy</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2V0LnNlZWQoMSlcbm1vZCA8LSBkZXBtaXgobGlzdChydCB+IDEsY29yciB+IDEpLCBkYXRhID0gc3BlZWQsIG5zdGF0ZXMgPSAyLFxuICAgICAgICAgICAgICAgICBmYW1pbHkgPSBsaXN0KGdhdXNzaWFuKCksIG11bHRpbm9taWFsKFwiaWRlbnRpdHlcIikpLFxuICAgICAgICAgICAgICAgICB0cmFuc2l0aW9uID0gfiBzY2FsZShQYWNjKSwgaW5zdGFydCA9IHJ1bmlmKDIpKVxuXG5mbSA8LSBmaXQobW9kLCB2ZXJib3NlID0gRkFMU0UsIGVtYz1lbS5jb250cm9sKHJhbmQ9RkFMU0UpKVxuYGBgIn0= -->
+<pre class="r"><code>set.seed(1)
+mod &lt;- depmix(list(rt ~ 1,corr ~ 1), data = speed, nstates = 2,
+                 family = list(gaussian(), multinomial(&quot;identity&quot;)),
+                 transition = ~ scale(Pacc), instart = runif(2))
+
+fm &lt;- fit(mod, verbose = FALSE, emc=em.control(rand=FALSE))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>We see that state 1 has faster response times, but has a lower chance of being correct (it is almost 50% chance of being correct - which appears to be almost complete guesses)</p>
+<p>Note: depmixS4 only has one multivariate response model which is for multivariate normal variables</p>
+</div>
+<div id="contraints-on-parameters" class="section level1">
+<h1>Contraints on Parameters</h1>
+<p>Using the function ‘fit’, and the ‘conpat’ argument, parameters can be given fixed or free values. Assigning fixed values with a 0 (in the vector) and other with other numbers (e.g. 1,2,3,…), and if two parameters are equal (but free) then they should be given the same number (e.g. 2 and 2). When only fixed values are required, can use the ‘fixed’ argument with zeros for fixed parameters and non-zero for others.</p>
+<p>Number of parameters can be checked using:</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2V0cGFycyhtb2QsIHZhbHVlPTE6bnBhcihtb2QpKVxuXG5gYGAifQ== -->
+<pre class="r"><code>setpars(mod, value=1:npar(mod))
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiSW5pdGlhbCBzdGF0ZSBwcm9iYWJpbHRpZXMgbW9kZWwgXG5wcjEgcHIyIFxuICAxICAgMiBcblxuVHJhbnNpdGlvbiBtb2RlbCBmb3Igc3RhdGUgKGNvbXBvbmVudCkgMSBcbk1vZGVsIG9mIHR5cGUgbXVsdGlub21pYWwgKG1sb2dpdCksIGZvcm11bGE6IH5zY2FsZShQYWNjKVxuQ29lZmZpY2llbnRzOiBcbiAgICAgICAgICAgIFN0MSBTdDJcbihJbnRlcmNlcHQpICAgMyAgIDRcbnNjYWxlKFBhY2MpICAgNSAgIDZcblByb2JhbGl0aWVzIGF0IHplcm8gdmFsdWVzIG9mIHRoZSBjb3ZhcmlhdGVzLlxuMC4wMTMzODk4IDAuNzMxMDU4NiBcblxuVHJhbnNpdGlvbiBtb2RlbCBmb3Igc3RhdGUgKGNvbXBvbmVudCkgMiBcbk1vZGVsIG9mIHR5cGUgbXVsdGlub21pYWwgKG1sb2dpdCksIGZvcm11bGE6IH5zY2FsZShQYWNjKVxuQ29lZmZpY2llbnRzOiBcbiAgICAgICAgICAgIFN0MSBTdDJcbihJbnRlcmNlcHQpICAgNyAgIDhcbnNjYWxlKFBhY2MpICAgOSAgMTBcblByb2JhbGl0aWVzIGF0IHplcm8gdmFsdWVzIG9mIHRoZSBjb3ZhcmlhdGVzLlxuMC4wMDAyNDUyNDI4IDAuNzMxMDU4NiBcblxuXG5SZXNwb25zZSBwYXJhbWV0ZXJzIFxuUmVzcCAxIDogZ2F1c3NpYW4gXG5SZXNwIDIgOiBtdWx0aW5vbWlhbCBcbiAgICBSZTEuKEludGVyY2VwdCkgUmUxLnNkIFJlMi5pbmMgUmUyLmNvclxuU3QxICAgICAgICAgICAgICAxMSAgICAgMTIgICAgICAxMyAgICAgIDE0XG5TdDIgICAgICAgICAgICAgIDE1ICAgICAxNiAgICAgIDE3ICAgICAgMThcbiJ9 -->
+<pre><code>Initial state probabilties model 
+pr1 pr2 
+  1   2 
+
+Transition model for state (component) 1 
+Model of type multinomial (mlogit), formula: ~scale(Pacc)
+Coefficients: 
+            St1 St2
+(Intercept)   3   4
+scale(Pacc)   5   6
+Probalities at zero values of the covariates.
+0.0133898 0.7310586 
+
+Transition model for state (component) 2 
+Model of type multinomial (mlogit), formula: ~scale(Pacc)
+Coefficients: 
+            St1 St2
+(Intercept)   7   8
+scale(Pacc)   9  10
+Probalities at zero values of the covariates.
+0.0002452428 0.7310586 
+
+
+Response parameters 
+Resp 1 : gaussian 
+Resp 2 : multinomial 
+    Re1.(Intercept) Re1.sd Re2.inc Re2.cor
+St1              11     12      13      14
+St2              15     16      17      18</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Vector must be the same length as number of parameters. Parameters should be ordered in this way: Prior model parameters, parameter for transition models, response model parameters per state (and subsequently per response in the cast of multivariate time series).</p>
+<p>Ordering can be visualed as below:</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2V0cGFycyhtb2QsIHZhbHVlPTE6bnBhcihtb2QpKVxuYGBgIn0= -->
+<pre class="r"><code>setpars(mod, value=1:npar(mod))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+</div>
+
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiVGVzdGluZyBITU1zIgpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sKLS0tCgojIyBTZXR0aW5nIFVwCmRlcG1peFM0IHByb3ZpZGVzIG1ldGhvZHMgdG8gZml0IGhpZGRlbiAobGF0ZW50KSBNYXJrb3YgbW9kZWxzLgoKV2Ugb2JzZXJ2ZSBhbiBtLXZhcmlhdGUgdGltZSBzZXJpZXMsIG1lYW5pbmcgZWFjaCBhdCBlYWNoIHRpbWUgdCB3ZSBvYnNlcnZlIG0gY2hhcmFjdGVyaXN0aWNzIG9mIHRoZSBwcm9jZXNzLgoKVW5kZXJwaW5uaW5nIHRoaXMgYXJlIG4gaGlkZGVuIHN0YXRlcywgYW5kIGF0IHRoZSB0aW1lIG9mIGVhY2ggb2JzZXJ2YXRpb24gdGhlIHByb2Nlc3MgaXMgaW4gb25lIG9mIHRoZSBuIHN0YXRlcy4gV2Ugd2FudCB0byBmaW5kIHdoaWNoIG9mIHRoZXNlIHN0YXRlcyB3ZSBhcmUgaW4gYXQgYW55IHRpbWUgdC4KClRvIGVzdGltYXRlIHRoZSBwYXJhbWV0ZXJzLCBkZXBtaXhTNCB1c2VzIEV4cGVjdGF0aW9uLU1pbmltaXplciAoRU0pIG1ldGhvZCBmb3IgdW5jb25zdHJhaW5lZCBtb2RlbHMgKHZpYSBOZXd0b24gUmFwaHNvbiksIGFuZCB1c2VzIERpcmVjdCBPcHRpbWl6YXRpb24gZm9yIGdlbmVyYWwgbGluZWFyIChpbillcXVhbGl0eSBjb25zdHJhaW50cy4KCk1pc3NpbmcgZGF0YSBpcyBub3QgYSBwcm9ibGVtLCBhcyBkZXBtaXhTNCBlc3RpbWF0ZXMgdGhlIGxhdGVudCBzdGF0ZSBwcm9iYWJpbGl0aWVzIGZvciB0aGUgbWlzc2luZyB0aW1lIHQgd2l0aCB0aGUgZGF0YSBmcm9tIHRpbWVzIDEsLi4uLHQtMS4KCgojRXhhbXBsZSAtIFNwZWVkCgpIZXJlIGlzIGFuIGV4YW1wbGUgdXNpbmcgdGhlIGRhdGFzZXQgJ3NwZWVkJy4KClRoaXMgZGF0YSBpcyBmcm9tIGEgcHN5Y2hvbG9naWNhbCBleHBlcmltZW50IHdoZXJlIGEgcGVyc29uIGlzIG9ic2VydmVkIGFuc3dlcmluZyBxdWVzdGlvbnMgb3ZlciB0aW1lLgoKVGhpcyBjb250YWlucyB0aHJlZSB0aW1lIHNlcmllcyB3aXRoIHRocmVlIHZhcmlhYmxlczogcmVzcG9uc2UgdGltZSAocnQpLCBjb3JyZWN0IChjb3JyKSwgYW5kIHBheW9mZiAoUGFjYykgd2hpY2ggaXMgYSBjb3ZhcmlhdGUgZm9yIHRoZSByZWxhdGl2ZSByZXdhcmQgZm9yIHRoZSBzcGVlZCBhbmQgYWNjdXJhY3kgb2YgdGhlIHJlc3BvbnNlLiBUaGUgcGF5b2ZmIGF0IHRpbWUgdCBpcyBrbm93biB0byB0aGUgcGVyc29uIGJlZm9yZSB0aGUgcXVlc3Rpb24gaXMgZ2l2ZW4uCgpUaGVyZSBhcmUgNDM5IG9ic2VydmF0aW9ucywgYW5kIHRoZSBkYXRhIGFsc28gaW5jbHVkZXMgcHJldmlvdXMgYW5zd2VyIChwcmV2KS4KClRoZSBhaW0gaXMgb2YgdGhpcyB0ZXN0IGlzIHRvIHNlZSBpZiB0aGVyZSBhcmUgdHdvIGRpc3RpbmN0IHN0YXRlcyAobGF0ZW50KSBmb3IgdGhlIHBlcnNvbiBhbnN3ZXJpbmcgLSBhIHNsb3cgcmVzcG9uc2Ugc3RhdGUgYW5kIGEgZmFzdCByZXNwb25zZSBzdGF0ZSAtIHJhdGhlciB0aGFuIGEgY29udGludW91cyB0cmFkZS1vZmYgYmV0d2VlbiBzcGVlZCBhbmQgYWNjdXJhY3kKCmBgYHtTcGVlZH0KbGlicmFyeSgiZGVwbWl4UzQiKQpkYXRhKCJzcGVlZCIpCnN0cihzcGVlZCkKCiNGb3IgaW5pdGlhbCB2YWx1ZXMKc2V0LnNlZWQoMSkKCiNJbml0aWFsIG1vZGVsIC0gd2l0aCByYW5kb20gc3RhcnQgdmFsdWVzCm1vZCA8LSBkZXBtaXgocmVzcHNvbnNlID0gcnQgfiAxLCBkYXRhID0gc3BlZWQsIG5zdGF0ZXMgPSAyLCB0cnN0YXJ0ID0gcnVuaWYoNCkpCgojRml0IG1vZGVsIGFuZCBwcmludCByZXN1bHRzCiNDb250cm9scyBFTSBhbGdvcml0aG0gZm9yIHN0YXJ0IHZhbHVlcyBub3QgdG8gYmUgZ2VuZXJhdGVkCmZtIDwtIGZpdChtb2QsIGVtYz1lbS5jb250cm9sKHJhbmQ9RkFMU0UpKQoKI1ByaW50IGZvciBpbmZvIG9uIGNvbnZlcmdlbmNlIGFuZCBBSUMgKyBCSUMgdmFsdWVzCmZtCnN1bW1hcnkoZm0pCmBgYAoKVGhpcyBkaXNwbGF5IHNob3dzIHVzOgotIEluaXRpYWwgc3RhdGUgcHJvYWJpbGl0aWVzCi0gVHJhbnNpdGlvbiBwcm9iYWJpbGl0aWVzCi0gUmVzcG9uc2UgcGFyYW1ldGVycyAtIGRlcGVuZGVudCBvbiBzdGF0ZSAtIG1lYW4gYW5kIHNkCgoKTm93IHdlIGFyZSBhZGRpbmcgaW4gdGhlIGNvdmFyaWF0ZSBvZiBQYWNjIChwYXlvZmYpIHdoaWNoIHdpbGwgYmUgYWxsb3dlZCB0bwphZmZlY3QgYm90aCBpbml0aWFsIGFuZCB0cmFuc2l0aW9uIHByb2JhYmlsaXRpZXMuCgpgYGB7cn0Kc2V0LnNlZWQoMSkKbW9kIDwtIGRlcG1peChydCB+IDEsIGRhdGEgPSBzcGVlZCwgbnN0YXRlcyA9IDIsIGZhbWlseSA9IGdhdXNzaWFuKCksIHRyYW5zaXRpb24gPSB+IHNjYWxlKFBhY2MpLCBpbnN0YXJ0ID0gcnVuaWYoMikpCmZtIDwtIGZpdChtb2QsIHZlcmJvc2UgPSBGQUxTRSwgZW1jPWVtLmNvbnRyb2wocmFuZD1GQUxTRSkpCgpzdW1tYXJ5KGZtLCB3aGljaCA9ICJ0cmFuc2l0aW9uIikKYGBgCgpUaGlzIG5vdyBzaG93cyB1cyB0aGUgdHJhbnNpdGlvbiBtb2RlbHMgZm9yIGVhY2ggc3RhdGUsIHdpdGggc3RhdGUgMSBhcyB0aGUgYmFzZSBjYXRlZ29yeSBmb3IgdGhlIGxvZ2l0IG1vZGVsLiBUaGlzIG1lYW5zIHRoYXQgdGhlIG91dHB1dCBpcyBzaG93aW5nIHRoZSBjb2VmZmljaWVudHMgZm9yOiBsb2coUHIoU3RYKS9QcihTdDEpKSA9IChpbnRlcmNlcHQpICsgKHNsb3BlKSpQYWNjLgoKU2V0IHZhbHVlIG9mIGNvdmFyaWF0ZTogVHJhbnNpdGlvbiBwcm9iYWJpbGl0aWVzIGFyZSBmb3VuZCBieSBwbHVnZ2luZyBpbiBQYWNjID0gWSBhbmQgc29sdmluZyBzaW1lbHRhbmVvdXNseSB3aXRoIFByKFN0MikrUHIoU3QxKT0xIAoKYGBge3J9CgpgYGAKCgpUbyBvYnRhaW4gdGhlIHRyYW5zaXRpb24gcHJvYmFiaWxpdGllcwoKI011bHRpdmFyaWF0ZSBkYXRhCgpOb3cgdXNpbmcgbXVsdGl2YXJpYXRlIGRhdGEgLSBzZWVpbmcgaG93IHRoZSBzdGF0ZSBhZmZlY3RzIHJlc3BvbnNlIHRpbWUgYW5kIGhvdyBpdCBhZmZlY3RzIGFjY3VyYWN5CgoKYGBge3J9CnNldC5zZWVkKDEpCm1vZCA8LSBkZXBtaXgobGlzdChydCB+IDEsY29yciB+IDEpLCBkYXRhID0gc3BlZWQsIG5zdGF0ZXMgPSAyLAogICAgICAgICAgICAgICAgIGZhbWlseSA9IGxpc3QoZ2F1c3NpYW4oKSwgbXVsdGlub21pYWwoImlkZW50aXR5IikpLAogICAgICAgICAgICAgICAgIHRyYW5zaXRpb24gPSB+IHNjYWxlKFBhY2MpLCBpbnN0YXJ0ID0gcnVuaWYoMikpCgpmbSA8LSBmaXQobW9kLCB2ZXJib3NlID0gRkFMU0UsIGVtYz1lbS5jb250cm9sKHJhbmQ9RkFMU0UpKQpgYGAKCldlIHNlZSB0aGF0IHN0YXRlIDEgaGFzIGZhc3RlciByZXNwb25zZSB0aW1lcywgYnV0IGhhcyBhIGxvd2VyIGNoYW5jZSBvZiBiZWluZyBjb3JyZWN0IChpdCBpcyBhbG1vc3QgNTAlIGNoYW5jZSBvZiBiZWluZyBjb3JyZWN0IC0gd2hpY2ggYXBwZWFycyB0byBiZSBhbG1vc3QgY29tcGxldGUgZ3Vlc3NlcykKCk5vdGU6IGRlcG1peFM0IG9ubHkgaGFzIG9uZSBtdWx0aXZhcmlhdGUgcmVzcG9uc2UgbW9kZWwgd2hpY2ggaXMgZm9yIG11bHRpdmFyaWF0ZSBub3JtYWwgdmFyaWFibGVzCgojIENvbnRyYWludHMgb24gUGFyYW1ldGVycwoKVXNpbmcgdGhlIGZ1bmN0aW9uICdmaXQnLCBhbmQgdGhlICdjb25wYXQnIGFyZ3VtZW50LCBwYXJhbWV0ZXJzIGNhbiBiZSBnaXZlbiBmaXhlZCBvciBmcmVlIHZhbHVlcy4gQXNzaWduaW5nIGZpeGVkIHZhbHVlcyB3aXRoIGEgMCAoaW4gdGhlIHZlY3RvcikgYW5kIG90aGVyIHdpdGggb3RoZXIgbnVtYmVycyAoZS5nLiAxLDIsMywuLi4pLCBhbmQgaWYgdHdvIHBhcmFtZXRlcnMgYXJlIGVxdWFsIChidXQgZnJlZSkgdGhlbiB0aGV5IHNob3VsZCBiZSBnaXZlbiB0aGUgc2FtZSBudW1iZXIgKGUuZy4gMiBhbmQgMikuIFdoZW4gb25seSBmaXhlZCB2YWx1ZXMgYXJlIHJlcXVpcmVkLCBjYW4gdXNlIHRoZSAnZml4ZWQnIGFyZ3VtZW50IHdpdGggemVyb3MgZm9yIGZpeGVkIHBhcmFtZXRlcnMgYW5kIG5vbi16ZXJvIGZvciBvdGhlcnMuCgpOdW1iZXIgb2YgcGFyYW1ldGVycyBjYW4gYmUgY2hlY2tlZCB1c2luZzoKCmBgYHtyfQpucGFyKGZtKSAjd2hlcmUgZm0gaXMgdGhlIG9iamVjdApgYGAKClZlY3RvciBtdXN0IGJlIHRoZSBzYW1lIGxlbmd0aCBhcyBudW1iZXIgb2YgcGFyYW1ldGVycy4gUGFyYW1ldGVycyBzaG91bGQgYmUgb3JkZXJlZCBpbiB0aGlzIHdheTogUHJpb3IgbW9kZWwgcGFyYW1ldGVycywgcGFyYW1ldGVyIGZvciB0cmFuc2l0aW9uIG1vZGVscywgcmVzcG9uc2UgbW9kZWwgcGFyYW1ldGVycyBwZXIgc3RhdGUgKGFuZCBzdWJzZXF1ZW50bHkgcGVyIHJlc3BvbnNlIGluIHRoZSBjYXN0IG9mIG11bHRpdmFyaWF0ZSB0aW1lIHNlcmllcykuCgpPcmRlcmluZyBjYW4gYmUgdmlzdWFsZWQgYXMgYmVsb3c6CgpgYGB7cn0Kc2V0cGFycyhtb2QsIHZhbHVlPTE6bnBhcihtb2QpKQpgYGAKCgoKCgoKCg==</div>
 
 
 
