@@ -1,0 +1,194 @@
+---
+title: "Tennis HMMs"
+output: html_notebook
+---
+
+#Federer's Matches in Aus Open 2017
+
+```{r loaddata}
+setwd("~/Documents/Winter Project/intentions/data")
+library(devtools)
+install()
+load("/Users/Jeremy/Documents/Winter Project/intentions/data/federer2017.RData")
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(readr)
+
+
+```
+
+```{r df}
+fed_df <- federer2017
+
+fed_df <- arrange(fed_df, matchid, set, game, point, shot)
+
+fed_df$server.score[161:165] = 40
+fed_df$receiver.score[161:165] = 0
+fed_df$receiver.score[1517] = 0
+fed_df$server.score[1517] = 0
+
+#fill in missing scores
+
+fed_df <- fed_df %>%
+  mutate(lastshot = ifelse(fed_df$shot == fed_df$final.shot,1,0)) %>%
+  mutate(fedhit = ifelse(fed_df$impact.player == "FEDERER",1,0)) %>%
+  mutate(isserver = ifelse(fed_df$server == fed_df$impact.player,1,0))
+
+fed_df <- fed_df %>%
+  mutate(winner = ifelse(fed_df$ended.in.error == FALSE & fed_df$lastshot == 1,1,0)) %>%
+  mutate(retser = ifelse(fed_df$shot == 2,1,0))
+
+for (i in 1:nrow(fed_df)) {
+if(fed_df$server.score[i] == "AD") {
+  fed_df$server.score[i] = 60
+}
+  if(fed_df$receiver.score[i] == "AD") {
+  fed_df$receiver.score[i] = 60
+}
+}
+#60 means advantage
+
+fed_df$server.score <- as.numeric(fed_df$server.score)
+fed_df$receiver.score <- as.numeric(fed_df$receiver.score)
+
+fed_df <- fed_df %>%
+  mutate(raw.server.score = NA) %>%
+  mutate(raw.receiver.score = NA)
+
+fed_df$raw.receiver.score[1] <- 0
+fed_df$raw.server.score[1] <- 0
+
+for (i in 2:nrow(fed_df)) {
+  fed_df$raw.server.score[i] = ifelse(fed_df$server.score[i] > fed_df$server.score[i-1], fed_df$raw.server.score [i-1] + 1, ifelse(fed_df$server.score[i] == fed_df$server.score[i-1], fed_df$raw.server.score[i-1], 0))
+  
+  fed_df$raw.receiver.score[i] = ifelse(fed_df$receiver.score[i] > fed_df$receiver.score[i-1], fed_df$raw.receiver.score [i-1] + 1, ifelse(fed_df$receiver.score[i] == fed_df$receiver.score[i-1], fed_df$raw.receiver.score[i-1], 0))
+} 
+
+
+for (i in 1:ncol(fed_df)) {
+  if(is.character(fed_df[,i]) == TRUE) {
+    fed_df[,i] <- as.factor(fed_df[,i])
+  }
+}
+
+```
+
+Adding in new variables
+
+```{r newvars}
+fed_df <- fed_df %>%
+  mutate(speed.diff = NA) %>%
+  mutate(oppo.hit.x = NA) %>%
+  mutate(oppo.hit.y = NA) %>%
+  mutate(oppo.hit.z = NA)
+
+
+for (i in 2:nrow(fed_df)) {
+  if((fed_df$shot[i] != 1)) { #so that only non-serves are affected
+  
+  fed_df$speed.diff[i]=fed_df$speed1[i]-fed_df$speed1[i-1]
+  #speed difference
+  
+  fed_df$oppo.hit.x[i]=fed_df$start.x[i-1]
+  fed_df$oppo.hit.y[i]=fed_df$start.y[i-1]
+  fed_df$oppo.hit.z[i]=fed_df$start.z[i-1]
+  #oppo hit
+  
+  }
+}
+```
+
+Glossary:
+lastshot - last shot in the point
+fedhit - federer hits the shot
+isserver - if server hits the shot
+winner - if shot is winner (i.e. point doesn't end in error, as opponent doesn't reach the ball)
+retser - if shot is returning serve
+speed.diff - difference in current shot speed vs opponents last shot speed (at impact)
+oppo.hit - coordinates of opponents previous impact
+rscorediff - raw score difference from Federer's POV
+
+```{r}
+#Now filter out serves
+fed_noser <- fed_df %>% filter(hitpoint != "S") %>%
+  dplyr::select(-serveid)
+```
+
+# Model 1
+### Begin with the first round match vs Melzer
+#### Analysis of Federer's shots only
+```{r}
+library(dplyr)
+fed_mel <- fed_noser %>% 
+  filter(matchid == "MS112")  %>%
+  mutate(rscorediff = ifelse(server == "FEDERER", server.score - receiver.score, receiver.score - server.score)) %>%
+  mutate(fhand = ifelse(hitpoint == "F",1,0)) %>%
+  filter(fedhit == "1")
+```
+
+We are missing data that tells us about the score up to each shot in the match. This would be nice to give us a better picture of player behavior. Moving on without it.
+
+
+Response: winner
+Covariates: set, game, point, rscorediff
+
+```{r}
+library(depmixS4)
+set.seed(1)
+mod.fed_mel1 <- depmix(winner ~ 1, transition = ~ set + game + point + rscorediff, data = fed_mel, nstates = 2, family=multinomial("identity"))
+fm.fed_mel1 <- fit(mod.fed_mel1)
+summary(fm.fed_mel1)
+```
+
+State 1 is returning as there is 0 probability of hitting a winner
+State 2 is more aggressive, with 0.12 chance of hitting a winner
+
+#Model 2
+Response: winner, speed1
+Covariates: set, game, point, rscorediff, retser, fhand
+
+```{r}
+library(depmixS4)
+mod.fed_mel2 <- depmix(list(winner ~ 1, speed1 ~ 1), transition = ~ set + game + point + rscorediff + retser + fhand, data = fed_mel, nstates = 2, family=list(multinomial("identity"),gaussian()))
+fm.fed_mel2 <- fit(mod.fed_mel2)
+summary(fm.fed_mel2)
+```
+
+State 1 is returning as there is 0.007 chance of hitting a winner, shots are also slower than 
+State 2 is more aggressive, with 0.106 chance of hitting a winner
+
+```{r}
+mod.fed_mel3 <- depmix(list(winner ~ 1, scale(speed.diff) ~ 1), transition = ~ set + game + point + rscorediff + retser, data = fed_mel, nstates = 2, family=list(multinomial("identity"),gaussian()))
+fm.fed_mel3 <- fit(mod.fed_mel3)
+summary(fm.fed_mel3)
+```
+```{r}
+mod.fed_mel4 <- depmix(list(winner ~ 1, speed1 ~ 1), transition = ~ set + game + point + rscorediff + retser + oppo.hit.x + oppo.hit.y, data = fed_mel, nstates = 2, family=list(multinomial("identity"),gaussian()))
+fm.fed_mel4 <- fit(mod.fed_mel4)
+summary(fm.fed_mel4)
+```
+
+Comparison between models:
+```{r}
+AIC(fm.fed_mel1)
+AIC(fm.fed_mel2)
+AIC(fm.fed_mel3)
+AIC(fm.fed_mel4)
+```
+
+
+
+```{r visualize winners}
+winners <- fed_df %>% filter(lastshot == 1) %>% 
+fedwinners <- fed_df %>% filter(impact.player == "FEDERER")
+
+ggplot(fedwinners,aes(ballmark.x,ballmark.y)) + geom_point()
+#+ geom_point(aes(color = impact.player))
+
+#+ geom_line(aes(x,y),data=courtlines)
+#courtlines <- data.frame(x = c(-11.89, -6.4, 0, 6.4, 11.89), y = c(-5.5, -4.115, 0, 4.115, 5.5))
+
+```
+
