@@ -45,7 +45,7 @@ for (i in 1:ncol(fed_df)) {
 
 Splitting id into sets won, games won, points won
 
-```{r}
+```{r scores}
 library(stringi)
 
 ids <- fed_df$id
@@ -73,7 +73,8 @@ fed_df <- fed_df %>%
   mutate(speed.diff = NA) %>%
   mutate(oppo.hit.x = NA) %>%
   mutate(oppo.hit.y = NA) %>%
-  mutate(oppo.hit.z = NA)
+  mutate(oppo.hit.z = NA) %>%
+  mutate(oppo.speed = NA)
 
 
 for (i in 2:nrow(fed_df)) {
@@ -85,10 +86,16 @@ for (i in 2:nrow(fed_df)) {
   fed_df$oppo.hit.x[i]=fed_df$start.x[i-1]
   fed_df$oppo.hit.y[i]=fed_df$start.y[i-1]
   fed_df$oppo.hit.z[i]=fed_df$start.z[i-1]
+  fed_df$oppo.speed[i]=fed_df$speed1[i-1]
   #oppo hit
   
   }
 }
+
+fed_df <- fed_df %>%
+    mutate(sets.diff = fed.sets - opp.sets) %>%
+    mutate(games.diff = fed.games - opp.games) %>%
+    mutate(points.diff = fed.points - opp.points)
 ```
 
 Glossary:
@@ -102,54 +109,125 @@ speed1 - speed of shot from impact with racquet
 oppo.hit - coordinates of opponents previous impact
 fed.points/games/sets - fed score up to current point
 opp.points/games/sets - opponent score up to current point
+points/games/sets.diff - difference in score from Federer's perspective
+ballmark.xy - multiplication of ballmark x & y coordinates
 
 
 ```{r noserves}
 #make all shots from same side
 fed_df <- fed_df %>%
   mutate(start.x = ifelse(start.x <= 0, -start.x, start.x)) %>%
-  mutate(start.y = ifelse(start.y <= 0, -start.y, start.y)) 
+  mutate(oppo.hit.x = ifelse(oppo.hit.x <= 0, -oppo.hit.x, oppo.hit.x)) %>%
+  mutate(ballmark.x = ifelse(ballmark.x <= 0, -ballmark.x, ballmark.x))
 
 #remove serves
 fed_noser <- fed_df %>% filter(hitpoint != "S") %>%
   dplyr::select(-serveid)
 
 #federer only
-library(dplyr)
 fed_only <- fed_noser %>% 
-  filter(impact.player == "FEDERER")
+  dplyr::filter(impact.player == "FEDERER")
 ```
 
 
 #Visualization - Before We Start Modelling
 
-First we look at the winners hit along the x-axis (length of court). Zero is the net, end of court is at 11.3.
+Here are a series of plots which give us an idea of how each variable affects our response variable - hitting a winner.
 
-```{r visxco}
+###Winners by coordinates of shot, bounce and opponents shot
+
+```{r vis}
 library(ggplot2)
-ggplot(fed_only, aes(x=start.x,winner)) + geom_smooth(aes(color = opponent), se=FALSE) + xlab("X Coordinate of Shot") + ylab("Winners as a Proportion of Shots")
 
-ggplot(fed_only, aes(x=start.x,y=start.y)) + geom_point(aes(color = factor(winner))) + xlab("X Coordinate") + ylab("Y Coordinate")
+#X Co-ordinate of shot
+ggplot(fed_only, aes(x=start.x,winner)) + geom_smooth(aes(color = opponent), se=FALSE) + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
 
-ggplot(fed_only, aes(x=start.x,y=start.y)) + geom_point(aes(color = factor(winner))) + facet_wrap(~opponent) + xlab("X Coordinate") + ylab("Y Coordinate")
+#Y Co-ordinate of shot
+ggplot(fed_only, aes(x=start.y,winner)) + geom_smooth(aes(color = opponent), se=FALSE) + xlab("Y Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Y Co-Ordinate")
+
+#Opponents shot before
+ggplot(fed_only, aes(x=oppo.hit.x,oppo.hit.y)) + geom_point(aes(color = factor(winner))) + xlab("X Coordinate of Oppo Shot") + ylab("Y Coordinate of Oppo Shot") + ggtitle("Winners By Opponent's Shot Co-Ordinates")
+
+#Y Co-ordinate of Opponent shot
+ggplot(fed_only, aes(x=abs(oppo.hit.y),winner)) + geom_smooth(se=TRUE) + xlab("Y Coordinate of Opponent Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent Shot Y Co-Ordinate")
+
+#Shots on x-y plane
+ggplot(fed_only, aes(x=start.x,y=start.y)) + geom_point(aes(color = factor(winner))) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates")
+
+#Shots on x-y plane, facet by opponent
+ggplot(fed_only, aes(x=start.x,y=start.y)) + geom_point(aes(color = factor(winner))) + facet_wrap(~opponent) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates, Across Opponents")
+
+#Bounce by winner in x-y plane
+ggplot(fed_only, aes(x=ballmark.x,y=ballmark.y)) + geom_point(aes(color = factor(winner))) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Bounce Co-Ordinates")
+
+#Interaction of x and y bounce to get density
+fed_only <- fed_only %>%
+mutate(ballmark.xy = ballmark.x * ballmark.y)
+
+ggplot(fed_only) + geom_density(aes(ballmark.xy, group = factor(winner), color=factor(winner)))
+
+#Winners by oppo speed
+ggplot(fed_only) + geom_density(aes(oppo.speed, group = factor(winner), color=factor(winner)))
+ggplot(fed_only, aes(x=factor(winner),y=oppo.speed,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent Speed")
+
 ```
 
-```{r visgames}
-fed_only <- fed_only %>%
-  mutate(point.adj = ifelse(point >= 8, 8, point))
 
+###Boxplots for speed and winner across score differences
+```{r vis2}
+#Box plots across multiple categories
+df_long1 <- gather(data = fed_only, key = variables, value = stat, speed1, final.shot, shot)
+
+ggplot(df_long1) + geom_boxplot(aes(x=factor(winner), y=stat, fill=factor(winner))) + facet_wrap(~variables, scale = "free_y") + ggtitle("Differences In Characteristics of Winner/Not")
+
+#Boxplots for speed across games, facet by winner
+ggplot(fed_only, aes(x=factor(winner),y=speed1,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ game) + ggtitle("Speed of Shots Across Games")
+
+#Boxplots for speed difference for winner, facet by sets difference
+ggplot(fed_only, aes(x=factor(winner),y=speed1,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ sets.diff) + ggtitle("Speed of Shots For Difference in Sets Won")
+
+#Boxplots for speed difference for winner, facet by games difference
+ggplot(fed_only, aes(x=factor(winner),y=speed1,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ games.diff) + ggtitle("Speed of Shots For Difference in Games Won")
+
+#Boxplots for speed difference for winner, facet by points difference
+ggplot(fed_only, aes(x=factor(winner),y=speed1,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ points.diff) + ggtitle("Speed of Shots For Difference in Points Won")
+
+#Boxplots for speed.diff difference for winner, facet by sets difference
+ggplot(fed_only, aes(x=factor(winner),y=speed.diff,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ sets.diff) + ggtitle("Difference in Speed For Difference in Sets Won")
+
+#Boxplots for speed difference for winner, facet by games difference
+ggplot(fed_only, aes(x=factor(winner),y=speed.diff,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ games.diff) + ggtitle("Difference in Speed For Difference in Games Won")
+
+#Boxplots for speed difference for winner, facet by points difference
+ggplot(fed_only, aes(x=factor(winner),y=speed.diff,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ points.diff) + ggtitle("Difference in Speed For Difference in Points Won")
+```
+
+###Winners by point in game
+
+```{r vis3}
+#Proportion of winners by forehand/backhand
+fed_hand <- na.omit(fed_only) %>%
+  group_by(hitpoint,winner) %>%
+  summarise(n=n()) %>%
+  mutate(proportion = n/sum(n))
+ggplot(fed_hand, aes(x=factor(winner),y=proportion,color=factor(winner))) + geom_point() + facet_grid(~hitpoint,labeller = label_both) + ggtitle("Proportion of Winners for Backhand/Forehand Shots")
+
+#Proportion of winners for returning serve
+fed_hand <- na.omit(fed_only) %>%
+  group_by(retser,winner) %>%
+  summarise(n=n()) %>%
+  mutate(proportion = n/sum(n))
+ggplot(fed_hand, aes(x=factor(winner),y=proportion,color=factor(winner))) + geom_point() + facet_grid(~retser,labeller = label_both) + ggtitle("Proportion of Winners for Returning Serve")
+
+
+#Winners across points, color by opponent
 ggplot(fed_only, aes(x=point,winner)) + geom_smooth(aes(color = opponent), se=FALSE) + xlab("Point") + ylab("Winners as a Proportion of Shots")
-
-#Adjusts all points over 8 to equal 8 - may help with the shape of smooth
-ggplot(fed_only, aes(x=point.adj,winner)) + geom_smooth(aes(color = opponent), se=FALSE) + xlab("Point Adjusted") + ylab("Winners as a Proportion of Shots")
-
 
 #Plotting the winners in each point, across games
 ggplot(fed_only, aes(x=point,y=winner)) + geom_smooth(aes(color = factor(game)), se=FALSE) +  xlab("Point") + ylab("Winner") + facet_wrap(~game, scale="free_x") + labs(title="Winners By Point Across Games")
 
 #Plotting the winners in each point, coloured by the set game number, faceted across sets
 ggplot(fed_only, aes(x=point,y=winner)) + geom_smooth(aes(color = factor(set)), se=FALSE) +  xlab("Point") + ylab("Winner") + facet_wrap(~game, scale="free_x") + labs(title="Winners By Point Across Sets")
-
 ```
 
 
