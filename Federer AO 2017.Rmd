@@ -8,7 +8,7 @@ output: html_notebook
 ```{r loaddata}
 setwd("~/Documents/Winter Project/intentions/data")
 library(devtools)
-install()
+#install()
 load("/Users/Jeremy/Documents/Winter Project/intentions/data/federer2017.RData")
 
 library(ggplot2)
@@ -16,25 +16,48 @@ library(tidyr)
 library(dplyr)
 library(readr)
 ```
+Shaping and manipulating the data. Adding new variables.
+
 
 ```{r df}
 fed_df <- federer2017
 
 fed_df <- arrange(fed_df, matchid, set, game, point, shot)
 
+#Reorienting shots so that all Federer's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
+
+#Federer
+fed_df <- fed_df %>% rowwise %>%
+  mutate(ballmark.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -ballmark.x, ballmark.x)) %>%
+  mutate(ballmark.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -ballmark.y, ballmark.y)) %>%
+  mutate(start.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.y, start.y)) %>%
+  mutate(final.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -final.x, ballmark.x)) %>%
+  mutate(final.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -final.y, ballmark.y)) %>%
+  mutate(start.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.x, start.x))
+
+#Opponents
+fed_df <- fed_df %>% rowwise %>%
+  mutate(start.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.y, start.y)) %>%
+  mutate(ballmark.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -ballmark.x, ballmark.x)) %>%
+  mutate(ballmark.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -ballmark.y, ballmark.y)) %>%
+  mutate(final.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -final.x, ballmark.x)) %>%
+  mutate(final.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -final.y, ballmark.y)) %>%
+  mutate(start.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.x, start.x))
+
+
+#Adding Vars
 
 fed_df <- fed_df %>%
-  mutate(lastshot = ifelse(fed_df$shot == fed_df$final.shot,1,0)) %>%
-  mutate(fedhit = ifelse(fed_df$impact.player == "FEDERER",1,0)) %>%
-  mutate(isserver = ifelse(fed_df$server == fed_df$impact.player,1,0)) %>%
-  mutate(fhand = ifelse(hitpoint == "F",1,0)) 
+  mutate(lastshot = ifelse(shot == final.shot,1,0)) %>%
+  mutate(isserver = ifelse(server == impact.player,1,0)) %>%
+  mutate(fhand = ifelse(hitpoint == "F",1,0)) %>%
+  mutate(opponent = ifelse(server == "FEDERER", receiver, server))
 
 fed_df <- fed_df %>%
-  mutate(opponent = ifelse(fed_df$server == "FEDERER", fed_df$receiver, fed_df$server))
-
-fed_df <- fed_df %>%
-  mutate(winner = ifelse(fed_df$ended.in.error == FALSE & fed_df$lastshot == 1,1,0)) %>%
-  mutate(retser = ifelse(fed_df$shot == 2,1,0))
+  mutate(winner = ifelse(ended.in.error == FALSE & lastshot == 1,1,0)) %>%
+  mutate(retser = ifelse(shot == 2,1,0)) %>%
+  mutate(retser1 = ifelse(shot == 2 & serve.classification == 1,1,0)) %>%
+  mutate(retser2 = ifelse(shot == 2 & serve.classification == 2,1,0))
 
 for (i in 1:ncol(fed_df)) {
   if(is.character(fed_df[,i]) == TRUE) {
@@ -43,15 +66,15 @@ for (i in 1:ncol(fed_df)) {
 }
 ```
 
-Splitting id into sets won, games won, points won
 
 ```{r scores}
 library(stringi)
 
 ids <- fed_df$id
 split.ids <- t(data.frame(stri_split_boundaries(ids, type="character")))
+
 fed_df <- fed_df %>%
-  mutate(server.points = split.ids[,1], receiver.points = split.ids[,2], server.games = split.ids[,3], receiver.games = split.ids[,4], server.sets = split.ids[,5], receiver.sets = split.ids[,6])
+  plyr::mutate(server.points = split.ids[,1], receiver.points = split.ids[,2], server.games = split.ids[,3], receiver.games = split.ids[,4], server.sets = split.ids[,5], receiver.sets = split.ids[,6])
 
 #Now mutate this to Federer score and opponent score
 fed_df <- fed_df %>% rowwise %>%
@@ -62,11 +85,12 @@ fed_df <- fed_df %>% rowwise %>%
   mutate(opp.games = ifelse(server == "FEDERER", as.numeric(receiver.games), as.numeric(server.games))) %>%
   mutate(opp.sets = ifelse(server == "FEDERER", as.numeric(receiver.sets), as.numeric(server.sets)))
 
-
+fed_df <- fed_df %>%
+    mutate(sets.diff = fed.sets - opp.sets) %>%
+    mutate(games.diff = fed.games - opp.games) %>%
+    mutate(points.diff = fed.points - opp.points)
 ```
 
-
-Adding in new variables
 
 ```{r newvars}
 fed_df <- fed_df %>%
@@ -74,12 +98,14 @@ fed_df <- fed_df %>%
   mutate(oppo.hit.x = NA) %>%
   mutate(oppo.hit.y = NA) %>%
   mutate(oppo.hit.z = NA) %>%
-  mutate(oppo.speed = NA)
-
+  mutate(oppo.speed = NA) %>%
+  mutate(oppo.ballmark.x = NA) %>%
+  mutate(oppo.ballmark.y = NA) %>%
+  mutate(speed.ratio = NA)
 
 for (i in 2:nrow(fed_df)) {
-  if((fed_df$shot[i] != 1)) { #so that only non-serves are affected
-  
+  if(fed_df$shot[i] != 1) {#so that only non-serves are affected
+
   fed_df$speed.diff[i]=fed_df$speed1[i]-fed_df$speed1[i-1]
   #speed difference
   
@@ -87,15 +113,70 @@ for (i in 2:nrow(fed_df)) {
   fed_df$oppo.hit.y[i]=fed_df$start.y[i-1]
   fed_df$oppo.hit.z[i]=fed_df$start.z[i-1]
   fed_df$oppo.speed[i]=fed_df$speed1[i-1]
+  fed_df$oppo.ballmark.x[i]=fed_df$ballmark.x[i-1]
+  fed_df$oppo.ballmark.y[i]=fed_df$ballmark.y[i-1]
   #oppo hit
   
   }
 }
 
 fed_df <- fed_df %>%
-    mutate(sets.diff = fed.sets - opp.sets) %>%
-    mutate(games.diff = fed.games - opp.games) %>%
-    mutate(points.diff = fed.points - opp.points)
+  mutate(speed.ratio = speed1/oppo.speed) %>% #speed ratio
+  mutate(side.dist = 4.115 - abs(oppo.ballmark.y)) %>% #distance of oppo.ballmark from sideline
+  mutate(base.dist = 11.89 - abs(oppo.ballmark.x)) %>% #distance of oppo.ballmark from baseline
+  mutate(short.dist = min(side.dist, base.dist)) #shortest distance from any line
+
+
+#Adding angles
+fed_df <- fed_df %>%
+  mutate(p.start.x = NA) %>%
+  mutate(p.start.y = NA)
+
+for (i in 3:nrow(fed_df)) {
+  if(fed_df$impact.player[i] == fed_df$impact.player[i-2] & fed_df$shot[i] == fed_df$shot[i-2] + 2) {
+    fed_df$p.start.x[i]=fed_df$start.x[i-2]
+    fed_df$p.start.y[i]=fed_df$start.y[i-2]
+  }
+}
+
+#adding angle between fed.shot-opp.shot vector and opp.shot-opp.ballmark vector
+#doing it in one line because df doesn't want to add vectors
+fed_df <- fed_df %>%
+  mutate(o.angle = NA)
+  
+for (i in 1:nrow(fed_df)) {
+  x1 <- fed_df$p.start.x[i]
+  y1 <- fed_df$p.start.y[i]
+  x2 <- fed_df$oppo.hit.x[i]
+  y2 <- fed_df$oppo.hit.y[i]
+  x3 <- fed_df$oppo.ballmark.x[i]
+  y3 <- fed_df$oppo.ballmark.y[i]
+  
+  o.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  fed_df$o.angle[i] = ifelse(o.angle > 90, 180-o.angle, o.angle)
+}
+
+#Now adding the angle the player hits
+fed_df <- fed_df %>%
+  mutate(p.angle = NA)
+  
+for (i in 1:nrow(fed_df)) {
+  x1 <- fed_df$oppo.hit.x[i]
+  y1 <- fed_df$oppo.hit.y[i]
+  x2 <- fed_df$start.x[i]
+  y2 <- fed_df$start.y[i]
+  x3 <- fed_df$ballmark.x[i]
+  y3 <- fed_df$ballmark.y[i]
+  
+  p.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  fed_df$p.angle[i] = ifelse(p.angle > 90, 180-p.angle, p.angle)
+}
 ```
 
 Glossary:
@@ -104,105 +185,113 @@ fedhit - federer hits the shot
 isserver - if server hits the shot
 winner - if shot is winner (i.e. point doesn't end in error, as opponent doesn't reach the ball)
 retser - if shot is returning serve
+retser1 - if shot is returning first serve
+retser2 - if shot is returning second serve
 speed.diff - difference in current shot speed vs opponents last shot speed (at impact)
+speed.ratio - shot speed/opponent's previous shot speed
 speed1 - speed of shot from impact with racquet
+o.angle - angle made by opponents previous shot
+p.angle - angle made by player's current shot
 oppo.hit - coordinates of opponents previous impact
 fed.points/games/sets - fed score up to current point
 opp.points/games/sets - opponent score up to current point
 points/games/sets.diff - difference in score from Federer's perspective
-ballmark.xy - multiplication of ballmark x & y coordinates
 
 
 ```{r noserves}
-#make all shots from same side
-fed_df <- fed_df %>%
-  mutate(start.x = ifelse(start.x <= 0, -start.x, start.x)) %>%
-  mutate(oppo.hit.x = ifelse(oppo.hit.x <= 0, -oppo.hit.x, oppo.hit.x)) %>%
-  mutate(ballmark.x = ifelse(ballmark.x <= 0, -ballmark.x, ballmark.x))
+#remove opponents
+fed_no.opp <- fed_df %>% 
+  dplyr::filter(impact.player == "FEDERER")
 
-#remove serves
-fed_noser <- fed_df %>% filter(hitpoint != "S") %>%
+#federer only - remove serves
+fed_only <- fed_no.opp %>%
+  filter(hitpoint != "S") %>%
   dplyr::select(-serveid)
 
-#federer only
-fed_only <- fed_noser %>% 
-  dplyr::filter(impact.player == "FEDERER")
+
+#First remove any errors for start, ballmark, so that we are only looking at shots that we hit onto the other side
+#To check: ggplot(fed_only, aes(ballmark.x, ballmark.y)) + geom_point()
+fed_only <- fed_only %>%
+  filter(oppo.hit.x >= 0) %>%
+  filter(oppo.ballmark.x <= 0) %>%
+  filter(ballmark.x >= 0)
+
 ```
 
 
 #Visualization - Before We Start Modelling
 
-Here are a series of plots which give us an idea of how each variable affects our response variable - hitting a winner.
+Here are a series of plots which give us an idea of how each variable affects hitting a winner.
 
-###Winners by coordinates of shot, bounce and opponents shot
+Looking at these plots, we try to determine which variables may be used as response variables, meaning that they make up part of the state classification, or as a covariate, meaning they affect the likelihood of being in a state.
+
+##Plots of shot and ballmark co-ordinates, angles made by shots and speed measures
 
 ```{r vis}
 library(ggplot2)
-
 #X Co-ordinate of shot
-ggplot(fed_only, aes(x=start.x,winner)) + geom_smooth(aes(color = opponent), se=FALSE) + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
-
-#Y Co-ordinate of shot
-ggplot(fed_only, aes(x=start.y,winner)) + geom_smooth(aes(color = opponent), se=FALSE) + xlab("Y Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Y Co-Ordinate")
+ggplot(fed_only, aes(x=start.x,winner)) + geom_smooth() + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
 
 #Opponents shot before
-ggplot(fed_only, aes(x=oppo.hit.x,oppo.hit.y)) + geom_point(aes(color = factor(winner))) + xlab("X Coordinate of Oppo Shot") + ylab("Y Coordinate of Oppo Shot") + ggtitle("Winners By Opponent's Shot Co-Ordinates")
+library(hexbin)
+ggplot(fed_only, aes(x=oppo.hit.x,y=oppo.hit.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate of Oppo Shot") + ylab("Y Coordinate of Oppo Shot") + ggtitle("Count of Winners By Opponent's Shot Co-Ordinates")
+### Get help transforming this to proportion in each bin instead of raw count
 
-#Y Co-ordinate of Opponent shot
-ggplot(fed_only, aes(x=abs(oppo.hit.y),winner)) + geom_smooth(se=TRUE) + xlab("Y Coordinate of Opponent Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent Shot Y Co-Ordinate")
+#Fed Shots on x-y plane
+ggplot(fed_only, aes(x=start.x,y=start.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates")
 
-#Shots on x-y plane
-ggplot(fed_only, aes(x=start.x,y=start.y)) + geom_point(aes(color = factor(winner))) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates")
+#Fed Ballmark by winner in x-y plane
+ggplot(fed_only, aes(x=ballmark.x,y=ballmark.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Ballmark Co-Ordinates")
 
-#Shots on x-y plane, facet by opponent
-ggplot(fed_only, aes(x=start.x,y=start.y)) + geom_point(aes(color = factor(winner))) + facet_wrap(~opponent) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates, Across Opponents")
 
-#Bounce by winner in x-y plane
-ggplot(fed_only, aes(x=ballmark.x,y=ballmark.y)) + geom_point(aes(color = factor(winner))) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Bounce Co-Ordinates")
+#Angle of shots
+ggplot(fed_only, aes(x=o.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents Shot With Fed's Previous Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent Shot Angle")
 
-#Interaction of x and y bounce to get density
-fed_only <- fed_only %>%
-mutate(ballmark.xy = ballmark.x * ballmark.y)
+ggplot(fed_only, aes(x=p.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's Shot Angle")
 
-ggplot(fed_only) + geom_density(aes(ballmark.xy, group = factor(winner), color=factor(winner)))
+ggplot(fed_only) + geom_density(aes(p.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Fed Shot Angles")
+
+ggplot(fed_only) + geom_density(aes(o.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Opponent Shot Angles")
 
 #Winners by oppo speed
 ggplot(fed_only) + geom_density(aes(oppo.speed, group = factor(winner), color=factor(winner)))
+
 ggplot(fed_only, aes(x=factor(winner),y=oppo.speed,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent Speed")
 
+#Winners by speed ratio
+ggplot(fed_only) + geom_density(aes(speed.ratio, group = factor(winner), color=factor(winner)))
+
+ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
 ```
 
 
-###Boxplots for speed and winner across score differences
+###Differences in speed for winners across match situations/scores
 ```{r vis2}
 #Box plots across multiple categories
 df_long1 <- gather(data = fed_only, key = variables, value = stat, speed1, final.shot, shot)
 
 ggplot(df_long1) + geom_boxplot(aes(x=factor(winner), y=stat, fill=factor(winner))) + facet_wrap(~variables, scale = "free_y") + ggtitle("Differences In Characteristics of Winner/Not")
 
-#Boxplots for speed across games, facet by winner
-ggplot(fed_only, aes(x=factor(winner),y=speed1,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ game) + ggtitle("Speed of Shots Across Games")
-
-#Boxplots for speed difference for winner, facet by sets difference
+#Boxplots for speed by winner, facet by sets difference
 ggplot(fed_only, aes(x=factor(winner),y=speed1,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ sets.diff) + ggtitle("Speed of Shots For Difference in Sets Won")
 
-#Boxplots for speed difference for winner, facet by games difference
+#Boxplots for speed by winner, facet by games difference
 ggplot(fed_only, aes(x=factor(winner),y=speed1,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ games.diff) + ggtitle("Speed of Shots For Difference in Games Won")
 
-#Boxplots for speed difference for winner, facet by points difference
+#Boxplots for speed by winner, facet by points difference
 ggplot(fed_only, aes(x=factor(winner),y=speed1,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ points.diff) + ggtitle("Speed of Shots For Difference in Points Won")
 
-#Boxplots for speed.diff difference for winner, facet by sets difference
-ggplot(fed_only, aes(x=factor(winner),y=speed.diff,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ sets.diff) + ggtitle("Difference in Speed For Difference in Sets Won")
+#Boxplots for speed.ratio by winner, facet by sets difference
+ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ sets.diff) + ggtitle("Difference in Speed Ratio For Difference in Sets Won")
 
-#Boxplots for speed difference for winner, facet by games difference
-ggplot(fed_only, aes(x=factor(winner),y=speed.diff,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ games.diff) + ggtitle("Difference in Speed For Difference in Games Won")
+#Boxplots for speed.ratio by winner, facet by games difference
+ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ games.diff) + ggtitle("Difference in Speed Ratio For Difference in Games Won")
 
-#Boxplots for speed difference for winner, facet by points difference
-ggplot(fed_only, aes(x=factor(winner),y=speed.diff,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ points.diff) + ggtitle("Difference in Speed For Difference in Points Won")
+#Boxplots for speed.ratio by winner, facet by points difference
+ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ points.diff) + ggtitle("Difference in Speed Ratio For Difference in Points Won")
 ```
 
-###Winners by point in game
+###Winners by forehand/backhand, return serve classifcations and the effect of importance (metric)
 
 ```{r vis3}
 #Proportion of winners by forehand/backhand
@@ -213,108 +302,110 @@ fed_hand <- na.omit(fed_only) %>%
 ggplot(fed_hand, aes(x=factor(winner),y=proportion,color=factor(winner))) + geom_point() + facet_grid(~hitpoint,labeller = label_both) + ggtitle("Proportion of Winners for Backhand/Forehand Shots")
 
 #Proportion of winners for returning serve
-fed_hand <- na.omit(fed_only) %>%
-  group_by(retser,winner) %>%
+fed_ret <- fed_only %>%
+  group_by(retser,retser1,winner) %>%
   summarise(n=n()) %>%
   mutate(proportion = n/sum(n))
-ggplot(fed_hand, aes(x=factor(winner),y=proportion,color=factor(winner))) + geom_point() + facet_grid(~retser,labeller = label_both) + ggtitle("Proportion of Winners for Returning Serve")
+ggplot(fed_ret, aes(x=factor(winner),y=proportion,color=factor(winner))) + geom_point() + facet_wrap(~retser ~retser1,labeller = label_both) + ggtitle("Proportion of Winners for Returning Serve - For Both Serve 1 and 2")
 
+#Plotting Importance
+ggplot(fed_only, aes(x=importance,y=winner)) + geom_smooth() + xlab("Importance") + ylab("Proportion of Winners") + labs(title="Proportion of Winners against Importance")
 
-#Winners across points, color by opponent
-ggplot(fed_only, aes(x=point,winner)) + geom_smooth(aes(color = opponent), se=FALSE) + xlab("Point") + ylab("Winners as a Proportion of Shots")
-
-#Plotting the winners in each point, across games
-ggplot(fed_only, aes(x=point,y=winner)) + geom_smooth(aes(color = factor(game)), se=FALSE) +  xlab("Point") + ylab("Winner") + facet_wrap(~game, scale="free_x") + labs(title="Winners By Point Across Games")
-
-#Plotting the winners in each point, coloured by the set game number, faceted across sets
-ggplot(fed_only, aes(x=point,y=winner)) + geom_smooth(aes(color = factor(set)), se=FALSE) +  xlab("Point") + ylab("Winner") + facet_wrap(~game, scale="free_x") + labs(title="Winners By Point Across Sets")
+ggplot(fed_only) + geom_density(aes(importance, group = factor(winner), color=factor(winner))) + labs(title="Density of Importance by Winners")
 ```
 
 
+Notes Pre-Modelling:
 
 
+Response variables to consider: 
+winner
+speed.ratio
+p.angle
+ballmark.x
+ballmark.y
+
+Covariates
+o.angle, oppo.speed, retser1, retser2, fhand, start.x, diff.sets, diff.games, diff.points
+
+```{r adjustingo.angle}
+fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
+```
 
 
+# Type 1: Simple Models, Independent of Match Score/Situation
 
-
-# Model 1
-### Analysis of Federer's shots only
-
+### T1: Model 1
 Response: winner
-Covariates: set, game, point, fed.points, opp.points, fed.games, opp.games, fed.sets, opp.sets 
+Covariates: oppo.speed, retser1, retser2, fhand, start.x
 
-```{r model1}
+```{r t1m1}
 library(depmixS4)
-set.seed(1)
-mod.fed_only1 <- depmix(winner ~ 1, transition = ~ set + game + point + fed.points + fed.games + fed.sets, data = fed_only, nstates = 2, family=multinomial("identity"))
-fm.fed_only1 <- fit(mod.fed_only1)
-summary(fm.fed_only1)
+library(dplyr)
+t1.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x, data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.fm1 <- fit(t1.mod1)
+summary(t1.fm1)
 ```
 
-State 1 is returning as there is 0 probability of hitting a winner
-State 2 is more aggressive, with 0.607 chance of hitting a winner
+State 1 is returning as there is 0.052 probability of hitting a winner
+State 2 is more aggressive, with 0.226 chance of hitting a winner
 
+### T1: Model 2
+Response: winner
+Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle
 
-#Model 2
-Additions to Model 1. speed1 as response variable, retser and fhand as covariates
-
-Response: winner, speed1
-Covariates: set, game, point, fed.points, opp.points, fed.games, opp.games, fed.sets, opp.sets, retser, fhand, isserver
-
-```{r model2}
+```{r t1m2}
 library(depmixS4)
-mod.fed_only2 <- depmix(list(winner ~ 1, speed1 ~ 1), transition = ~ set + game + point + fed.points + fed.games + fed.sets + retser + fhand + isserver, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
-fm.fed_only2 <- fit(mod.fed_only2)
-summary(fm.fed_only2)
+t1.mod2 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle, data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.fm2 <- fit(t1.mod2)
+summary(t1.fm2)
 ```
 
-State 1 is returning as there is 0.009 chance of hitting a winner, shots are also slower
-State 2 is more aggressive, with 0.530 chance of hitting a winner, shots are clearly faster
+State 1 is returning as there is 0.000 probability of hitting a winner
+State 2 is more aggressive, with 0.227 chance of hitting a winner
 
-#Model 3
-Scaling speed1 from Model 2
+# Type 2: Detailed Models, Independent of Match Score/Situation
 
-Response: winner, scale(speed1)
-Covariates: set, game, point, fed.points, opp.points, fed.games, opp.games, fed.sets, opp.sets, retser, fhand, isserver
+### T2: Model 1
+Response: winner, speed.ratio
+Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle
 
-```{r model3}
-mod.fed_only3 <- depmix(list(winner ~ 1, scale(speed1) ~ 1), transition = ~ set + game + point + fed.points + fed.games + fed.sets + retser + fhand, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
-fm.fed_only3 <- fit(mod.fed_only3)
-summary(fm.fed_only3)
+```{r t2m1}
+library(depmixS4)
+t2.mod1 <- depmix(list(winner ~ 1,speed.ratio ~1), transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
+t2.fm1 <- fit(t2.mod1)
+summary(t2.fm1)
 ```
 
-Only difference with model 3 from model 2 is that we are scaing the speed of first arc (i.e. speed at impact of ball with racket). This significantly decreases our AIC and makes a much better fit. Probability of hitting a winner from state 2 also increases to 0.584.
+State 1 is more aggressive, with 0.296 chance of hitting a winner, and the speed ratio is much higher
+State 2 is returning as there is 0.049 probability of hitting a winner and speed ratio is lower
 
 
-### Recall
-
-
-#Model 4
-Adding importance of points score to Model 3
-
-Response: winner, scale(speed1)
-Covariates: set, game, point, fed.points, opp.points, fed.games, opp.games, fed.sets, opp.sets, retser, fhand, isserver, importance
-
-```{r model4}
-mod.fed_only4 <- depmix(list(winner ~ 1, scale(speed1) ~ 1), transition = ~ set + game + point + fed.points + opp.points + fed.games + opp.games + fed.sets + opp.sets + retser + fhand + importance, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
-fm.fed_only4 <- fit(mod.fed_only4)
-summary(fm.fed_only4)
+```{r t2m2}
+library(depmixS4)
+t2.mod2 <- depmix(list(winner ~ 1, p.angle ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian(),gaussian()))
+t2.fm2 <- fit(t2.mod2)
+summary(t2.fm2)
 ```
 
-By including the "importance" measure, we increase AIC and also increase probability of hitting a winner from state 1 - which is now 0.008. scale(speed1) parameters are similar to model 3. 
+State 1 is more aggressive, with 0.196 chance of hitting a winner, player angles are greater and the speed ratio is much higher
+State 2 is returning as there is 0.034 probability of hitting a winner and speed ratio is lower, player angles are lesser and speed ratio is low
 
-#Model 5
-Omitting point, game, set in match from model 4
+```{r comparet1}
+AIC(t1.fm1)
+AIC(t1.fm2)
+AIC(t2.fm1)
+AIC(t2.fm2)
 
-Response: winner, scale(speed1)
-Covariates: fed.points, opp.points, fed.games, opp.games, fed.sets, opp.sets, retser, fhand, isserver, importance
 
-
-```{r model5}
-mod.fed_only5 <- depmix(list(winner ~ 1, scale(speed1) ~ 1), transition = ~ fed.points + opp.points + fed.games + opp.games + fed.sets + opp.sets + retser + fhand + isserver + importance, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
-fm.fed_only5 <- fit(mod.fed_only5)
-summary(fm.fed_only5)
+library(lmtest)
+lrtest(t1.fm2,t1.fm1)
+lrtest(t2.fm1,t1.fm1)
+lrtest(t2.fm2,t2.fm1)
 ```
+
+
+
 
 
 Comparison between models:
@@ -333,11 +424,11 @@ lrtest(fm.fed_only4,fm.fed_only3)
 lrtest(fm.fed_only5,fm.fed_only4)
 ```
 
-Model 4 appears to be the best model for this match. This means the time in the match is influential, not just score.
 
-#Predictions with Model 4
 
-```{r predictmodel4}
+#Predictions with Model - BELOW FROM PREVIOUS CODE - DO NOT RUN
+
+```{ predictmodel4}
 #Pull out parameters
 pars_4 <- getpars(fm.fed_only4)
 
@@ -406,15 +497,8 @@ ggplot(test_pred,aes(speed1,winner)) + geom_point(aes(color = pred.s1)) + ggtitl
 
 
 
-```{r visualize winners}
-winners <- fed_df %>% filter(lastshot == 1) %>% 
-fedwinners <- fed_df %>% filter(impact.player == "FEDERER")
+```{r Appendix}
 
-ggplot(fedwinners,aes(ballmark.x,ballmark.y)) + geom_point()
-#+ geom_point(aes(color = impact.player))
-
-#+ geom_line(aes(x,y),data=courtlines)
-#courtlines <- data.frame(x = c(-11.89, -6.4, 0, 6.4, 11.89), y = c(-5.5, -4.115, 0, 4.115, 5.5))
 
 ```
 
