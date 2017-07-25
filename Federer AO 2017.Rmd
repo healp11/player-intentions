@@ -5,10 +5,14 @@ output: html_notebook
 
 #Federer's Matches in Aus Open 2017
 
+This project looks at using Hidden Markov Models to identify Federer's shot intentions during the Australian Open, 2017.
+
+Using two hidden states, shots intentions can be categorized as 'return', meaning the shot was just meant to be returned to the opponent, and 'winner' or 'aggressive', meaning that the intention of the shots was to win the point with that shot.
+
+The depmixS4 package includes the function depmix, which is used for estimation of this particular hidden markov model.
+
 ```{r loaddata}
-setwd("~/Documents/Winter Project/intentions/data")
 library(devtools)
-#install()
 load("/Users/Jeremy/Documents/Winter Project/intentions/data/federer2017.RData")
 
 library(ggplot2)
@@ -16,7 +20,9 @@ library(tidyr)
 library(dplyr)
 library(readr)
 ```
-Shaping and manipulating the data. Adding new variables.
+
+##Shaping and manipulating the data. Adding new variables.
+Adding new variables that are manipulations of the information contained in the datatset.
 
 
 ```{r df}
@@ -189,24 +195,42 @@ for (i in 3:nrow(fed_df)) {
 }
 ```
 
-Glossary:
+### Glossary of Added Variables
+
 lastshot - last shot in the point
+
 fedhit - federer hits the shot
+
 isserver - if server hits the shot
+
 winner - if shot is winner (i.e. point doesn't end in error, as opponent doesn't reach the ball)
+
 retser - if shot is returning serve
+
 retser1 - if shot is returning first serve
+
 retser2 - if shot is returning second serve
+
 speed.diff - difference in current shot speed vs opponents last shot speed (at impact)
+
 speed.ratio - shot speed/opponent's previous shot speed
+
 speed1 - speed of shot from impact with racquet
+
 o.angle - angle made by opponents previous shot
+
 p.angle - angle made by player's current shot
+
 lag.p.angle - angle made by player's previous shot in rally
+
 lag.speed.ratio - speed ratio of player's previous in rally
+
 oppo.hit - coordinates of opponents previous impact
+
 fed.points/games/sets - fed score up to current point
+
 opp.points/games/sets - opponent score up to current point
+
 points/games/sets.diff - difference in score from Federer's perspective
 
 
@@ -237,18 +261,180 @@ fed_only <- fed_only %>%
       fed_only$count[i] = fed_only$count[i-1] + 1
     }
   }
+
+#Adjusting to remove NAs and replace with 0s for modelling
+fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 ```
 
 
-#Visualization - Before We Start Modelling
+## Modelling
 
+After a visual analysis of interaction between variables in the dataset, the response variables and covariates must be selected for the model.
+
+Response variables are what we see occur as a result of Federer's hidden state. The primary candidates for the models are: winner, speed.ratio and p.angle.
+
+Covariates are factors that occur up to the time of the shot, and affect the transition probabilities from/to each hidden state. The covariates selected for modelling after visual examination are: oppo.speed, retser1, retser2, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio, points.diff, games.diff, sets.diff
+
+## Model Types
+Models are broken down into three types. The first are simple models, independent of match score, the second are more detailed models, independent of match score and the third are detailed models, dependent on match score.
+
+## Model Decision
+The two best models by comparing AIC values were Type 2, Model 1 and Type 3, Model 4. The latter is just the former plus covariates for the difference in points, games and sets.
+
+Because the difference in AIC between these models is so small, and the -logLik is lower for Type 3 Model 4, I have decided to include points, games and set difference in the model for the sake of examining other players. 
+
+Part of the rationale for this decision is that other players may behave differently with different score differentials, even if Federer may be able to block out the score in a match and play consistantly throughout. For the sake of modelling other players in the future, the score dependent model (T3M4) is selected, even though it is not a significant improvement on the score independent model (T2M1).
+
+Overall: The decision is to proceed with Model 4 from Type 3 category.
+
+Response variables: winner, speed.ratio
+
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio, points.diff, games.diff, sets.diff
+
+```{r t3m4final}
+library(depmixS4)
+t3.mod4 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio + points.diff + games.diff + sets.diff, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
+t3.fm4<- fit(t3.mod4)
+summary(t3.fm4)
+```
+
+### Interpreting the output
+The response parameters tell us about the characteristics of each state. What is found is that when two states are specified, they meet the criteria of 'winner' and 'return' as we expect.
+
+State 1 is a 'returning' state, where the probability of hitting a winner is 0.044, and the speed.ratio of shots are 0.819, on average. This indicates slower shots with more conservative approach.
+
+State 2 is a 'winning' or 'aggressive' state, where the probability of hitting a winner is 0.29, and the speed.ratio of shots are 1.326, on average.
+
+Not only is this confirming our qualitative intuition, but it is telling us about how Federer behaves in matches, and shows that there is a clear difference between his shot intentions.
+
+A limitation of this analysis is that it is examining only two states. Further analysis would consider more states to help classification. For example, if four states were used, there may be two returning states, one faster than the other, and two aggressive states, with one very fast, and one very slow (i.e. drop shots).
+
+
+#Predictions with Model
+
+```{r predict}
+#Pull out parameters
+pars <- getpars(t3.fm4)
+
+#Creating temporary transition matrix
+#Refresh function: Inputs
+#a - oppo.speed
+#b - retser1
+#c - retser2
+#d - start.x
+#e - o.angle
+#f - oppo.hit.x
+#g - lag.p.angle
+#h - lag.speed.ratio
+#j - points.diff
+#k - games.diff
+#l - sets.diff
+tr.refresh <- function(a,b,c,d,e,f,g,h,j,k,l) {
+  p11 <- 1/(1+exp(pars[[4]]+pars[[6]]*a+pars[[8]]*b+pars[[10]]*c+pars[[12]]*d+pars[[14]]*e+pars[[16]]*f+pars[[18]]*g+pars[[20]]*h+pars[[22]]*j+pars[[24]]*k+pars[[26]]*l))
+  
+  p21 <- 1/(1+exp(pars[[28]]+pars[[30]]*a+pars[[32]]*b+pars[[34]]*c+pars[[36]]*d+pars[[38]]*e+pars[[40]]*f+pars[[42]]*g+pars[[44]]*h+pars[[46]]*j+pars[[48]]*k+pars[[50]]*l))
+  
+  p12 <- 1 - p11
+  p22 <- 1 - p21
+  
+  tr.temp <- as.matrix(c(p11,p21,p12,p22))
+  tr.temp <- matrix(tr.temp, ncol=2)
+}
+
+
+#Predicted states shell
+pr.state <- matrix(0,nrow(fed_only),2)
+
+#State 1
+init.state <- matrix(c(pars[[1]],pars[[2]]),ncol=2) #initial state
+a <- fed_only$oppo.speed[1]
+b <- fed_only$retser1[1]
+c <- fed_only$retser2[1]
+d <- fed_only$start.x[1]
+e <- fed_only$o.angle[1]
+f <- fed_only$oppo.hit.x[1]
+g <- fed_only$lag.p.angle[1]
+h <- fed_only$lag.speed.ratio[1]
+j <- fed_only$points.diff[1]
+k <- fed_only$games.diff[1]
+l <- fed_only$sets.diff[1]
+trans <- tr.refresh(a,b,c,d,e,f,g,h,j,k,l)
+pr.state[1,] <- init.state %*% trans
+
+#States 2 onwards (holding probabilities)
+for(i in 2:nrow(fed_only)) {
+a <- fed_only$oppo.speed[i]
+b <- fed_only$retser1[i]
+c <- fed_only$retser2[i]
+d <- fed_only$start.x[i]
+e <- fed_only$o.angle[i]
+f <- fed_only$oppo.hit.x[i]
+g <- fed_only$lag.p.angle[i]
+h <- fed_only$lag.speed.ratio[i]
+j <- fed_only$points.diff[i]
+k <- fed_only$games.diff[i]
+l <- fed_only$sets.diff[i]
+  trans <- tr.refresh(a,b,c,d,e,f,g,h,j,k,l)
+  pr.state[i,] <- pr.state[i-1,] %*% trans
+}
+
+#Predicted states - also adjusts to make sure it selects correct state
+if (pars[[52]] >= pars [[56]]) {
+  predict_df <- data.frame(prob.win=pr.state[,1])
+} else {
+  predict_df <- data.frame(prob.win=1-pr.state[,1])
+}
+
+
+#Making conclusions on state
+predict_df <- predict_df %>% rowwise %>%
+  mutate(pred.win = ifelse(prob.win <= 0.5, 0, 1))
+
+fed_pred <- cbind(fed_only, predict_df)
+
+#Remember that state 1 is winner, state 2 is returning
+```
+
+Now plotting the probabilities for each shot, for every game
+
+```{r visproject}
+ggplot(fed_pred, aes(x=count,y=prob.win)) + geom_line(color="blue", size=0.3) + geom_smooth(span = 0.1, se=FALSE, color="red", size = 0.4) + facet_wrap(~factor(opponent), scale="free") + xlab("Time") + ylab("Probability of Being in Aggressive/Winning State") + ggtitle("Predicting Federer's Shot Intentions Across Matches in the 2017 Australian Open")
+```
+
+This plot shows the probability of being in a 'winning' or 'aggressive' state throughout each of Federer's matches. The red lines are fitted lines that give us a lower resolution picture of Federer's behaviour throughout the games.
+
+Further visualization involving faceting with other variables may give more insight into Federer's behavior. There was difficultly faceting by opponent and by other variables.
+
+### Extension: Round 3 vs. Berdych
+
+For the sake of more visualization, let's consider Federer's game against Berdych. This match is chosen because the probability of being in aggressive state increases as the game goes on (i.e. upwards trend).
+
+```{r ext.berd}
+#Berdych match
+fed_berd <- fed_pred %>%
+  filter(opponent == "BERDYCH")
+
+fed_berd <- fed_berd %>%
+  gather(key = vars, value = measurement, prob.win, oppo.speed, start.x, o.angle,  oppo.hit.x, points.diff, games.diff, sets.diff)
+
+ggplot(fed_berd, aes(x=count,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych: Looking at how variables move together over the match")
+```
+
+
+
+
+#Appendix
+
+This contains all models run in determining best fit, and the visual plots.
+
+## Visualization of Variables
 Here are a series of plots which give us an idea of how each variable affects hitting a winner.
 
 Looking at these plots, we try to determine which variables may be used as response variables, meaning that they make up part of the state classification, or as a covariate, meaning they affect the likelihood of being in a state.
 
-##Plots of shot and ballmark co-ordinates, angles made by shots and speed measures
-
+### Coordinates, speed and angles of shots from both Federer and opponents
 ```{r vis}
+##Plots of shot and ballmark co-ordinates, angles made by shots and speed measures
 library(ggplot2)
 #X Co-ordinate of shot
 ggplot(fed_only, aes(x=start.x,winner)) + geom_smooth() + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
@@ -286,7 +472,7 @@ ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom
 ```
 
 
-###Differences in speed for winners across match situations/scores
+### Looking at differences in speed for winners across match situations/scores
 ```{r vis2}
 #Box plots across multiple categories
 df_long1 <- gather(data = fed_only, key = variables, value = stat, speed1, final.shot, shot)
@@ -312,7 +498,7 @@ ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom
 ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + facet_grid(.~ points.diff) + ggtitle("Difference in Speed Ratio For Difference in Points Won")
 ```
 
-###Winners by forehand/backhand, return serve classifcations and the effect of importance (metric)
+### Winners by forehand/backhand, return serve classifcations and the effect of importance (metric)
 
 ```{r vis3}
 #Proportion of winners by forehand/backhand
@@ -336,34 +522,19 @@ ggplot(fed_only) + geom_density(aes(importance, group = factor(winner), color=fa
 ```
 
 
-Notes Pre-Modelling:
 
+##Modelling
 
-Response variables to consider: 
-winner
-speed.ratio
-p.angle
-ballmark.x
-ballmark.y
-
-Covariates
-o.angle, oppo.speed, retser1, retser2, fhand, start.x, diff.sets, diff.games, diff.points
-
-```{r adjustingo.angle}
-fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
-```
-
-
-# Type 1: Simple Models, Independent of Match Score/Situation
+## Type 1: Simple Models, Independent of Match Score/Situation
 
 ### T1: Model 1
 Response: winner
-Covariates: oppo.speed, retser1, retser2, fhand, start.x
+Covariates: oppo.speed, retser1, retser2, start.x
 
 ```{r t1m1}
 library(depmixS4)
 library(dplyr)
-t1.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x, data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + start.x, data = fed_only, nstates = 2, family=multinomial("identity"))
 t1.fm1 <- fit(t1.mod1)
 summary(t1.fm1)
 ```
@@ -373,11 +544,11 @@ State 2 is more aggressive, with 0.226 chance of hitting a winner
 
 ### T1: Model 2
 Response: winner
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle
 
 ```{r t1m2}
 library(depmixS4)
-t1.mod2 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle, data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.mod2 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle, data = fed_only, nstates = 2, family=multinomial("identity"))
 t1.fm2 <- fit(t1.mod2)
 summary(t1.fm2)
 ```
@@ -387,33 +558,33 @@ State 2 is more aggressive, with 0.227 chance of hitting a winner
 
 ### T1: Model 3
 Response: winner
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle, oppo.hit.x
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle, oppo.hit.x
 
 ```{r t1m3}
 library(depmixS4)
-t1.mod3 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle + oppo.hit.x, data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.mod3 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x, data = fed_only, nstates = 2, family=multinomial("identity"))
 t1.fm3<- fit(t1.mod3)
 summary(t1.fm3)
 ```
 
 ### T1: Model 4
 Response: winner
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle, oppo.hit.x, oppo.ballmark.x
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle, oppo.hit.x, oppo.ballmark.x
 
 ```{r t1m4}
 library(depmixS4)
-t1.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle + oppo.hit.x + oppo.ballmark.x, data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x + oppo.ballmark.x, data = fed_only, nstates = 2, family=multinomial("identity"))
 t1.fm4<- fit(t1.mod4)
 summary(t1.fm4)
 ```
 
 ### T1: Model 5
 Response: winner
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio
 
 ```{r t1m5}
 library(depmixS4)
-t1.mod5 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.mod5 <- depmix(winner ~ 1, transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=multinomial("identity"))
 t1.fm5 <- fit(t1.mod5)
 summary(t1.fm5)
 ```
@@ -434,26 +605,26 @@ Conclusion:
 Model 5 has lowest AIC, which is slightly lower than model 3. LR Test confirms that Model 5 is significantly different to Model 3, so we will continue with Model 5's covariates.
 
 
-# Type 2: Higher Resolution Models, Independent of Match Score
+## Type 2: Higher Resolution Models, Independent of Match Score
 
 ### T2: Model 1
 Response: winner, speed.ratio
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio
 
 ```{r t2m1}
 library(depmixS4)
-t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
+t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
 t2.fm1<- fit(t2.mod1)
 summary(t2.fm1)
 ```
 
 ### T2: Model 2
 Response: winner, p.angle
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio
 
 ```{r t2m2}
 library(depmixS4)
-t2.mod1 <- depmix(list(winner ~ 1, p.angle ~ 1), transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
+t2.mod2 <- depmix(list(winner ~ 1, p.angle ~ 1), transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
 t2.fm2<- fit(t2.mod2)
 summary(t2.fm2)
 ```
@@ -461,11 +632,11 @@ summary(t2.fm2)
 
 ### T2: Model 3
 Response: winner, speed.ratio p.angle
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio
 
 ```{r t2m3}
 library(depmixS4)
-t2.mod3 <- depmix(list(winner ~ 1, speed.ratio ~ 1, p.angle ~ 1), transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian(),gaussian()))
+t2.mod3 <- depmix(list(winner ~ 1, speed.ratio ~ 1, p.angle ~ 1), transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian(),gaussian()))
 t2.fm3<- fit(t2.mod3)
 summary(t2.fm3)
 ```
@@ -476,19 +647,18 @@ Comparing these three to see which combination of response variables is the best
 AIC(t2.fm1)
 AIC(t2.fm2)
 AIC(t2.fm3)
-AIC(t2.fm4)
 ```
 Model 1 - winner and speed.ratio as response variables - is the best fit.
 
-# Type 3: Detailed Models, Dependent of Match Score/Situation
+## Type 3: Detailed Models, Dependent of Match Score/Situation
 
 ### T3: Model 1
 Response: winner, speed.ratio p.angle
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio, importance
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio, importance
 
 ```{r t3m1}
 library(depmixS4)
-t3.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio + importance, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
+t3.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio + importance, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
 t3.fm1<- fit(t3.mod1)
 summary(t3.fm1)
 
@@ -501,11 +671,11 @@ No signficant change in the model from including importance. Decision is to not 
 
 ### T3: Model 2
 Response: winner, speed.ratio p.angle
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio, points.diff
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio, points.diff
 
 ```{r t3m2}
 library(depmixS4)
-t3.mod2 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio + points.diff, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
+t3.mod2 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio + points.diff, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
 t3.fm2<- fit(t3.mod2)
 summary(t3.fm2)
 
@@ -522,11 +692,11 @@ Adding the point differential does improve the model. Let's continue by adding g
 
 ### T3: Model 3
 Response: winner, speed.ratio p.angle
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio, points.diff, games.diff
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle, oppo.hit.x, lag.p.angle, lag.speed.ratio, points.diff, games.diff
 
 ```{r t3m3}
 library(depmixS4)
-t3.mod3 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio + points.diff + games.diff, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
+t3.mod3 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio + points.diff + games.diff, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
 t3.fm3<- fit(t3.mod3)
 summary(t3.fm3)
 
@@ -540,147 +710,23 @@ lrtest(t3.fm2,t3.fm3)
 ```
 It appears that adding the games differential doesn't improve from model 2. Let's try adding sets as well.
 
-### T3: Model 4
-Response: winner, speed.ratio p.angle
-Covariates: oppo.speed, retser1, retser2, fhand, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio, points.diff, games.diff, sets.diff
-
+## T3: Model 4
+Response: winner, speed.ratio
+Covariates: oppo.speed, retser1, retser2, start.x, o.angle,  oppo.hit.x, lag.p.angle, lag.speed.ratio, points.diff, games.diff, sets.diff
 ```{r t3m4}
 library(depmixS4)
-t3.mod4 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + fhand + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio + points.diff + games.diff + sets.diff, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
+t3.mod4 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + retser1 + retser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio + points.diff + games.diff + sets.diff, data = fed_only, nstates = 2, family=list(multinomial("identity"),gaussian()))
 t3.fm4<- fit(t3.mod4)
 summary(t3.fm4)
-
 ```
 
-```{r}
-AIC(t3.fm2)
+```{r t3m4test}
 AIC(t3.fm3)
 AIC(t3.fm4)
+lrtest(t3.fm4,t3.fm3)
 
-lrtest(t3.fm2,t3.fm4)
-lrtest(t3.fm3,t3.fm4)
-```
-
-Adding sets improves the model with games, but is not an overall improvement from points. Because the difference in AIC is so small, and p-value for LR test is almost 0.05, I have decided to include points, games and set difference in the model for the sake of examining other players. Federer may be able to block out the score in a match and play consistantly throughout, whereas other players may behave differently with different score differentials.
-
-#Decision on a Final Model
-
-```{r}
 AIC(t3.fm4)
 AIC(t2.fm1)
-
 lrtest(t3.fm4,t2.fm1)
-```
-
-The model that includes match score overall (Type 3: Model 4) is an improvement from the model without (Type 2: Model 1). So we will use Type 3: Model 4 for the forecasts.
-
-#Predictions with Model - BELOW FROM PREVIOUS CODE - DO NOT RUN
-
-```{r predict}
-#Pull out parameters
-pars <- getpars(t3.fm4)
-
-#Creating temporary transition matrix
-#Refresh function: Inputs
-#a - oppo.speed
-#b - retser1
-#c - retser2
-#d - fhand
-#e - start.x
-#f - o.angle
-#g - oppo.hit.x
-#h - lag.p.angle
-#i - lag.speed.ratio
-#j - points.diff
-#k - games.diff
-#l - sets.diff
-tr.refresh <- function(a,b,c,d,e,f,g,h,i,j,k,l) {
-  p11 <- 1/(1+exp(pars[[4]]+pars[[6]]*a+pars[[8]]*b+pars[[10]]*c+pars[[12]]*d+pars[[14]]*e+pars[[16]]*f+pars[[18]]*g+pars[[20]]*h+pars[[22]]*i+pars[[24]]*j+pars[[26]]*k+pars[[28]]*l))
-  
-  p21 <- 1/(1+exp(pars[[30]]+pars[[32]]*a+pars[[34]]*b+pars[[36]]*c+pars[[38]]*d+pars[[40]]*e+pars[[42]]*f+pars[[44]]*g+pars[[46]]*h+pars[[48]]*i+pars[[50]]*j+pars[[52]]*k+pars[[54]]*l))
-  
-  p12 <- 1 - p11
-  p22 <- 1 - p21
-  
-  tr.temp <- as.matrix(c(p11,p21,p12,p22))
-  tr.temp <- matrix(tr.temp, ncol=2)
-}
-
-
-#Predicted states shell
-pr.state <- matrix(0,nrow(fed_only),2)
-
-#State 1
-init.state <- matrix(c(pars[[1]],pars[[2]]),ncol=2) #initial state
-a <- fed_only$oppo.speed[1]
-b <- fed_only$retser1[1]
-c <- fed_only$retser2[1]
-d <- fed_only$fhand[1]
-e <- fed_only$start.x[1]
-f <- fed_only$o.angle[1]
-g <- fed_only$oppo.hit.x[1]
-h <- fed_only$lag.p.angle[1]
-i <- fed_only$lag.speed.ratio[1]
-j <- fed_only$points.diff[1]
-k <- fed_only$games.diff[1]
-l <- fed_only$sets.diff[1]
-trans <- tr.refresh(a,b,c,d,e,f,g,h,i,j,k,l)
-pr.state[1,] <- init.state %*% trans
-
-#States 2 onwards (holding probabilities)
-for(q in 2:nrow(fed_only)) {
-a <- fed_only$oppo.speed[q]
-b <- fed_only$retser1[q]
-c <- fed_only$retser2[q]
-d <- fed_only$fhand[q]
-e <- fed_only$start.x[q]
-f <- fed_only$o.angle[q]
-g <- fed_only$oppo.hit.x[q]
-h <- fed_only$lag.p.angle[q]
-i <- fed_only$lag.speed.ratio[q]
-j <- fed_only$points.diff[q]
-k <- fed_only$games.diff[q]
-l <- fed_only$sets.diff[q]
-  trans <- tr.refresh(a,b,c,d,e,f,g,h,i,j,k,l)
-  pr.state[q,] <- pr.state[q-1,] %*% trans
-}
-
-#Predicted states
-predict_df <- data.frame(prob.win=pr.state[,1])
-
-#Making conclusions on state
-predict_df <- predict_df %>% rowwise %>%
-  mutate(pred.win = ifelse(prob.win <= 0.5, 0, 1))
-
-fed_pred <- cbind(fed_only, predict_df)
-
-#Remember that state 1 is winner, state 2 is returning
-```
-
-```{r}
-df_long <- fed_pred %>%
-  gather(key = vars, value = measurement, pred.win, oppo.speed, retser1, retser2, fhand, start.x, o.angle, oppo.hit.x, lag.p.angle, lag.speed.ratio, points.diff, games.diff, sets.diff)
-  
-ggplot(df_long, aes(x=count,y=measurement)) + geom_line() + facet_grid(opponent~vars~., scale="free_y") + xlab("Time")
-
-
-ggplot(test_pred,aes(prob.win,winner)) + geom_point(aes(color = pred.s1)) + ggtitle("Model 4 - Response: Winner, Speed")
-
-
-
-models_df <- cbind(mut_eye_x, chs_m4 = mut_eye_n4x$pred.chs) %>%
- cbind(chs_m5 = mut_eye_n5x$pred.chs) %>%
-  cbind(chs_m6 = mut_eye_n6x$pred.chs)
-
-models_long <- models_df %>%
-  gather(key = model, value = choosing, chs_m4, chs_m5, chs_m6)
-
-ggplot(models_long, aes(x=begtime,y=choosing)) + geom_point(aes(color = model)) + facet_grid(model~., scale="free_y") + xlab("Time") + ylab("Choosing State")
-```
-
-
-
-
-```{r Appendix}
 ```
 
