@@ -1,0 +1,19 @@
+---
+title: "rallies"
+author: "Pat Healy"
+date: "17 November 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(devtools)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+
+```
+
