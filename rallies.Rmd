@@ -14,6 +14,77 @@ library(devtools)
 library(ggplot2)
 library(tidyr)
 library(dplyr)
+library(tidyverse)
+```
+```{r}
+load("data/rallies.RData")
+library(readr)
+```
+Shaping data to recreate the variables used in ("Federer AO 2017.Rmd")'Federer vs Berych 2017' for the AO matches 'Djokovic v Chung 2016', 'Djokovic v Chung 2018', 'Federer v Berdych 2016', 'Federer v Berdych 2018', 'Makarova v Konta 2016','Makarova v Konta 2017','Strycova v Garcia 2016' 'Strycova v Garcia 2017', 'Siegemund v Jankovic 2016','Siegemund v Jankovic 2017', 'Goffin v Thiem 2016''Goffin v Thiem 2017'""
+
+'Siegemund v Jankovic 2017' goes from set 3 to set 6?? 
+
+#### Sorting the matches
+
+```{r}
+djo16_df <- filter(rallies, year == 2016, h2h == "DJOKOVIC CHUNG" )
+djo16_df <- arrange(djo16_df, matchid, set, game, point, shot)
+
+djo18_df <- filter(rallies, year == 2018, h2h == "DJOKOVIC CHUNG" )
+djo18_df <- arrange(djo18_df, matchid, set, game, point, shot)
+
+fed16_df <- filter(rallies, year == 2016, h2h == "FEDERER BERDYCH" )
+fed16_df <- arrange(fed16_df, matchid, set, game, point, shot)
+
+fed17_df <- filter(rallies, year == 2017, h2h == "FEDERER BERDYCH" )
+fed17_df <- arrange(fed17_df, matchid, set, game, point, shot)
+
+fed18_df <- filter(rallies, year == 2018, h2h == "FEDERER BERDYCH" )
+fed18_df <- arrange(fed18_df, matchid, set, game, point, shot)
+
+mak16_df <- filter(rallies, year == 2016, h2h == "MAKAROVA KONTA" )
+mak16_df <- arrange(mak16_df, matchid, set, game, point, shot)
+
+mak17_df <- filter(rallies, year == 2017, h2h == "MAKAROVA KONTA" )
+mak17_df <- arrange(mak17_df, matchid, set, game, point, shot)
+
+stry16_df <- filter(rallies, year == 2016, h2h == "STRYCOVA GARCIA" )
+stry16_df <- arrange(stry16_df, matchid, set, game, point, shot)
+
+stry17_df <- filter(rallies, year == 2017, h2h == "STRYCOVA GARCIA" )
+stry17_df <- arrange(stry17_df, matchid, set, game, point, shot)
+
+sie16_df <- filter(rallies, year == 2016, h2h == "SIEGEMUND JANKOVIC" )
+sie16_df <- arrange(sie16_df, matchid, set, game, point, shot)
+
+sie17_df <- filter(rallies, year == 2017, h2h == "SIEGEMUND JANKOVIC" )
+sie17_df <- arrange(sie17_df, matchid, set, game, point, shot)
+
+thi16_df <- filter(rallies, year == 2016, h2h == "THIEM GOFFIN" )
+thi16_df <- arrange(thi16_df, matchid, set, game, point, shot)
+
+thi17_df <- filter(rallies, year == 2017, h2h == "THIEM GOFFIN" )
+thi17_df <- arrange(thi17_df, matchid, set, game, point, shot)
+```
+
+Starting with fed16 to compare to fed17
+
+Need to compare projected.ballmark.x and start.x stats before reorienting shots. Need to confirm change of terms between data sets first. (no end.x )
+
+
+
+#####Recreating variables from Federer AO 2017 for fed16. 
+(some columns in rallies data have a different classification than in federer2017 data. Such as 'is.good' replaces 'ended.in.error')(we also now have 'serve' which means we do not need to recreate retser1 or retser2)
+```{r}
+fed16_df <- fed16_df %>%
+  mutate(lastshot = ifelse(shot == final.shot,1,0)) %>%
+  mutate(isserver = ifelse(server == impact.player,1,0)) %>%
+  mutate(fhand = ifelse(hitpoint == "F",1,0)) %>%
+  mutate(opponent = ifelse(server == "FEDERER", receiver, server))
+
+fed16_df <- fed16_df %>%
+  mutate(winner = ifelse(is.good == FALSE & lastshot == 1,1,0)) 
+  
 
 ```
 
