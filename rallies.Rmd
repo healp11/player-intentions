@@ -116,6 +116,109 @@ for (i in 1:ncol(fed16_df)) {
 #can no longer do score differentials
 ```
 
+```{r}
+#code for this chunk relatively unchanged
+# replaced ballmark.x with projected.ballmark.x; speed1 replaced by speed.start
+
+fed16_df <- fed16_df %>%
+  mutate(speed.diff = NA) %>%
+  mutate(oppo.hit.x = NA) %>%
+  mutate(oppo.hit.y = NA) %>%
+  mutate(oppo.hit.z = NA) %>%
+  mutate(oppo.speed = NA) %>%
+  mutate(oppo.projected.ballmark.x = NA) %>%
+  mutate(oppo.projected.ballmark.y = NA) %>%
+  mutate(speed.ratio = NA)
+
+for (i in 2:nrow(fed16_df)) {
+  if(fed16_df$shot[i] != 1) {#so that only non-serves are affected
+
+  fed16_df$speed.diff[i]=fed16_df$speed.start[i]-fed16_df$speed.start[i-1]
+  #speed difference
+  
+  fed16_df$oppo.hit.x[i]=fed16_df$start.x[i-1]
+  fed16_df$oppo.hit.y[i]=fed16_df$start.y[i-1]
+  fed16_df$oppo.hit.z[i]=fed16_df$start.z[i-1]
+  fed16_df$oppo.speed[i]=fed16_df$speed.start[i-1]
+  fed16_df$oppo.projected.ballmark.x[i]=fed16_df$projected.ballmark.x[i-1]
+  fed16_df$oppo.projected.ballmark.y[i]=fed16_df$projected.ballmark.y[i-1]
+  #oppo hit
+  
+  }
+}
+
+fed16_df <- fed16_df %>%
+  mutate(speed.ratio = speed.start/oppo.speed) %>% #speed ratio
+  mutate(side.dist = 4.115 - abs(oppo.projected.ballmark.y)) %>% #distance of oppo.projected.ballmark from sideline
+  mutate(base.dist = 11.89 - abs(oppo.projected.ballmark.x)) %>% #distance of oppo.projected.ballmark from baseline
+  mutate(short.dist = min(side.dist, base.dist)) #shortest distance from any line
+
+
+#Adding angles
+fed16_df <- fed16_df %>%
+  mutate(p.start.x = NA) %>%
+  mutate(p.start.y = NA)
+
+for (i in 3:nrow(fed16_df)) {
+  if(fed16_df$impact.player[i] == fed16_df$impact.player[i-2] & fed16_df$shot[i] == fed16_df$shot[i-2] + 2) {
+    fed16_df$p.start.x[i]=fed16_df$start.x[i-2]
+    fed16_df$p.start.y[i]=fed16_df$start.y[i-2]
+  }
+}
+
+#adding angle between fed.shot-opp.shot vector and opp.shot-opp.projected.ballmark vector
+#doing it in one line because df doesn't want to add vectors
+fed16_df <- fed16_df %>%
+  mutate(o.angle = NA)
+  
+for (i in 1:nrow(fed16_df)) {
+  x1 <- fed16_df$p.start.x[i]
+  y1 <- fed16_df$p.start.y[i]
+  x2 <- fed16_df$oppo.hit.x[i]
+  y2 <- fed16_df$oppo.hit.y[i]
+  x3 <- fed16_df$oppo.projected.ballmark.x[i]
+  y3 <- fed16_df$oppo.projected.ballmark.y[i]
+  
+  o.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  fed16_df$o.angle[i] = ifelse(o.angle > 90, 180-o.angle, o.angle)
+}
+
+#Now adding the angle the player hits
+fed16_df <- fed16_df %>%
+  mutate(p.angle = NA)
+  
+for (i in 1:nrow(fed16_df)) {
+  x1 <- fed16_df$oppo.hit.x[i]
+  y1 <- fed16_df$oppo.hit.y[i]
+  x2 <- fed16_df$start.x[i]
+  y2 <- fed16_df$start.y[i]
+  x3 <- fed16_df$projected.ballmark.x[i]
+  y3 <- fed16_df$projected.ballmark.y[i]
+  
+  p.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  fed16_df$p.angle[i] = ifelse(p.angle > 90, 180-p.angle, p.angle)
+}
+
+fed16_df <- fed16_df %>%
+  mutate(lag.p.angle = 0) %>%
+  mutate(lag.speed.ratio = 0)
+
+#Add p.angle and speed ratio of prior shot
+for (i in 3:nrow(fed16_df)) {
+  fed16_df$lag.p.angle[i] = ifelse(fed16_df$impact.player[i]==fed16_df$impact.player[i-2] & fed16_df$shot[i] >= 4, fed16_df$p.angle[i-2], 0)
+  fed16_df$lag.speed.ratio[i] = ifelse(fed16_df$impact.player[i]==fed16_df$impact.player[i-2] & fed16_df$shot[i] >= 4, fed16_df$speed.ratio[i-2], 0)
+}
+```
+```{r}
+
+```
+
 
 
  
