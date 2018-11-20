@@ -26,7 +26,7 @@ Shaping data to recreate the variables used in ("Federer AO 2017.Rmd")'Federer v
 
 #### Sorting the matches
 
-```{r}
+```{r df}
 djo16_df <- filter(rallies, year == 2016, h2h == "DJOKOVIC CHUNG" )
 djo16_df <- arrange(djo16_df, matchid, set, game, point, shot)
 
@@ -69,12 +69,31 @@ thi17_df <- arrange(thi17_df, matchid, set, game, point, shot)
 
 Starting with fed16 to compare to fed17
 
-Need to compare projected.ballmark.x and start.x stats before reorienting shots. Need to confirm change of terms between data sets first. (no end.x )
+Need to compare projected.ballmark.x and start.x stats before reorienting shots. Need to confirm change of terms between data sets first. (no end.x/end.y? )
+
+```{r df}
+
+#Reorienting Federer 2016 Shots
+fed16_df <- fed16_df %>% rowwise %>%
+  mutate(projected.ballmark.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
+  mutate(projected.ballmark.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(start.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.y, start.y))%>%
+  mutate(start.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.x, start.x)) 
+
+#Reorienting Berdych 2016 Shots
+fed16_df <- fed16_df %>% rowwise %>%
+  mutate(start.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.y, start.y)) %>%
+  mutate(projected.ballmark.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
+  mutate(projected.ballmark.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(start.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.x, start.x))
+```
+
 
 
 
 #####Recreating variables from Federer AO 2017 for fed16. 
-(some columns in rallies data have a different classification than in federer2017 data. Such as 'is.good' replaces 'ended.in.error')(we also now have 'serve' which means we do not need to recreate retser1 or retser2)
+(some columns in rallies data have a different classification than in federer2017 data. Such as 'is.good' replaces 'ended.in.error')(With Aceswe also now cannot recreate retser, retser1 or retser2 )
+
 ```{r}
 fed16_df <- fed16_df %>%
   mutate(lastshot = ifelse(shot == final.shot,1,0)) %>%
@@ -83,8 +102,20 @@ fed16_df <- fed16_df %>%
   mutate(opponent = ifelse(server == "FEDERER", receiver, server))
 
 fed16_df <- fed16_df %>%
-  mutate(winner = ifelse(is.good == FALSE & lastshot == 1,1,0)) 
+  mutate(winner = ifelse(is.good == TRUE & lastshot == 1,1,0)) %>%
+  mutate(ser1 = ifelse(serve == 1 & serve_classification == 1,1,0)) %>%
+  mutate(ser2 = ifelse(serve == 2 & serve_classification == 1,1,0)) 
   
-
+for (i in 1:ncol(fed16_df)) {
+  if(is.character(fed16_df[,i]) == TRUE) {
+    fed16_df[,i] <- as.factor(fed16_df[,i])
+  }
+}
+```
+```{r}
+#can no longer do score differentials
 ```
 
+
+
+ 
