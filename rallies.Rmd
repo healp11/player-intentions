@@ -216,9 +216,77 @@ for (i in 3:nrow(fed16_df)) {
 }
 ```
 ```{r}
+#remove opponents
+fed_no.opp <- fed16_df %>% 
+  dplyr::filter(impact.player == "FEDERER")
 
+
+
+
+#First remove any errors for start, projected.ballmark, so that we are only looking at shots that we hit onto the other side
+#To check: ggplot(fed_only, aes(projected.ballmark.x, projected.ballmark.y)) + geom_point()
+fed_only <- fed_only %>%
+  filter(oppo.hit.x >= 0) %>%
+  filter(oppo.projected.ballmark.x <= 0) %>%
+  filter(projected.ballmark.x >= 0)
+
+#Adding shot number cumulative count (functions as time)
+#check this for new data set .
+fed_only <- fed_only %>%
+  mutate(count = 1)
+
+  for (i in 2:nrow(fed_only)) {
+    if(fed_only$matchid[i]==fed_only$matchid[i-1]) {
+      fed_only$count[i] = fed_only$count[i-1] + 1
+    }
+  }
+
+  
+
+#Adjusting to remove NAs and replace with 0s for modelling
+fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 ```
 
+```{r}
+ggplot(fed_only, aes(projected.ballmark.x, projected.ballmark.y)) + geom_point()
+```
 
+```{r}
+##Plots of shot and ballmark co-ordinates, angles made by shots and speed measures
+library(ggplot2)
+#X Co-ordinate of shot
+ggplot(fed_only, aes(x=start.x,winner)) + geom_smooth() + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
+
+#Opponents shot before
+library(hexbin)
+ggplot(fed_only, aes(x=oppo.hit.x,y=oppo.hit.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate of Oppo Shot") + ylab("Y Coordinate of Oppo Shot") + ggtitle("Count of Winners By Opponent's Shot Co-Ordinates")
+### Get help transforming this to proportion in each bin instead of raw count
+
+#Fed Shots on x-y plane
+ggplot(fed_only, aes(x=start.x,y=start.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates")
+
+#Fed Ballmark by winner in x-y plane
+ggplot(fed_only, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Ballmark Co-Ordinates")
+
+
+#Angle of shots
+ggplot(fed_only, aes(x=o.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents Shot With Fed's Previous Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent Shot Angle")
+
+ggplot(fed_only, aes(x=p.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's Shot Angle")
+
+ggplot(fed_only) + geom_density(aes(p.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Fed Shot Angles")
+
+ggplot(fed_only) + geom_density(aes(o.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Opponent Shot Angles")
+
+#Winners by oppo speed
+ggplot(fed_only) + geom_density(aes(oppo.speed, group = factor(winner), color=factor(winner)))
+
+ggplot(fed_only, aes(x=factor(winner),y=oppo.speed,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent Speed")
+
+#Winners by speed ratio
+ggplot(fed_only) + geom_density(aes(speed.ratio, group = factor(winner), color=factor(winner)))
+
+ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
+```
 
  
