@@ -73,14 +73,14 @@ Need to compare projected.ballmark.x and start.x stats before reorienting shots.
 
 ```{r df}
 
-#Reorienting Federer 2016 Shots
+#Reorienting shots so that all Federer's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
 fed16_df <- fed16_df %>% rowwise %>%
   mutate(projected.ballmark.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
   mutate(projected.ballmark.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
   mutate(start.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.y, start.y))%>%
   mutate(start.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.x, start.x)) 
 
-#Reorienting Berdych 2016 Shots
+#Reorienting opponent shots
 fed16_df <- fed16_df %>% rowwise %>%
   mutate(start.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.y, start.y)) %>%
   mutate(projected.ballmark.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
@@ -89,17 +89,52 @@ fed16_df <- fed16_df %>% rowwise %>%
 ```
 
 
+```{r}
+#Reorienting player positions so that all Federer's & Opponents start/end positions match reoriented ballmarks
+#For Federer
+fed16_df <- fed16_df %>% rowwise %>%
+  mutate(start.server.x = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.x, start.server.x)) %>%
+  mutate(start.server.y = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver.score == "FEDERER" & start.receiver.x >= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(start.receiver.x = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.x, start.receiver.x)) 
+
+fed16_df <- fed16_df %>% rowwise %>%
+  mutate(end.server.x = ifelse(server == "FEDERER" & end.receiver.x >= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.server.y = ifelse(server == "FEDERER" & end.receiver.x >= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
+  mutate(end.receiver.x = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.x, end.receiver.x)) 
+```
+```{r}
+#For Opponent
+fed16_df <- fed16_df %>% rowwise %>%
+  mutate(start.server.x = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.x, start.server.x)) %>%
+  mutate(start.server.y = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver.score != "FEDERER" & start.receiver.x <= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(start.receiver.x = ifelse(receiver != "FEDERER" & start.receiver.x <= 0, -start.receiver.x, start.receiver.x)) 
+
+fed16_df <- fed16_df %>% rowwise %>%
+  mutate(end.server.x = ifelse(server != "FEDERER" & end.receiver.x <= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.server.y = ifelse(server != "FEDERER" & end.receiver.x <= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.y, end.receiver.y))%>%
+  mutate(end.receiver.x = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.x, end.receiver.x)) 
+```
 
 
 #####Recreating variables from Federer AO 2017 for fed16. 
-(some columns in rallies data have a different classification than in federer2017 data. Such as 'is.good' replaces 'ended.in.error')(With Aceswe also now cannot recreate retser, retser1 or retser2 )
+(some columns in rallies data have a different classification than in federer2017 data. Such as 'is.good' replaces 'ended.in.error')(With Aces dropped we also now cannot recreate retser, retser1 or retser2 )
 
 ```{r}
 fed16_df <- fed16_df %>%
   mutate(lastshot = ifelse(shot == final.shot,1,0)) %>%
   mutate(isserver = ifelse(server == impact.player,1,0)) %>%
   mutate(fhand = ifelse(hitpoint == "F",1,0)) %>%
-  mutate(opponent = ifelse(server == "FEDERER", receiver, server))
+  mutate(opponent = ifelse(server == "FEDERER", receiver, server)) %>%
+  mutate (is.rally = ifelse(final.shot >= 3, TRUE, FALSE)) %>%
+  mutate(end.rally = ifelse(shot == final.shot & is.rally == "TRUE",1,0)) %>%
+  mutate(start.rally = ifelse(shot == 3 & is.rally == "TRUE",1,0)) %>%
+  mutate(ral.num = sum(start.rally))
+
+  
 
 fed16_df <- fed16_df %>%
   mutate(winner = ifelse(is.good == TRUE & lastshot == 1,1,0)) %>%
@@ -113,8 +148,10 @@ for (i in 1:ncol(fed16_df)) {
 }
 ```
 ```{r}
-#can no longer do score differentials
+#Put score differentials in when new data received
 ```
+
+
 
 ```{r}
 #code for this chunk relatively unchanged
@@ -128,7 +165,8 @@ fed16_df <- fed16_df %>%
   mutate(oppo.speed = NA) %>%
   mutate(oppo.projected.ballmark.x = NA) %>%
   mutate(oppo.projected.ballmark.y = NA) %>%
-  mutate(speed.ratio = NA)
+  mutate(speed.ratio = NA) 
+
 
 for (i in 2:nrow(fed16_df)) {
   if(fed16_df$shot[i] != 1) {#so that only non-serves are affected
@@ -220,7 +258,10 @@ for (i in 3:nrow(fed16_df)) {
 fed_no.opp <- fed16_df %>% 
   dplyr::filter(impact.player == "FEDERER")
 
-
+#federer only - remove serves
+fed_only <- fed_no.opp %>%
+  filter(hitpoint != "S") %>%
+  dplyr::select(-serveid)
 
 
 #First remove any errors for start, projected.ballmark, so that we are only looking at shots that we hit onto the other side
@@ -290,3 +331,97 @@ ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom
 ```
 
  
+ 
+ 
+```{r rally variables}
+#examining rallies to look at side to side movement within rallies. Starting with the longest rally.(Tidy up this code to find longest rally in one line..)
+longral_df <- filter(fed_only, final.shot >= 10)
+```
+```{r}
+longest_df <- filter(fed_only, final.shot == 17)
+```
+```{r}
+ggplot(fed_only, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=shot)) + stat_summary_hex(fun = function(shot) sum(shot)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Shot Number By Shot Ballmark Co-Ordinates For Match")
+
+
+ggplot(longral_df, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=shot)) + stat_summary_hex(fun = function(shot) sum(shot)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Shot Number By Shot Ballmark Co-Ordinates For Long Rallies")
+
+#Rally Ballmark by shot number in x-y plane
+ggplot(longest_df, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=shot)) + stat_summary_hex(fun = function(shot) sum(shot)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Shot Number By Shot Ballmark Co-Ordinates For Longest Rally")
+
+
+#projeted ballmark appears to move beyond service line as rally length increases. Need to examine distance from baseline more closely for longer rallies. 
+
+```
+```{r}
+#speed ratio
+
+ggplot(fed16_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For match")
+
+ggplot(fed_only, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Fed Only Speed ratio by distance from the baseline For match")
+
+ggplot(longral_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For Long Rallies")
+
+ggplot(longest_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For Longest Rally")
+
+
+
+
+#player angles
+
+ggplot(fed16_df, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Federer Shot Angle by distance from the baseline")
+
+ggplot(fed_only, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Fed only Shot Angle by distance from the baseline")
+
+ggplot(fed16_df, aes(x=base.dist,y=o.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Berdych previous Shot") + ggtitle("Berdych Shot Angle by Federer distance from the baseline")
+
+
+```
+
+```{r}
+#creating new variables to get more information about player movement
+#First step is to create intermediate variables for seperating rallies when including new data which includes aces and serve returns these are included with initial mutations
+#Second step is to put a count on rallies so that we can create new variables that look at individual rallies 
+#Need help with that
+#create some sum of variables for change of court side shot player/opposition, rally total energy expenditure, this will be more difficult as serve and serve expenditure will be counted, change of shot f/b within rally
+
+  
+```
+```{r}
+#Creating new variables for player positions/angles/speeds
+#started by reorienting server/reciever start/end positions to match reorientation of projected.ballmark
+```
+
+
+
+
+```{r}
+# The new variables that we have in this data set (Rallies)are
+#passed.baseline, speed.at.baseline, reaction.time, distance.from.sideline, depth, is.ground.stroke, is.going.for.line, inside.out.forehand, down.line.winner, serve1.stretch, all.valid, scorer, 
+
+#receiver.distance, server.distance, receiver.avg.speed, receiver.peak.speed, receiver.avg.acceleration, receiver.peak.acceleration, receiver.advantage, receiver.work, receiver.total.changes, start.receiver.x, end.receiver.x
+
+#server.avg.speed, server.peak.speed, server.avg.acceleration, server.peak.acceleration, server.advantage, server.work, server.total.changes, start.server.x, end.server.x
+```
+
+```{r}
+ggplot(fed16_df, aes(x=server.advantage,y=receiver.total.changes)) + geom_smooth() + xlab("Receiver Advantage") + ylab("Server Total Changes") + ggtitle("Server Advantage by Reciever Total Changes")
+
+ggplot(fed16_df, aes(x=receiver.advantage,y=server.total.changes)) + geom_smooth() + xlab("Server Advantage") + ylab("Reciver Total Changes") + ggtitle("Receiver Advantage by Server Total Changes")
+
+ggplot(fed16_df, aes(x=receiver.advantage,y=receiver.total.changes)) + geom_smooth() + xlab("receiver Advantage") + ylab("Reciver Total Changes") + ggtitle("Receiver Advantage by Receiver Total Changes")
+
+ggplot(fed16_df, aes(x=server.advantage,y=server.total.changes)) + geom_smooth() + xlab("server Advantage") + ylab("Server Total Changes") + ggtitle("server Advantage by server Total Changes")
+```
+
+```{r}
+ggplot(fed16_df, aes(x=receiver.work,y=receiver.advantage)) + geom_smooth() + xlab("Receiver Work") + ylab("Receiver Advantage") + ggtitle("Receiver Advantage by Receiver Work")
+
+ggplot(fed16_df, aes(x=server.work,y=server.advantage)) + geom_smooth() + xlab("Server Work") + ylab("Server Advantage") + ggtitle("Server Advantage by Server Work")
+
+#djo16
+ggplot(djo16_df, aes(x=server.work,y=server.advantage)) + geom_smooth() + xlab("Server Work") + ylab("Server Advantage") + ggtitle("Server Advantage by Server Work")
+
+ggplot(djo16_df, aes(x=receiver.work,y=receiver.advantage)) + geom_smooth() + xlab("Receiver Work") + ylab("Receiver Advantage") + ggtitle("Receiver Advantage by Receiver Work")
+```
+
