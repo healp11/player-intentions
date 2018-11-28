@@ -99,8 +99,8 @@ fed16_df <- fed16_df %>% rowwise %>%
   mutate(start.receiver.x = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.x, start.receiver.x)) 
 
 fed16_df <- fed16_df %>% rowwise %>%
-  mutate(end.server.x = ifelse(server == "FEDERER" & end.receiver.x >= 0, -end.server.x, end.server.x)) %>%
-  mutate(end.server.y = ifelse(server == "FEDERER" & end.receiver.x >= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.server.x = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.server.y = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.y, end.server.y)) %>%
   mutate(end.receiver.y = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(end.receiver.x = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.x, end.receiver.x)) 
 ```
@@ -113,8 +113,8 @@ fed16_df <- fed16_df %>% rowwise %>%
   mutate(start.receiver.x = ifelse(receiver != "FEDERER" & start.receiver.x <= 0, -start.receiver.x, start.receiver.x)) 
 
 fed16_df <- fed16_df %>% rowwise %>%
-  mutate(end.server.x = ifelse(server != "FEDERER" & end.receiver.x <= 0, -end.server.x, end.server.x)) %>%
-  mutate(end.server.y = ifelse(server != "FEDERER" & end.receiver.x <= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.server.x = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.server.y = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.y, end.server.y)) %>%
   mutate(end.receiver.y = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(end.receiver.x = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.x, end.receiver.x)) 
 ```
@@ -289,8 +289,49 @@ fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 ```
 
 ```{r}
-ggplot(fed_only, aes(projected.ballmark.x, projected.ballmark.y)) + geom_point()
+#New Variables for player positioning
+
+fed16_df <- fed16_df %>%
+  mutate(speed.diff = NA) %>%
+  mutate(oppo.start.server.x = NA) %>%
+  mutate(oppo.start.server.y = NA) %>%
+  mutate(oppo.end.server.x = NA) %>%
+  mutate(oppo.end.server.y = NA) %>%
+  mutate(oppo.start.receiver.x = NA) %>%
+  mutate(oppo.start.receiver.y = NA) %>%
+  mutate(oppo.end.receiver.x = NA) %>%
+  mutate(oppo.end.receiver.y = NA) %>%
+  mutate(oppo.server.distance = NA) %>%
+  mutate(oppo.receiver.distance = NA) %>%
+  mutate(avg.player.speed.diff = NA) %>%
+  mutate(peak.player.speed.diff = NA) %>%
+  mutate(avg.player.speed.ratio = NA) %>%
+  mutate(peak.player.speed.ratio = NA) %>%
+  mutate(avg.player.acceleration.diff = NA) %>%
+  mutate(peak.player.acceleration.diff = NA) %>%
+  mutate(avg.player.acceleration.ratio = NA) %>%
+  mutate(peak.player.acceleration.ratio = NA) %>%
+  mutate(oppo.avg.server.speed = NA) %>%
+  mutate(oppo.peak.server.speed = NA) %>%
+  mutate(oppo.avg.receiver.speed = NA) %>%
+  mutate(oppo.peak.receiver.speed = NA) %>%
+  mutate(oppo.avg.server.acceleration = NA) %>%
+  mutate(oppo.peak.server.acceleration = NA) %>%
+  mutate(oppo.avg.receiver.acceleration = NA) %>%
+  mutate(oppo.peak.receiver.acceleration = NA) 
+ 
+server.start.dist.from.base
+#server.end.dist.from.base
+#receiver.start.dist.from.base
+#receiver.end.dist.from.base
+fed16_df <- fed16_df %>%
+  mutate(player.avg.speed.ratio = speed.start/oppo.speed) %>% #Player average speed ratio
+   mutate(player.peak.speed.ratio = speed.start/oppo.speed) %>% #Player average speed ratio
+  mutate(side.dist = 4.115 - abs(oppo.projected.ballmark.y)) %>% #distance of oppo.projected.ballmark from sideline
+  mutate(base.dist = 11.89 - abs(oppo.projected.ballmark.x)) %>% #distance of oppo.projected.ballmark from baseline
+  mutate(short.dist = min(side.dist, base.dist)) #shortest distance from any line
 ```
+
 
 ```{r}
 ##Plots of shot and ballmark co-ordinates, angles made by shots and speed measures
@@ -367,7 +408,7 @@ ggplot(longest_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Dista
 
 
 
-#player angles
+#player shot angles
 
 ggplot(fed16_df, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Federer Shot Angle by distance from the baseline")
 
@@ -390,6 +431,12 @@ ggplot(fed16_df, aes(x=base.dist,y=o.angle)) + geom_smooth() + xlab("Distance fr
 ```{r}
 #Creating new variables for player positions/angles/speeds
 #started by reorienting server/reciever start/end positions to match reorientation of projected.ballmark
+
+#New Variables Player Distance from baseline
+#server.start.dist.from.base
+#server.end.dist.from.base
+#receiver.start.dist.from.base
+#receiver.end.dist.from.base
 ```
 
 
@@ -423,5 +470,14 @@ ggplot(fed16_df, aes(x=server.work,y=server.advantage)) + geom_smooth() + xlab("
 ggplot(djo16_df, aes(x=server.work,y=server.advantage)) + geom_smooth() + xlab("Server Work") + ylab("Server Advantage") + ggtitle("Server Advantage by Server Work")
 
 ggplot(djo16_df, aes(x=receiver.work,y=receiver.advantage)) + geom_smooth() + xlab("Receiver Work") + ylab("Receiver Advantage") + ggtitle("Receiver Advantage by Receiver Work")
+```
+```{r}
+ggplot(fed16_df, aes(x=receiver.distance,y=receiver.work)) + geom_smooth() + xlab("Receiver Distance") + ylab("Receiver Work") + ggtitle("Receiver Work by Receiver Distance")
+
+ggplot(fed16_df, aes(x=server.distance,y=server.work)) + geom_smooth() + xlab("Server Distance") + ylab("Server Work") + ggtitle("Server Work by Server Distance")
+
+ggplot(fed16_df, aes(x=receiver.distance,y=receiver.work)) + geom_smooth() + xlab("Receiver Distance") + ylab("Receiver Work") + ggtitle("Receiver Work by Receiver Distance")
+
+ggplot(fed16_df, aes(x=server.distance,y=server.work)) + geom_smooth() + xlab("Server Distance") + ylab("Server Work") + ggtitle("Server Work by Server Distance")
 ```
 
