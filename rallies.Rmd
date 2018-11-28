@@ -292,17 +292,6 @@ fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 #New Variables for player positioning
 
 fed16_df <- fed16_df %>%
-  mutate(speed.diff = NA) %>%
-  mutate(oppo.start.server.x = NA) %>%
-  mutate(oppo.start.server.y = NA) %>%
-  mutate(oppo.end.server.x = NA) %>%
-  mutate(oppo.end.server.y = NA) %>%
-  mutate(oppo.start.receiver.x = NA) %>%
-  mutate(oppo.start.receiver.y = NA) %>%
-  mutate(oppo.end.receiver.x = NA) %>%
-  mutate(oppo.end.receiver.y = NA) %>%
-  mutate(oppo.server.distance = NA) %>%
-  mutate(oppo.receiver.distance = NA) %>%
   mutate(avg.player.speed.diff = NA) %>%
   mutate(peak.player.speed.diff = NA) %>%
   mutate(avg.player.speed.ratio = NA) %>%
@@ -311,15 +300,54 @@ fed16_df <- fed16_df %>%
   mutate(peak.player.acceleration.diff = NA) %>%
   mutate(avg.player.acceleration.ratio = NA) %>%
   mutate(peak.player.acceleration.ratio = NA) %>%
-  mutate(oppo.avg.server.speed = NA) %>%
-  mutate(oppo.peak.server.speed = NA) %>%
-  mutate(oppo.avg.receiver.speed = NA) %>%
-  mutate(oppo.peak.receiver.speed = NA) %>%
-  mutate(oppo.avg.server.acceleration = NA) %>%
-  mutate(oppo.peak.server.acceleration = NA) %>%
-  mutate(oppo.avg.receiver.acceleration = NA) %>%
-  mutate(oppo.peak.receiver.acceleration = NA) 
+  mutate(oppo.start.position.x = NA) %>%
+  mutate(oppo.start.position.y = NA) %>%
+  mutate(oppo.end.position.x = NA) %>%
+  mutate(oppo.end.position.y = NA) %>%
+  mutate(p.start.position.x = NA) %>%
+  mutate(p.start.position.y = NA) %>%
+  mutate(p.end.position.x = NA) %>%
+  mutate(p.end.position.y = NA) %>%
+  mutate(oppo.distance = NA) %>%
+  mutate(p.distance = NA) %>%
+  mutate(p.peak.speed = NA) %>%
+  mutate(p.avg..speed = NA) %>%
+  mutate(p.avg.acceleration = NA) %>%
+  mutate(p.peak.acceleration = NA)
+  mutate(oppo.peak.speed = NA) %>%
+  mutate(oppo.avg.speed = NA) %>%
+  mutate(oppo.avg.acceleration = NA) %>%
+  mutate(oppo.peak.acceleration = NA) 
  
+
+```
+
+
+```{r}
+for (i in 2:nrow(fed_df)) {
+  if(fed_df$shot[i] != 1) {#so that only non-serves are affected
+
+  fed_df$avg.player.speed.diff[i]=fed_df$avg.server.speed[i]-fed_df$avg.server.speed[i]
+  fed_df$peak.player.speed.diff[i]=fed_df$peak.server.speed[i]-fed_df$peak.server.speed[i-1]
+  fed_df$avg.player.acceleration.diff[i]=fed_df$avg.server.acceleration[i]-fed_df$avg.server.acceleration[i]
+  fed_df$peak.player.acceleration.diff[i]=fed_df$peak.server.acceleration[i]-fed_df$peak.server.acceleration[i-1]
+  #speed difference
+  
+  fed_df$oppo.start.position.x[i]=fed_df$start.x[i-1]
+  fed_df$oppo.start.position.y[i]=fed_df$start.y[i-1]
+  fed_df$oppo.end.position.x[i]=fed_df$start.z[i-1]
+  fed_df$oppo.end.position.y[i]=fed_df$speed1[i-1]
+  fed_df$p.start.position.x[i]=fed_df$start.x[i-1]
+  fed_df$p.start.position.y[i]=fed_df$start.y[i-1]
+  fed_df$p.end.position.x[i]=fed_df$start.z[i-1]
+  fed_df$p.end.position.y[i]=fed_df$speed1[i-1]
+  fed_df$oppo.ballmark.x[i]=fed_df$ballmark.x[i-1]
+  fed_df$oppo.ballmark.y[i]=fed_df$ballmark.y[i-1]
+  #oppo hit
+  }
+}
+
+
 server.start.dist.from.base
 #server.end.dist.from.base
 #receiver.start.dist.from.base
