@@ -135,7 +135,20 @@ fed16_df <- fed16_df %>%
   mutate(ral.num = sum(start.rally))
 
   
+#use group_index
+#Want to create an index want to group by when the rally starts
+#How to create an inde on multiple rows
+#to assign an index add a new column that has 1 to n() row of a data set
+#Want to group by everything exccept shot number/ final shot number
 
+#changes of angles, have to show the absolute change in angles for every change in direction between shots
+#Be very clear about what the angle reference of the baseline and centre line
+#Have different columns for 1st second change in direction angle
+#make sure that everything that can be looked at in code is being looked at. 
+
+#Broom a package for forecasting and fitting for a model
+
+#Need to look at lecture 6 for fitting data
 fed16_df <- fed16_df %>%
   mutate(winner = ifelse(is.good == TRUE & lastshot == 1,1,0)) %>%
   mutate(ser1 = ifelse(serve == 1 & serve_classification == 1,1,0)) %>%
@@ -150,7 +163,71 @@ for (i in 1:ncol(fed16_df)) {
 ```{r}
 #Put score differentials in when new data received
 ```
+```{r}
+#New Variables for player and opponent: start/end positions,  speed &acceleration, distance run within shot, work, advantage, total changes  
 
+#start/end player positions x/y
+fed16_df <- fed16_df %>%
+  mutate(oppo.start.position.x = ifelse(server != "FEDERER", start.server.x,0)+ifelse(server == "FEDERER", start.receiver.x,0))%>%
+  mutate(oppo.start.position.y = ifelse(server != "FEDERER", start.server.y,0)+ifelse(server == "FEDERER", start.receiver.y,0)) %>%
+  mutate(oppo.end.position.x = ifelse(server != "FEDERER", end.server.x,0)+ifelse(server == "FEDERER", end.receiver.x,0)) %>%
+  mutate(oppo.end.position.y = ifelse(server != "FEDERER", end.server.y,0)+ifelse(server == "FEDERER", end.receiver.y,0)) %>%
+  mutate(p.start.position.x = ifelse(server == "FEDERER", start.server.x,0)+ifelse(server != "FEDERER", start.receiver.x,0)) %>%
+  mutate(p.start.position.y = ifelse(server == "FEDERER", start.server.y,0)+ifelse(server != "FEDERER", start.receiver.y,0)) %>%
+  mutate(p.end.position.x = ifelse(server == "FEDERER", end.server.x,0)+ifelse(server != "FEDERER", end.receiver.x,0)) %>%
+  mutate(p.end.position.y = ifelse(server == "FEDERER", end.server.y,0)+ifelse(server != "FEDERER", end.receiver.y,0)) 
+  
+#player and opponent distances travelled from start of shot to end of next shot
+fed16_df <- fed16_df %>%  
+  mutate(oppo.distance = ifelse(server != "FEDERER", server.distance,0)+ifelse(server == "FEDERER", receiver.distance,0)) %>%
+  mutate(p.distance = ifelse(server == "FEDERER", server.distance,0)+ifelse(server != "FEDERER", receiver.distance,0))
+
+#player and opponent speed 
+fed16_df <- fed16_df %>%
+  mutate(p.peak.speed = ifelse(server == "FEDERER", server.peak.speed,0)+ifelse(server != "FEDERER", receiver.peak.speed,0)) %>%
+  mutate(p.avg.speed = ifelse(server == "FEDERER", server.avg.speed,0)+ifelse(server != "FEDERER", receiver.avg.speed,0)) 
+  
+
+#player and opponent acceleration
+fed16_df <- fed16_df %>%  
+  mutate(p.avg.acceleration = ifelse(server == "FEDERER", server.avg.acceleration,0)+ifelse(server != "FEDERER", receiver.avg.acceleration,0)) %>%
+  mutate(p.peak.acceleration = ifelse(server == "FEDERER", server.peak.acceleration,0)+ifelse(server != "FEDERER", receiver.peak.acceleration,0)) %>%
+  mutate(oppo.peak.speed = ifelse(server != "FEDERER", server.peak.speed,0)+ifelse(server == "FEDERER", receiver.peak.speed,0)) %>%
+  mutate(oppo.avg.speed = ifelse(server != "FEDERER", server.avg.speed,0)+ifelse(server == "FEDERER", receiver.avg.speed,0)) %>%
+  mutate(oppo.avg.acceleration = ifelse(server != "FEDERER", server.avg.acceleration,0)+ifelse(server == "FEDERER", receiver.avg.acceleration,0)) %>%
+  mutate(oppo.peak.acceleration = ifelse(server != "FEDERER", server.peak.acceleration,0)+ifelse(server == "FEDERER", receiver.peak.acceleration,0))
+
+
+#player and opponent work
+fed16_df <- fed16_df %>%
+  mutate(oppo.work = ifelse(server != "FEDERER", server.work,0)+ifelse(server == "FEDERER", receiver.work,0)) %>%
+  mutate(p.work = ifelse(server == "FEDERER", server.work,0)+ifelse(server != "FEDERER", receiver.work,0))
+
+#player and opponent advantage
+fed16_df <- fed16_df %>%
+  mutate(oppo.advantage =ifelse(server != "FEDERER", server.advantage,0)+ifelse(server == "FEDERER", receiver.advantage,0))%>%
+   mutate(p.advantage =ifelse(server == "FEDERER", server.advantage,0)+ifelse(server != "FEDERER", receiver.advantage,0))
+
+
+#player and opponent total changes
+fed16_df <- fed16_df %>%
+  mutate(oppo.total.changes =ifelse(server != "FEDERER", server.total.changes,0)+ifelse(server == "FEDERER", receiver.total.changes,0))%>%
+   mutate(p.total.changes =ifelse(server == "FEDERER", server.total.changes,0)+ifelse(server != "FEDERER", receiver.total.changes,0))
+  
+  
+```
+
+```{r}
+fed16_df <- fed16_df %>%
+  mutate(avg.player.speed.diff = p.avg.speed-oppo.avg.speed) %>%
+  mutate(peak.player.speed.diff = p.peak.speed-oppo.peak.speed) %>%
+  mutate(avg.player.speed.ratio = p.avg.speed/oppo.avg.speed) %>%
+  mutate(peak.player.speed.ratio = p.peak.speed/oppo.peak.speed) %>%
+  mutate(avg.player.acceleration.diff = (p.avg.acceleration)-(oppo.avg.acceleration)) %>%
+  mutate(peak.player.acceleration.diff = (p.peak.acceleration)-(oppo.peak.acceleration)) %>%
+  mutate(avg.player.acceleration.ratio = (p.avg.acceleration)/(oppo.avg.acceleration)) %>%
+  mutate(peak.player.acceleration.ratio = (p.peak.acceleration)/(oppo.peak.acceleration))
+```
 
 
 ```{r}
@@ -287,78 +364,14 @@ fed_only <- fed_only %>%
 #Adjusting to remove NAs and replace with 0s for modelling
 fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 ```
-
 ```{r}
-#New Variables for player positioning
-
 fed16_df <- fed16_df %>%
-  mutate(avg.player.speed.diff = NA) %>%
-  mutate(peak.player.speed.diff = NA) %>%
-  mutate(avg.player.speed.ratio = NA) %>%
-  mutate(peak.player.speed.ratio = NA) %>%
-  mutate(avg.player.acceleration.diff = NA) %>%
-  mutate(peak.player.acceleration.diff = NA) %>%
-  mutate(avg.player.acceleration.ratio = NA) %>%
-  mutate(peak.player.acceleration.ratio = NA) %>%
-  mutate(oppo.start.position.x = NA) %>%
-  mutate(oppo.start.position.y = NA) %>%
-  mutate(oppo.end.position.x = NA) %>%
-  mutate(oppo.end.position.y = NA) %>%
-  mutate(p.start.position.x = NA) %>%
-  mutate(p.start.position.y = NA) %>%
-  mutate(p.end.position.x = NA) %>%
-  mutate(p.end.position.y = NA) %>%
-  mutate(oppo.distance = NA) %>%
-  mutate(p.distance = NA) %>%
-  mutate(p.peak.speed = NA) %>%
-  mutate(p.avg..speed = NA) %>%
-  mutate(p.avg.acceleration = NA) %>%
-  mutate(p.peak.acceleration = NA)
-  mutate(oppo.peak.speed = NA) %>%
-  mutate(oppo.avg.speed = NA) %>%
-  mutate(oppo.avg.acceleration = NA) %>%
-  mutate(oppo.peak.acceleration = NA) 
- 
-
+  mutate(oppo.start.server.x = ifelse(server != "Federer", start.server.x, 0)) 
 ```
 
 
-```{r}
-for (i in 2:nrow(fed_df)) {
-  if(fed_df$shot[i] != 1) {#so that only non-serves are affected
-
-  fed_df$avg.player.speed.diff[i]=fed_df$avg.server.speed[i]-fed_df$avg.server.speed[i]
-  fed_df$peak.player.speed.diff[i]=fed_df$peak.server.speed[i]-fed_df$peak.server.speed[i-1]
-  fed_df$avg.player.acceleration.diff[i]=fed_df$avg.server.acceleration[i]-fed_df$avg.server.acceleration[i]
-  fed_df$peak.player.acceleration.diff[i]=fed_df$peak.server.acceleration[i]-fed_df$peak.server.acceleration[i-1]
-  #speed difference
-  
-  fed_df$oppo.start.position.x[i]=fed_df$start.x[i-1]
-  fed_df$oppo.start.position.y[i]=fed_df$start.y[i-1]
-  fed_df$oppo.end.position.x[i]=fed_df$start.z[i-1]
-  fed_df$oppo.end.position.y[i]=fed_df$speed1[i-1]
-  fed_df$p.start.position.x[i]=fed_df$start.x[i-1]
-  fed_df$p.start.position.y[i]=fed_df$start.y[i-1]
-  fed_df$p.end.position.x[i]=fed_df$start.z[i-1]
-  fed_df$p.end.position.y[i]=fed_df$speed1[i-1]
-  fed_df$oppo.ballmark.x[i]=fed_df$ballmark.x[i-1]
-  fed_df$oppo.ballmark.y[i]=fed_df$ballmark.y[i-1]
-  #oppo hit
-  }
-}
 
 
-server.start.dist.from.base
-#server.end.dist.from.base
-#receiver.start.dist.from.base
-#receiver.end.dist.from.base
-fed16_df <- fed16_df %>%
-  mutate(player.avg.speed.ratio = speed.start/oppo.speed) %>% #Player average speed ratio
-   mutate(player.peak.speed.ratio = speed.start/oppo.speed) %>% #Player average speed ratio
-  mutate(side.dist = 4.115 - abs(oppo.projected.ballmark.y)) %>% #distance of oppo.projected.ballmark from sideline
-  mutate(base.dist = 11.89 - abs(oppo.projected.ballmark.x)) %>% #distance of oppo.projected.ballmark from baseline
-  mutate(short.dist = min(side.dist, base.dist)) #shortest distance from any line
-```
 
 
 ```{r}
