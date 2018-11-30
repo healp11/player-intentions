@@ -218,6 +218,8 @@ fed16_df <- fed16_df %>%
 ```
 
 ```{r}
+
+#player speed and acceleration differences and ratios
 fed16_df <- fed16_df %>%
   mutate(avg.player.speed.diff = p.avg.speed-oppo.avg.speed) %>%
   mutate(peak.player.speed.diff = p.peak.speed-oppo.peak.speed) %>%
@@ -227,6 +229,29 @@ fed16_df <- fed16_df %>%
   mutate(peak.player.acceleration.diff = (p.peak.acceleration)-(oppo.peak.acceleration)) %>%
   mutate(avg.player.acceleration.ratio = (p.avg.acceleration)/(oppo.avg.acceleration)) %>%
   mutate(peak.player.acceleration.ratio = (p.peak.acceleration)/(oppo.peak.acceleration))
+
+#player/opponent side distance for start/end positions
+fed16_df <- fed16_df %>%
+  mutate(p.start.position.side.dist = 4.115 - abs(p.start.position.y)) %>%
+  mutate(p.end.position.side.dist = 4.115 - abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.side.dist = 4.115 - abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.side.dist = 4.115 - abs(oppo.end.position.y))
+  
+#player/opponent base distances for start/end positions  
+fed16_df <- fed16_df %>%
+  mutate(p.start.position.base.dist = 11.89 - abs(p.start.position.x)) %>%
+  mutate(p.end.position.base.dist = 11.89 - abs(p.end.position.x)) %>%
+  mutate(oppo.start.position.base.dist = 11.89 - abs(oppo.start.position.x)) %>%
+  mutate(oppo.end.position.base.dist = 11.89 - abs(oppo.end.position.x))
+  
+```
+```{r}
+#player/ opponent shortest distances for start/end positions 
+fed16_df <- fed16_df %>%
+  mutate(oppo.start.position.short.dist = min(oppo.start.position.side.dist, oppo.start.position.base.dist)) %>%
+   mutate(oppo.end.position.short.dist = min(oppo.end.position.side.dist, oppo.end.position.base.dist)) %>%
+  mutate(p.start.position.short.dist = min(p.start.position.side.dist, p.start.position.base.dist)) %>%
+   mutate(p.end.position.short.dist = min(p.end.position.side.dist, p.end.position.base.dist)) 
 ```
 
 
@@ -366,7 +391,7 @@ fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 ```
 ```{r}
 fed16_df <- fed16_df %>%
-  mutate(oppo.start.server.x = ifelse(server != "Federer", start.server.x, 0)) 
+  mutate(oppo.start.server.x = ifelse(server != "FEDERER", start.server.x, 0)) 
 ```
 
 
