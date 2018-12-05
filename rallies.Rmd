@@ -129,10 +129,7 @@ fed16_df <- fed16_df %>%
   mutate(isserver = ifelse(server == impact.player,1,0)) %>%
   mutate(fhand = ifelse(hitpoint == "F",1,0)) %>%
   mutate(opponent = ifelse(server == "FEDERER", receiver, server)) %>%
-  mutate (is.rally = ifelse(final.shot >= 3, TRUE, FALSE)) %>%
-  mutate(end.rally = ifelse(shot == final.shot & is.rally == "TRUE",1,0)) %>%
-  mutate(start.rally = ifelse(shot == 3 & is.rally == "TRUE",1,0)) %>%
-  mutate(ral.num = sum(start.rally))
+ 
 
   
 #use group_index
@@ -163,6 +160,14 @@ for (i in 1:ncol(fed16_df)) {
 ```{r}
 #Put score differentials in when new data received
 ```
+```{r}
+fed16_df <- fed16_df %>%
+  mutate(end.rally = ifelse(shot == final.shot & is.rally == "TRUE",TRUE,FALSE)) %>%
+  mutate(start.rally = ifelse(shot == 3 & is.rally == "TRUE",TRUE,FALSE)) 
+  
+```
+
+
 ```{r}
 #New Variables for player and opponent: start/end positions,  speed &acceleration, distance run within shot, work, advantage, total changes  
 
@@ -253,6 +258,7 @@ fed16_df <- fed16_df %>%
   mutate(p.start.position.short.dist = min(p.start.position.side.dist, p.start.position.base.dist)) %>%
    mutate(p.end.position.short.dist = min(p.end.position.side.dist, p.end.position.base.dist)) 
 ```
+
 
 
 ```{r}
@@ -395,7 +401,53 @@ fed16_df <- fed16_df %>%
 ```
 
 
+```{r}
+#Adding angles for player & opposition movement from start position[i] to end position[i] as well as end position[i] to start position[i+1]. Measuring the angle of movement from the baseline. With the baseline running 90 to 270 degrees and the centre service line running 0 to 180 degrees
 
+
+fed16_df <- fed16_df %>%
+  mutate(p.movement.angle.1 = NA) %>%
+  mutate(p.movement.angle.2 = NA) %>%
+  mutate(oppo.movement.angle.1 = NA) %>%
+  mutate(oppo.movement.angle.2 = NA) 
+  
+  
+#player start to end movement angle  
+for (i in 1:nrow(fed16_df)) {
+  a1 <- fed16_df$p.start.position.x[i]
+  b1 <- fed16_df$p.start.position.y[i]
+  a2 <- fed16_df$p.end.position.x[i]
+  b2 <- fed16_df$p.end.position.y[i]
+  
+  
+  p.movement.angle.1 <- atan(
+  ((-(a1-a2))/(-(b1-b2)))* 180/pi) 
+  
+  fed16_df$p.movement.angle.1[i] = ifelse(p.movement.angle.1 < 0 & -(a1-a2)<0,180+p.movement.angle.1,
+                                          ifelse(p.movement.angle.1 < 0 & -(b1-b2)<0,360+p.movement.angle.1,
+                                                 ifelse(p.movement.angle.1 > 0 & -(a1-a2)<0,180+p.movement.angle.1,p.movement.angle.1)))
+                                                                                                                  
+                                                                                                              
+    
+}
+
+
+
+```
+
+```{r}
+#
+
+  
+for (i in 1:nrow(fed16_df)) {
+  a1 <- fed16_df$oppo.start.position.x[i]
+  b1 <- fed16_df$oppo.start.position.y[i]
+  a2 <- fed16_df$oppo.end.position.x[i]
+  b2 <- fed16_df$oppo.end.position.y[i]
+  
+  
+}
+```
 
 
 
