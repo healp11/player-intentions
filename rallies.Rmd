@@ -120,6 +120,7 @@ fed16_df <- fed16_df %>% rowwise %>%
 ```
 
 
+
 #####Recreating variables from Federer AO 2017 for fed16. 
 (some columns in rallies data have a different classification than in federer2017 data. Such as 'is.good' replaces 'ended.in.error')(With Aces dropped we also now cannot recreate retser, retser1 or retser2 )
 
@@ -128,10 +129,14 @@ fed16_df <- fed16_df %>%
   mutate(lastshot = ifelse(shot == final.shot,1,0)) %>%
   mutate(isserver = ifelse(server == impact.player,1,0)) %>%
   mutate(fhand = ifelse(hitpoint == "F",1,0)) %>%
-  mutate(opponent = ifelse(server == "FEDERER", receiver, server)) %>%
+  mutate(opponent = ifelse(server == "FEDERER", receiver, server)) 
  
 
   
+
+```
+
+```{r}
 #use group_index
 #Want to create an index want to group by when the rally starts
 #How to create an inde on multiple rows
@@ -157,16 +162,25 @@ for (i in 1:ncol(fed16_df)) {
   }
 }
 ```
+
+
 ```{r}
 #Put score differentials in when new data received
 ```
+
 ```{r}
-fed16_df <- fed16_df %>%
-  mutate(end.rally = ifelse(shot == final.shot & is.rally == "TRUE",TRUE,FALSE)) %>%
-  mutate(start.rally = ifelse(shot == 3 & is.rally == "TRUE",TRUE,FALSE)) 
-  
+col = c("set","game", "point")
+rally.num = as.data.frame(group_indices_(fed16_df,.dots = col))
+colnames(rally.num)<- "rally.number"
 ```
 
+```{r}
+
+
+fed16_df <- fed16_df %>%
+  cbind(rally.num)
+ 
+```
 
 ```{r}
 #New Variables for player and opponent: start/end positions,  speed &acceleration, distance run within shot, work, advantage, total changes  
@@ -259,6 +273,85 @@ fed16_df <- fed16_df %>%
    mutate(p.end.position.short.dist = min(p.end.position.side.dist, p.end.position.base.dist)) 
 ```
 
+```{r}
+#Tally of the number of times player and opponent change side during rally
+fed16_df <- fed16_df %>%
+  mutate(rally.side.change.count = length(rle(sign(fed16_df))$lengths))
+```
+
+
+```{r}
+#Adding angles for player & opposition movement from start position[i] to end position[i] as well as end position[i] to start position[i+1]. Measuring the angle of movement from the baseline. With the baseline running 90 to 270 degrees and the centre service line running 0 to 180 degrees
+
+
+fed16_df <- fed16_df %>%
+  mutate(p.movement.angle.1 = NA) %>%
+  mutate(p.movement.angle.2 = NA) %>%
+  mutate(oppo.movement.angle.1 = NA) %>%
+  mutate(oppo.movement.angle.2 = NA) 
+  
+  
+#player start to end movement angle  
+for (i in 1:nrow(fed16_df)) {
+  a1 <- fed16_df$p.start.position.x[i]
+  b1 <- fed16_df$p.start.position.y[i]
+  a2 <- fed16_df$p.end.position.x[i]
+  b2 <- fed16_df$p.end.position.y[i]
+  
+  
+  p.movement.angle.1 <- atan(
+  ((abs(a1)-abs(a2))/(abs(b1)-abs(b2)))* 180/pi) 
+  
+  fed16_df$p.movement.angle.1[i] = ifelse(p.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.1,
+                                          ifelse(p.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,360+p.movement.angle.1,
+                                                 ifelse(p.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.1,p.movement.angle.1)))
+                                                                                                            
+}
+
+
+
+```
+```{r}
+#player end position(i) to start position (i+1) movement angle
+for (i in 2:nrow(fed16_df)) {
+  a1 <- fed16_df$p.end.position.x[i]
+  b1 <- fed16_df$p.end.position.y[i]
+  a2 <- fed16_df$p.start.position.x[i+1]
+  b2 <- fed16_df$p.start.position.y[i+1]
+  
+  p.movement.angle.2 <- atan(
+  ((abs(a1)-abs(a2))/(abs(b1)-abs(b2)))* 180/pi) 
+  
+  fed16_df$p.movement.angle.2[i] = ifelse(p.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.2,
+                                          ifelse(p.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,360+p.movement.angle.2,
+                                                 ifelse(p.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.2,p.movement.angle.2)))
+  
+}  
+  
+
+
+```
+
+```{r}
+# opposition start to end movement angle
+
+  
+for (i in 1:nrow(fed16_df)) {
+  a1 <- fed16_df$oppo.start.position.x[i]
+  b1 <- fed16_df$oppo.start.position.y[i]
+  a2 <- fed16_df$oppo.end.position.x[i]
+  b2 <- fed16_df$oppo.end.position.y[i]
+  
+  oppo.movement.angle.1 <- atan(
+  ((abs(a1)-abs(a2))/(abs(b1)-abs(b2)))* 180/pi) 
+  
+  fed16_df$oppo.movement.angle.1[i] = ifelse(oppo.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0,180+oppo.movement.angle.1,
+                                          ifelse(oppo.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,360+oppo.movement.angle.1,
+                                                 ifelse(oppo.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0,180+oppo.movement.angle.1,p.movement.angle.1)))
+  
+  
+}
+```
 
 
 ```{r}
@@ -402,52 +495,10 @@ fed16_df <- fed16_df %>%
 
 
 ```{r}
-#Adding angles for player & opposition movement from start position[i] to end position[i] as well as end position[i] to start position[i+1]. Measuring the angle of movement from the baseline. With the baseline running 90 to 270 degrees and the centre service line running 0 to 180 degrees
-
-
-fed16_df <- fed16_df %>%
-  mutate(p.movement.angle.1 = NA) %>%
-  mutate(p.movement.angle.2 = NA) %>%
-  mutate(oppo.movement.angle.1 = NA) %>%
-  mutate(oppo.movement.angle.2 = NA) 
-  
-  
-#player start to end movement angle  
-for (i in 1:nrow(fed16_df)) {
-  a1 <- fed16_df$p.start.position.x[i]
-  b1 <- fed16_df$p.start.position.y[i]
-  a2 <- fed16_df$p.end.position.x[i]
-  b2 <- fed16_df$p.end.position.y[i]
-  
-  
-  p.movement.angle.1 <- atan(
-  ((-(a1-a2))/(-(b1-b2)))* 180/pi) 
-  
-  fed16_df$p.movement.angle.1[i] = ifelse(p.movement.angle.1 < 0 & -(a1-a2)<0,180+p.movement.angle.1,
-                                          ifelse(p.movement.angle.1 < 0 & -(b1-b2)<0,360+p.movement.angle.1,
-                                                 ifelse(p.movement.angle.1 > 0 & -(a1-a2)<0,180+p.movement.angle.1,p.movement.angle.1)))
-                                                                                                                  
-                                                                                                              
-    
-}
-
-
-
+#to view collums that have been truncated
+str(fed16_df, list.len = ncol(fed16_df))
 ```
 
-```{r}
-#
-
-  
-for (i in 1:nrow(fed16_df)) {
-  a1 <- fed16_df$oppo.start.position.x[i]
-  b1 <- fed16_df$oppo.start.position.y[i]
-  a2 <- fed16_df$oppo.end.position.x[i]
-  b2 <- fed16_df$oppo.end.position.y[i]
-  
-  
-}
-```
 
 
 
