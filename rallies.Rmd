@@ -182,6 +182,8 @@ fed16_df <- fed16_df %>%
  
 ```
 
+
+
 ```{r}
 #New Variables for player and opponent: start/end positions,  speed &acceleration, distance run within shot, work, advantage, total changes  
 
@@ -273,10 +275,28 @@ fed16_df <- fed16_df %>%
    mutate(p.end.position.short.dist = min(p.end.position.side.dist, p.end.position.base.dist)) 
 ```
 
+
+
 ```{r}
+
 #Tally of the number of times player and opponent change side during rally
 fed16_df <- fed16_df %>%
-  mutate(rally.side.change.count = length(rle(sign(fed16_df))$lengths))
+  mutate(p.side.change.count = ifelse(p.start.position.y <= 0 & p.end.position.y >= 0, 1, ifelse(p.start.position.y >= 0 & p.end.position.y <= 0, 1, 0))) %>%
+  mutate(p.side.change.cumsum = cumsum(p.side.change.count)) %>%
+  mutate(oppo.side.change.count = ifelse(oppo.start.position.y <= 0 & oppo.end.position.y >= 0, 1, ifelse(oppo.start.position.y >= 0 & oppo.end.position.y <= 0, 1, 0))) %>%
+  mutate(oppo.side.change.cumsum = cumsum(oppo.side.change.count)) 
+  
+  
+  
+  
+```
+```{r}
+fed16_df <- fed16_df %>%
+  group_by(rally.number ) %>%
+  dplyr::mutate(p.rally.side.change.count = cumsum(p.side.change.count)) %>%
+  dplyr::mutate(oppo.rally.side.change.count = cumsum(oppo.side.change.count)) %>%
+  ungroup
+ 
 ```
 
 
@@ -350,6 +370,22 @@ for (i in 1:nrow(fed16_df)) {
                                                  ifelse(oppo.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0,180+oppo.movement.angle.1,p.movement.angle.1)))
   
   
+}
+```
+```{r}
+#oppositions end[i] to start [i+1] movement angle
+for (i in 2:nrow(fed16_df)) {
+  a1 <- fed16_df$oppo.end.position.x[i]
+  b1 <- fed16_df$oppo.end.position.y[i]
+  a2 <- fed16_df$oppo.start.position.x[i+1]
+  b2 <- fed16_df$oppo.start.position.y[i+1]
+  
+  oppo.movement.angle.2 <- atan(
+  ((abs(a1)-abs(a2))/(abs(b1)-abs(b2)))* 180/pi) 
+  
+  fed16_df$oppo.movement.angle.2[i] = ifelse(oppo.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+oppo.movement.angle.2,
+                                          ifelse(oppo.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,360+oppo.movement.angle.2,
+                                                 ifelse(oppo.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 180+oppo.movement.angle.2,oppo.movement.angle.2)))
 }
 ```
 
@@ -492,12 +528,19 @@ fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 fed16_df <- fed16_df %>%
   mutate(oppo.start.server.x = ifelse(server != "FEDERER", start.server.x, 0)) 
 ```
+```{r}
+#Angle of shots
+ggplot(fed_only, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
+
+ggplot(fed_only, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
+```
 
 
 ```{r}
 #to view collums that have been truncated
 str(fed16_df, list.len = ncol(fed16_df))
 ```
+
 
 
 
