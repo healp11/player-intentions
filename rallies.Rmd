@@ -528,12 +528,6 @@ fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 fed16_df <- fed16_df %>%
   mutate(oppo.start.server.x = ifelse(server != "FEDERER", start.server.x, 0)) 
 ```
-```{r}
-#Angle of shots
-ggplot(fed_only, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
-
-ggplot(fed_only, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
-```
 
 
 ```{r}
@@ -587,25 +581,13 @@ ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom
  
  
 ```{r rally variables}
-#examining rallies to look at side to side movement within rallies. Starting with the longest rally.(Tidy up this code to find longest rally in one line..)
+#examining rallies to look at side to side movement within rallies. Starting with the longest rally.
 longral_df <- filter(fed_only, final.shot >= 10)
 ```
 ```{r}
 longest_df <- filter(fed_only, final.shot == 17)
 ```
-```{r}
-ggplot(fed_only, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=shot)) + stat_summary_hex(fun = function(shot) sum(shot)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Shot Number By Shot Ballmark Co-Ordinates For Match")
 
-
-ggplot(longral_df, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=shot)) + stat_summary_hex(fun = function(shot) sum(shot)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Shot Number By Shot Ballmark Co-Ordinates For Long Rallies")
-
-#Rally Ballmark by shot number in x-y plane
-ggplot(longest_df, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=shot)) + stat_summary_hex(fun = function(shot) sum(shot)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Shot Number By Shot Ballmark Co-Ordinates For Longest Rally")
-
-
-#projeted ballmark appears to move beyond service line as rally length increases. Need to examine distance from baseline more closely for longer rallies. 
-
-```
 ```{r}
 #speed ratio
 
@@ -663,33 +645,41 @@ ggplot(fed16_df, aes(x=base.dist,y=o.angle)) + geom_smooth() + xlab("Distance fr
 #server.avg.speed, server.peak.speed, server.avg.acceleration, server.peak.acceleration, server.advantage, server.work, server.total.changes, start.server.x, end.server.x
 ```
 
+
 ```{r}
-ggplot(fed16_df, aes(x=server.advantage,y=receiver.total.changes)) + geom_smooth() + xlab("Receiver Advantage") + ylab("Server Total Changes") + ggtitle("Server Advantage by Reciever Total Changes")
+#Using Data visualisation to explore new variables
+```
+```{r}
+#Angle of movement
+ggplot(fed_only, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
 
-ggplot(fed16_df, aes(x=receiver.advantage,y=server.total.changes)) + geom_smooth() + xlab("Server Advantage") + ylab("Reciver Total Changes") + ggtitle("Receiver Advantage by Server Total Changes")
+ggplot(fed_only, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
 
-ggplot(fed16_df, aes(x=receiver.advantage,y=receiver.total.changes)) + geom_smooth() + xlab("receiver Advantage") + ylab("Reciver Total Changes") + ggtitle("Receiver Advantage by Receiver Total Changes")
+ggplot(fed_only, aes(x=p.movement.angle.1,y=p.peak.speed)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Federers Peak Speed") + ggtitle("Winners By Federer's movement angle 1")
 
-ggplot(fed16_df, aes(x=server.advantage,y=server.total.changes)) + geom_smooth() + xlab("server Advantage") + ylab("Server Total Changes") + ggtitle("server Advantage by server Total Changes")
+
 ```
 
 ```{r}
-ggplot(fed16_df, aes(x=receiver.work,y=receiver.advantage)) + geom_smooth() + xlab("Receiver Work") + ylab("Receiver Advantage") + ggtitle("Receiver Advantage by Receiver Work")
+#Movement and shot position seperated by forehand and backhand
+ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer winners by start position seperated by shot type for long rallies")
 
-ggplot(fed16_df, aes(x=server.work,y=server.advantage)) + geom_smooth() + xlab("Server Work") + ylab("Server Advantage") + ggtitle("Server Advantage by Server Work")
+ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer winners by end position seperated by shot type for long rallies")
 
-#djo16
-ggplot(djo16_df, aes(x=server.work,y=server.advantage)) + geom_smooth() + xlab("Server Work") + ylab("Server Advantage") + ggtitle("Server Advantage by Server Work")
+ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer errors by start position seperated by shot type for long rallies")
 
-ggplot(djo16_df, aes(x=receiver.work,y=receiver.advantage)) + geom_smooth() + xlab("Receiver Work") + ylab("Receiver Advantage") + ggtitle("Receiver Advantage by Receiver Work")
+ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer errors by end position seperated by shot type for long rallies")
+
+ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer shot time to net by start position seperated by shot type for long rallies")
+
+ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer shot time to net by end position seperated by shot type for long rallies")
+
 ```
 ```{r}
-ggplot(fed16_df, aes(x=receiver.distance,y=receiver.work)) + geom_smooth() + xlab("Receiver Distance") + ylab("Receiver Work") + ggtitle("Receiver Work by Receiver Distance")
+# Federer backhands are played on the baseline the majority of the time. All errors and winners for Federer backhands in long rallies are starting on negative y side of court. Examine this further to see what type of backhands are being played to identify any risks. 
+#For running backhand in long rallies, with a slower speed to net more errors appear to occur
 
-ggplot(fed16_df, aes(x=server.distance,y=server.work)) + geom_smooth() + xlab("Server Distance") + ylab("Server Work") + ggtitle("Server Work by Server Distance")
 
-ggplot(fed16_df, aes(x=receiver.distance,y=receiver.work)) + geom_smooth() + xlab("Receiver Distance") + ylab("Receiver Work") + ggtitle("Receiver Work by Receiver Distance")
-
-ggplot(fed16_df, aes(x=server.distance,y=server.work)) + geom_smooth() + xlab("Server Distance") + ylab("Server Work") + ggtitle("Server Work by Server Distance")
 ```
+
 
