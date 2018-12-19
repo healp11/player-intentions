@@ -490,6 +490,10 @@ for (i in 3:nrow(fed16_df)) {
   fed16_df$lag.speed.ratio[i] = ifelse(fed16_df$impact.player[i]==fed16_df$impact.player[i-2] & fed16_df$shot[i] >= 4, fed16_df$speed.ratio[i-2], 0)
 }
 ```
+
+
+
+
 ```{r}
 #remove opponents
 fed_no.opp <- fed16_df %>% 
@@ -538,7 +542,6 @@ str(fed16_df, list.len = ncol(fed16_df))
 
 
 
-
 ```{r}
 ##Plots of shot and ballmark co-ordinates, angles made by shots and speed measures
 library(ggplot2)
@@ -576,16 +579,43 @@ ggplot(fed_only) + geom_density(aes(speed.ratio, group = factor(winner), color=f
 
 ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
 ```
+```{r}
+# na.omit(fed16_df)
+```
 
- 
+```{r}
+
+#creating new rows so that every second row start and end player positions are switched
+#this allows is to better plot player positions
+fed16_df <- fed16_df %>%
+  mutate(lag.p.end.position.x=NA) %>%
+  mutate(lag.p.end.position.y=NA) %>%
+  mutate(lag.oppo.end.position.x=NA) %>%
+  mutate(lag.oppo.end.position.y=NA)
+
+for (i in 2:nrow(fed16_df)) {
+  fed16_df$lag.p.end.position.x[i]=fed16_df$p.end.position.x[i-1]
+  fed16_df$lag.p.end.position.y[i]=fed16_df$p.end.position.y[i-1]
+  fed16_df$lag.oppo.end.position.x[i]=fed16_df$oppo.end.position.x[i-1]
+  fed16_df$lag.oppo.end.position.y[i]=fed16_df$oppo.end.position.y[i-1]
+}
+
+
+insert_df <- transform(fed16_df, p.start.position.x=lag.p.end.position.x, p.end.position.x=p.start.position.x,p.start.position.y=lag.p.end.position.y, p.end.position.y=p.start.position.y, oppo.start.position.x=lag.oppo.end.position.x, oppo.end.position.x=oppo.start.position.x,oppo.start.position.y=lag.oppo.end.position.y, oppo.end.position.y=oppo.start.position.y)
+
+fed16_pos <- bind_rows(fed16_df, setNames(insert_df, names(fed16_df))) %>% 
+           arrange(rally.number, shot)
+
+
+``` 
  
  
 ```{r rally variables}
 #examining rallies to look at side to side movement within rallies. Starting with the longest rally.
-longral_df <- filter(fed_only, final.shot >= 10)
+longral_df <- filter(fed16_pos, final.shot >= 10)
 ```
 ```{r}
-longest_df <- filter(fed_only, final.shot == 17)
+longest_df <- filter(fed16_pos, final.shot == 17)
 ```
 
 ```{r}
@@ -612,6 +642,45 @@ ggplot(fed16_df, aes(x=base.dist,y=o.angle)) + geom_smooth() + xlab("Distance fr
 
 
 ```
+
+```{r}
+
+library(plotly)
+#--- Packages Required
+# require(ggplot2)
+# require(plotly)
+
+#--- Outline of the court
+court_trace <- data.frame(x = c(-11.89, -11.89, 0, 0, 0, 11.89, 11.89, -11.89, -11.89, 11.89, 11.89, -11.89, -6.4, -6.4, 6.4, 6.4, 6.4, -6.4),
+                          y = c(5.49, -5.49, -5.49, 5.49, -5.49, -5.49, 5.49, 5.49, 4.115, 4.115, -4.115, -4.115, -4.115, 4.115, 4.115, -4.115, 0, 0),
+                          z = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+net_trace <- data.frame(x = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                        y = c(-5.49,-5.49, -6.4, -6.4, -5.49, 0, 5.49, 6.4, 6.4, 5.49, 5.49),
+                        z = c(1.07, 0, 0, 1.07, 1.07, 0.914, 1.07, 1.07, 0, 0, 1.07))
+service_trace <- data.frame(x = c(-8, 0, 0, 0, -6.4, -6.4, 0, -6.4, -6.4, -6.4, -6.4, -6.4,  0, 0, -8),
+                            y = c(-5.49, -5.49, -4.115, 4.115, 4.115, 0, 0, 0, -4.115, -5.49, 5.49, -4.115, -4.115, 5.49, 5.49),
+                            z = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,0 ,0))
+    
+axis_labels <- data.frame(x.break = c(-21.89:-11.89, -6.4, 0, 6.4, 11.89),
+                          x.label = c("-10m","","","","","-5m","","","","",
+                                      "Baseline","Service Line","Net","Service Line","Baseline"),
+                          y.break = c(-5.49,-4.115,0,4.115,5.49),
+                          y.label = c("Doubles", "Singles","Centre","Singles","Doubles"),
+                          z.break = c(0,0.992,2,3,4),
+                          z.label = c("Ground", "Net", "2m", "3m", "4m"))
+
+#--- Top down court view
+court_topdown <- ggplot() + 
+    labs(x = "x direction", y = "y direction") + 
+    scale_x_continuous(breaks = axis_labels$x.break,
+                       labels = axis_labels$x.label) +
+    scale_y_continuous(breaks = axis_labels$y.break,
+                       labels = axis_labels$y.label) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed()
+```
+
 
 ```{r}
 #creating new variables to get more information about player movement
@@ -660,19 +729,20 @@ ggplot(fed_only, aes(x=p.movement.angle.1,y=p.peak.speed)) + geom_smooth() + xla
 
 ```
 
+
 ```{r}
 #Movement and shot position seperated by forehand and backhand
-ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer winners by start position seperated by shot type for long rallies")
+ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer winners by start position seperated by shot type for long rallies")
 
-ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer winners by end position seperated by shot type for long rallies")
+ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer winners by end position seperated by shot type for long rallies")
 
-ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer errors by start position seperated by shot type for long rallies")
+ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer errors by start position seperated by shot type for long rallies")
 
-ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer errors by end position seperated by shot type for long rallies")
+ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer errors by end position seperated by shot type for long rallies")
 
-ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer shot time to net by start position seperated by shot type for long rallies")
+ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer shot time to net by start position seperated by shot type for long rallies")
 
-ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint), scale="free") + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer shot time to net by end position seperated by shot type for long rallies")
+ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer shot time to net by end position seperated by shot type for long rallies")
 
 ```
 ```{r}
@@ -680,6 +750,72 @@ ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=time.to.net))  + 
 #For running backhand in long rallies, with a slower speed to net more errors appear to occur
 
 
+```
+
+
+
+
+
+```{r}
+library(grid)
+
+ggplot(longest_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y, z=winner))   + stat_summary_hex(fun = function(winner) sum(winner)) + geom_segment(arrow = arrow(angle = 15,))  + xlab("Federer Position X ") + ylab("Federer Position Y") + ggtitle("Federer positions in longest rally") 
+
+ggplot(longest_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y, z=winner))   + 
+  stat_summary_hex(fun = function(winner) sum(winner)) + 
+  geom_text(aes(label=shot)) +
+  scale_colour_brewer(palette="Set1")
+  geom_path(arrow = arrow(angle = 15))  + 
+  xlab("Federer Position X ") + 
+  ylab("Federer Position Y") + 
+  ggtitle("Federer positions in longest rally") 
+```
+
+```{r}
+trial_df <- filter(fed16_pos, final.shot >= 14)
+
+ p.rally.paths <- ggplot(trial_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y))    + geom_point()  + geom_path(arrow = arrow(angle = 15)) +  facet_wrap(~rally.number) + xlab("Federer Position X ") + ylab("Federer Position Y") + ggtitle("Federer start and end positions for rallies 10 shots or longer") 
+ p.rally.paths <- ggplotly(p.rally.paths)
+ p.rally.paths
+
+oppo.rally.paths <- ggplot(trial_df, aes(x=oppo.start.position.x, xend=oppo.end.position.x, y=oppo.start.position.y, yend=oppo.end.position.y))    + geom_point()  + geom_path(arrow = arrow(angle = 15)) +  facet_wrap(~rally.number) + xlab("Opponent Position X ") + ylab("Opponent Position Y") + ggtitle("Opponent start and end positions for for rallies 10 shots or longer")  
+ oppo.rally.paths <- ggplotly(oppo.rally.paths)
+ oppo.rally.paths
+
+```
+
+
+```{r}
+Xpoint1_df <- fed16_df %>% 
+  filter(rally.number == 1, shot == 3) %>%
+  select(p.start.position.x,  oppo.start.position.x,  start.x ) %>%
+  gather( XPosition,  X ) 
+head(point1)
+Ypoint1_df<- fed16_df %>% 
+  filter(rally.number == 1, shot == 3) %>%
+  select(p.start.position.y,  oppo.start.position.y,  start.y ) %>%
+  gather( YPosition,  Y ) 
+head(point1)
+point1_df <-merge(Xpoint1_df, Ypoint1_df, by=0)
+```
+
+
+```{r}
+hull_df <- point1_df %>%
+  select(X,Y)
+c.hull <- chull(hull_df)
+c.hull2 <- c(c.hull)
+
+```
+```{r}
+hull2_df <- as.data.frame(cbind(1,hull_df[c.hull2 ,]$X,hull_df[c.hull2 ,]$Y))
+colnames(hull2_df) <- c('ID','X','Y')
+
+
+```
+
+```{r}
+ggplot(hull2_df, aes(x=X, y=Y)) + geom_polygon() 
 ```
 
 
