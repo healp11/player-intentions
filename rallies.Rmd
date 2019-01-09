@@ -798,14 +798,14 @@ trial_df <- filter(fed16_pos, final.shot >= 14)
  p.rally.paths <- ggplotly(p.rally.paths)
    
  p.rally.paths
-# 
-# oppo.rally.paths <- ggplot(trial_df, aes(x=oppo.start.position.x, xend=oppo.end.position.x, y=oppo.start.position.y, yend=oppo.end.position.y))    + geom_point()  + geom_segment(arrow = arrow(angle = 15)) +  facet_wrap(~rally.number) + xlab("Opponent Position X ") + ylab("Opponent Position Y") + ggtitle("Opponent start and end positions for for rallies 14 shots or longer")  
-#  oppo.rally.paths <- ggplotly(oppo.rally.paths)
-#  oppo.rally.paths
 
+
+```
+```{r}
  
-
-
+oppo.rally.paths <- ggplot(trial_df, aes(x=oppo.start.position.x, xend=oppo.end.position.x, y=oppo.start.position.y, yend=oppo.end.position.y))    + geom_point()  + geom_segment(arrow = arrow(angle = 15)) +  facet_wrap(~rally.number) + xlab("Opponent Position X ") + ylab("Opponent Position Y") + ggtitle("Opponent start and end positions for for rallies 14 shots or longer")  
+oppo.rally.paths <- ggplotly(oppo.rally.paths)
+oppo.rally.paths
 ```
 
 
@@ -829,15 +829,90 @@ animate(p.rally.anim, duration = 30, fps = 10)
 ```
 
 ```{r}
-p.rally.anim2 <- ggplot(longest_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y, group = rally.number)) + 
-  geom_point() +
-  geom_path(aes(alpha = shot)) +
+p.rally.anim2 <- ggplot() + 
+  scale_x_continuous(breaks = axis_labels$x.break,
+                       labels = axis_labels$x.label) +
+    scale_y_continuous(breaks = axis_labels$y.break,
+                       labels = axis_labels$y.label) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point(data= longest_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number)) +
+  geom_path(data= longest_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
   transition_reveal(pos.rally.count) +
   xlab("Federer Position X ") + 
   ylab("Federer Position Y") + 
   ggtitle("Federer start and end positions animated for longest rally") 
 
+
 animate(p.rally.anim2, duration = 30, fps = 10)
+```
+```{r}
+p.rally.anim3 <- ggplot() + 
+  scale_x_continuous(breaks = axis_labels$x.break,
+                       labels = axis_labels$x.label) +
+    scale_y_continuous(breaks = axis_labels$y.break,
+                       labels = axis_labels$y.label) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point(data= longral_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number)) +
+  geom_path(data= longral_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
+  transition_reveal(pos.rally.count) +
+  facet_wrap(~rally.number) +
+  xlab("Federer Position X ") + 
+  ylab("Federer Position Y") + 
+  ggtitle("Federer start and end positions animated for rallies 10 shots or greater") 
+
+
+animate(p.rally.anim3, duration = 30, fps = 10)
+```
+```{r}
+p.rally.anim4 <- ggplot() + 
+  scale_x_continuous(breaks = axis_labels$x.break,
+                       labels = axis_labels$x.label) +
+    scale_y_continuous(breaks = axis_labels$y.break,
+                       labels = axis_labels$y.label) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point(data= longest_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) +
+  geom_path(data= longest_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
+  geom_point(data= longest_df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, colour="blue")) +
+  geom_path(data= longest_df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, alpha = shot)) +
+  transition_reveal(pos.rally.count) +
+  xlab("Player Position X ") + 
+  ylab("Player Position Y") + 
+  ggtitle("Federer and opposition start and end positions animated for longest rally")+
+  scale_colour_manual(name = "", values=c("red","blue"), labels= c("Berdych","Federer"))
+
+#had to reverse geom_point colour labels for some reason
+
+animate(p.rally.anim4, duration = 30, fps = 10)
+```
+```{r}
+p.rally.anim5 <- ggplot() + 
+  scale_x_continuous(breaks = axis_labels$x.break,
+                       labels = axis_labels$x.label) +
+    scale_y_continuous(breaks = axis_labels$y.break,
+                       labels = axis_labels$y.label) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point(data= longral_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) +
+  geom_path(data= longral_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
+  geom_point(data= longral_df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, colour="blue")) +
+  geom_path(data= longral_df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, alpha = shot)) +
+  transition_reveal(pos.rally.count) +
+  facet_wrap(~rally.number) +
+  xlab("Player Position X ") + 
+  ylab("Player Position Y") + 
+  ggtitle("Federer and opposition start and end positions animated for rallies 10 shots or longer")+
+  scale_colour_manual(name = "", values=c("red","blue"), labels= c("Berdych","Federer"))
+
+#had to reverse geom_point colour labels for some reason
+
+animate(p.rally.anim5, duration = 30, fps = 10)
 ```
 
 ```{r}
@@ -882,6 +957,6 @@ ggplot(hull2_df, aes(x=X, y=Y)) + geom_polygon()
 # t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = p.start.position.x , data = fed16_df, nstates = 2, family=list(multinomial("identity"),gaussian()))
 # t2.fm1<- fit(t2.mod1)
 # summary(t2.fm1)
-```
+``` 
 
 
