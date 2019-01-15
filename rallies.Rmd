@@ -536,7 +536,7 @@ fed16_df <- fed16_df %>%
 
 ```{r str}
 #to view collums that have been truncated
-#str(fed16_df, list.len = ncol(fed16_df))
+str(fed16_df, list.len = ncol(fed16_df))
 
 # str(longest_df, list.len = ncol(longest_df))
 
@@ -586,42 +586,27 @@ ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom
 ```{r}
 # na.omit(fed16_df)
 ```
-
-```{r Player/Ball Position rows}
+```{r Player/Ball Position rows }
 
 #creating new rows so that every second row start and end player positions are switched
 #Also creating new rows so that every second row in start.x,/start.y is projected ballmark
 #this allows us to better plot player positions as well as track positions for animations
-fed16_df <- fed16_df %>%
-  mutate(lag.p.end.position.x=NA) %>%
-  mutate(lag.p.end.position.y=NA) %>%
-  mutate(lag.oppo.end.position.x=NA) %>%
-  mutate(lag.oppo.end.position.y=NA)
 
-for (i in 2:nrow(fed16_df)) {
-  fed16_df$lag.p.end.position.x[i]=fed16_df$p.end.position.x[i-1]
-  fed16_df$lag.p.end.position.y[i]=fed16_df$p.end.position.y[i-1]
-  fed16_df$lag.oppo.end.position.x[i]=fed16_df$oppo.end.position.x[i-1]
-  fed16_df$lag.oppo.end.position.y[i]=fed16_df$oppo.end.position.y[i-1]
-}
+join_df <- transform(fed16_df, p.start.position.x=p.end.position.x, p.start.position.y=p.end.position.y, oppo.start.position.x=oppo.end.position.x, oppo.start.position.y=oppo.end.position.y, start.x=projected.ballmark.x, start.y=projected.ballmark.y)
 
-
-insert_df <- transform(fed16_df, p.start.position.x=lag.p.end.position.x, p.end.position.x=p.start.position.x,p.start.position.y=lag.p.end.position.y, p.end.position.y=p.start.position.y, oppo.start.position.x=lag.oppo.end.position.x, oppo.end.position.x=oppo.start.position.x,oppo.start.position.y=lag.oppo.end.position.y, oppo.end.position.y=oppo.start.position.y, start.x=projected.ballmark.x, start.y=projected.ballmark.y)
-
-fed16_pos <- bind_rows(fed16_df, setNames(insert_df, names(fed16_df))) %>% 
+fed_pos <- bind_rows(fed16_df, setNames(join_df, names(fed16_df))) %>% 
            arrange(rally.number, shot)
 
-fed16_pos <- fed16_pos %>%
+fed_pos <- fed_pos %>%
   group_by(rally.number, idx = cumsum(event == 1L)) %>%
   mutate(location.id= row_number()) %>%
   ungroup
 
-fed16_pos <- fed16_pos %>%
+fed_pos <- fed_pos %>%
   group_by(rally.number) %>%
   mutate(pos.rally.count= 1:n()) %>%
   ungroup
 ``` 
-
 
  
 ```{r rally variables}
@@ -793,10 +778,21 @@ library(grid)
 #   ggtitle("Federer positions in longest rally") 
 ```
 
-```{r}
-trial_df <- filter(fed16_pos, final.shot >= 14)
+```{r static player positions}
+trial_df <- filter(fed_pos, final.shot >= 14)
 
- p.rally.paths <- ggplot(trial_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y))    + geom_point(aes(alpha = shot))  + geom_path(  arrow = arrow(angle = 15)) +  facet_wrap(~rally.number) + xlab("Federer Position X ") + ylab("Federer Position Y") + ggtitle("Federer start and end positions for rallies 14 shots or longer") 
+ p.rally.paths <- ggplot(trial_df, aes(x=p.start.position.x,  y=p.start.position.y))    + 
+   scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+   geom_point(aes(alpha = shot))  + 
+   geom_path(  arrow = arrow(angle = 15)) + 
+   facet_wrap(~rally.number) + 
+   xlab("Federer Position X ") + 
+   ylab("Federer Position Y") + 
+   ggtitle("Federer start and end positions for rallies 14 shots or longer") 
  p.rally.paths <- ggplotly(p.rally.paths)
    
  p.rally.paths
@@ -806,7 +802,16 @@ trial_df <- filter(fed16_pos, final.shot >= 14)
 
 ```{r}
  
-oppo.rally.paths <- ggplot(trial_df, aes(x=oppo.start.position.x, xend=oppo.end.position.x, y=oppo.start.position.y, yend=oppo.end.position.y))    + geom_point()  + geom_segment(arrow = arrow(angle = 15)) +  facet_wrap(~rally.number) + xlab("Opponent Position X ") + ylab("Opponent Position Y") + ggtitle("Opponent start and end positions for for rallies 14 shots or longer")  
+oppo.rally.paths <- ggplot(trial_df, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+  scale_y_continuous(breaks = axis_labels$y.break) +
+  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+  coord_fixed() +
+  geom_point(aes(alpha = shot))  + 
+  geom_path(  arrow = arrow(angle = 15)) +   
+  facet_wrap(~rally.number) + xlab("Opponent Position X ") + ylab("Opponent Position Y") +
+  ggtitle("Opponent start and end positions for for rallies 14 shots or longer")  
 oppo.rally.paths <- ggplotly(oppo.rally.paths)
 oppo.rally.paths
 ```
@@ -835,38 +840,13 @@ animate(p.rally.anim, duration = 30, fps = 10)
 ```
 
 
-```{r}
-Xpoint1_df <- fed16_df %>% 
-  filter(rally.number == 1, shot == 3) %>%
-  select(p.start.position.x,  oppo.start.position.x,  start.x ) %>%
-  gather( XPosition,  X ) 
-head(point1)
-Ypoint1_df<- fed16_df %>% 
-  filter(rally.number == 1, shot == 3) %>%
-  select(p.start.position.y,  oppo.start.position.y,  start.y ) %>%
-  gather( YPosition,  Y ) 
-head(point1)
-point1_df <- merge(Xpoint1_df, Ypoint1_df, by=0)
-```
 
 
-```{r}
-hull_df <- point1_df %>%
-  select(X,Y)
-c.hull <- chull(hull_df)
-c.hull2 <- c(c.hull)
-
-```
-```{r}
-hull2_df <- as.data.frame(cbind(1,hull_df[c.hull2 ,]$X,hull_df[c.hull2 ,]$Y))
-colnames(hull2_df) <- c('ID','X','Y')
 
 
-```
 
-```{r}
-ggplot(hull2_df, aes(x=X, y=Y)) + geom_polygon() 
-```
+
+
 ```{r}
 # library(depmixS4)
 # t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = p.start.position.x , data = fed16_df, nstates = 2, family=list(multinomial("identity"),gaussian()))
@@ -878,22 +858,7 @@ ggplot(hull2_df, aes(x=X, y=Y)) + geom_polygon()
 ```{r}
 check_df <- filter(fed16_pos, rally.number == "9")
 ```
-```{r}
-join_df <- transform(fed16_df, p.start.position.x=p.end.position.x, p.start.position.y=p.end.position.y, oppo.start.position.x=oppo.end.position.x, oppo.start.position.y=oppo.end.position.y, start.x=projected.ballmark.x, start.y=projected.ballmark.y)
 
-fed_pos <- bind_rows(fed16_df, setNames(join_df, names(fed16_df))) %>% 
-           arrange(rally.number, shot)
-
-fed_pos <- fed_pos %>%
-  group_by(rally.number, idx = cumsum(event == 1L)) %>%
-  mutate(location.id= row_number()) %>%
-  ungroup
-
-fed_pos <- fed_pos %>%
-  group_by(rally.number) %>%
-  mutate(pos.rally.count= 1:n()) %>%
-  ungroup
-``` 
 ```{r}
 longest_pos <- filter(fed_pos, final.shot == 17)
 longral_pos <- filter(fed_pos, final.shot >= 10)
@@ -901,10 +866,8 @@ longral_pos <- filter(fed_pos, final.shot >= 10)
 
 ```{r}
 p.rally.anim8 <- ggplot() + 
-  scale_x_continuous(breaks = axis_labels$x.break,
-                       labels = axis_labels$x.label) +
-    scale_y_continuous(breaks = axis_labels$y.break,
-                       labels = axis_labels$y.label) +
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
     geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
     geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
     coord_fixed() +
@@ -917,7 +880,7 @@ p.rally.anim8 <- ggplot() +
   facet_wrap(~rally.number ) +
   xlab("Player Position X ") + 
   ylab("Player Position Y") + 
-  ggtitle("Longest Rally Animation")+
+  ggtitle("Animation for Federer 2016 rallies 10 shots or more")+
   scale_colour_manual(name = "", values=c("red","green","blue"), labels= c("Berdych","Ball","Federer"))
 
 #had to reverse geom_point colour labels for some reason
@@ -925,27 +888,25 @@ p.rally.anim8 <- ggplot() +
 animate(p.rally.anim8, duration = 30, fps = 10)
 ```
 ```{r}
-thirtyfour.df <- filter(longral_pos, rally.number=="34")
+seventythree.df <- filter(longral_pos, rally.number=="73")
 
 ```
 ```{r}
 p.rally.anim9 <- ggplot() + 
-  scale_x_continuous(breaks = axis_labels$x.break,
-                       labels = axis_labels$x.label) +
-    scale_y_continuous(breaks = axis_labels$y.break,
-                       labels = axis_labels$y.label) +
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
     geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
     geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
     coord_fixed() +
-  geom_point(data= thirtyfour.df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) +
-  geom_path(data= thirtyfour.df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
-  geom_point(data= thirtyfour.df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, colour="blue")) +
-  geom_path(data= thirtyfour.df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, alpha = shot)) +
-  geom_point(data= thirtyfour.df, aes(x=start.x, y=start.y, group = rally.number, colour="green")) +
+  geom_point(data= seventythree.df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) +
+  geom_path(data= seventythree.df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
+  geom_point(data= seventythree.df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, colour="blue")) +
+  geom_path(data= seventythree.df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, alpha = shot)) +
+  geom_point(data= seventythree.df, aes(x=start.x, y=start.y, group = rally.number, colour="green")) +
   transition_reveal(pos.rally.count) +
   xlab("Player Position X ") + 
   ylab("Player Position Y") + 
-  ggtitle("Longest Rally Animation")+
+  ggtitle("Federer 2016 Longest Rally Animation")+
   scale_colour_manual(name = "", values=c("red","green","blue"), labels= c("Berdych","Ball","Federer"))
 
 #had to reverse geom_point colour labels for some reason
