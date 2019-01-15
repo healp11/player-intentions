@@ -494,7 +494,52 @@ for (i in 3:nrow(fed16_df)) {
 
 
 
+
 ```{r}
+fed16_df <- fed16_df %>%
+  mutate(oppo.start.server.x = ifelse(server != "FEDERER", start.server.x, 0)) 
+```
+
+
+```{r str}
+#to view collums that have been truncated
+#str(fed16_df, list.len = ncol(fed16_df))
+
+str(seventythree_df, list.len = ncol(seventythree_df))
+
+
+```
+
+
+
+
+
+```{r}
+# na.omit(fed16_df)
+```
+```{r Player/Ball Position rows }
+
+#creating new rows so that every second row start and end player positions are switched
+#Also creating new rows so that every second row in start.x,/start.y is projected ballmark
+#this allows us to better plot player positions as well as track positions for animations
+
+join_df <- transform(fed16_df, p.start.position.x=p.end.position.x, p.start.position.y=p.end.position.y, oppo.start.position.x=oppo.end.position.x, oppo.start.position.y=oppo.end.position.y, start.x=projected.ballmark.x, start.y=projected.ballmark.y)
+
+fed_pos <- bind_rows(fed16_df, setNames(join_df, names(fed16_df))) %>% 
+           arrange(rally.number, shot)
+
+fed_pos <- fed_pos %>%
+  group_by(rally.number, idx = cumsum(event == 1L)) %>%
+  mutate(location.id= row_number()) %>%
+  ungroup
+
+fed_pos <- fed_pos %>%
+  group_by(rally.number) %>%
+  mutate(pos.rally.count= 1:n()) %>%
+  ungroup
+``` 
+
+```{r fed_only}
 #remove opponents
 fed_no.opp <- fed16_df %>% 
   dplyr::filter(impact.player == "FEDERER")
@@ -528,24 +573,6 @@ fed_only <- fed_only %>%
 #Adjusting to remove NAs and replace with 0s for modelling
 fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 ```
-```{r}
-fed16_df <- fed16_df %>%
-  mutate(oppo.start.server.x = ifelse(server != "FEDERER", start.server.x, 0)) 
-```
-
-
-```{r str}
-#to view collums that have been truncated
-str(fed16_df, list.len = ncol(fed16_df))
-
-# str(longest_df, list.len = ncol(longest_df))
-
-
-```
-
-
-
-
 ```{r}
 ##Plots of shot and ballmark co-ordinates, angles made by shots and speed measures
 library(ggplot2)
@@ -583,38 +610,13 @@ ggplot(fed_only) + geom_density(aes(speed.ratio, group = factor(winner), color=f
 
 ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
 ```
-```{r}
-# na.omit(fed16_df)
-```
-```{r Player/Ball Position rows }
-
-#creating new rows so that every second row start and end player positions are switched
-#Also creating new rows so that every second row in start.x,/start.y is projected ballmark
-#this allows us to better plot player positions as well as track positions for animations
-
-join_df <- transform(fed16_df, p.start.position.x=p.end.position.x, p.start.position.y=p.end.position.y, oppo.start.position.x=oppo.end.position.x, oppo.start.position.y=oppo.end.position.y, start.x=projected.ballmark.x, start.y=projected.ballmark.y)
-
-fed_pos <- bind_rows(fed16_df, setNames(join_df, names(fed16_df))) %>% 
-           arrange(rally.number, shot)
-
-fed_pos <- fed_pos %>%
-  group_by(rally.number, idx = cumsum(event == 1L)) %>%
-  mutate(location.id= row_number()) %>%
-  ungroup
-
-fed_pos <- fed_pos %>%
-  group_by(rally.number) %>%
-  mutate(pos.rally.count= 1:n()) %>%
-  ungroup
-``` 
-
  
 ```{r rally variables}
 #examining rallies to look at side to side movement within rallies. Starting with the longest rally.
-longral_df <- filter(fed16_pos, final.shot >= 10)
+longral_df <- filter(fed_pos, final.shot >= 10)
 ```
 ```{r}
-longest_df <- filter(fed16_pos, final.shot == 17)
+longest_df <- filter(fed_pos, final.shot == 17)
 ```
 
 ```{r}
@@ -841,22 +843,8 @@ animate(p.rally.anim, duration = 30, fps = 10)
 
 
 
-
-
-
-
-
-
 ```{r}
-# library(depmixS4)
-# t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = p.start.position.x , data = fed16_df, nstates = 2, family=list(multinomial("identity"),gaussian()))
-# t2.fm1<- fit(t2.mod1)
-# summary(t2.fm1)
-``` 
-
-
-```{r}
-check_df <- filter(fed16_pos, rally.number == "9")
+check_df <- filter(fed_pos, rally.number == "9")
 ```
 
 ```{r}
@@ -888,7 +876,7 @@ p.rally.anim8 <- ggplot() +
 animate(p.rally.anim8, duration = 30, fps = 10)
 ```
 ```{r}
-seventythree.df <- filter(longral_pos, rally.number=="73")
+seventythree_df <- filter(longral_pos, rally.number=="73")
 
 ```
 ```{r}
@@ -898,11 +886,11 @@ p.rally.anim9 <- ggplot() +
     geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
     geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
     coord_fixed() +
-  geom_point(data= seventythree.df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) +
-  geom_path(data= seventythree.df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
-  geom_point(data= seventythree.df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, colour="blue")) +
-  geom_path(data= seventythree.df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, alpha = shot)) +
-  geom_point(data= seventythree.df, aes(x=start.x, y=start.y, group = rally.number, colour="green")) +
+  geom_point(data= seventythree_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) +
+  geom_path(data= seventythree_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
+  geom_point(data= seventythree_df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, colour="blue")) +
+  geom_path(data= seventythree_df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, alpha = shot)) +
+  geom_point(data= seventythree_df, aes(x=start.x, y=start.y, group = rally.number, colour="green")) +
   transition_reveal(pos.rally.count) +
   xlab("Player Position X ") + 
   ylab("Player Position Y") + 
@@ -913,5 +901,37 @@ p.rally.anim9 <- ggplot() +
 
 animate(p.rally.anim9, duration = 30, fps = 10)
 ```
+
+##Glossary of added variables
+
+lastshot - last shot in the point
+fedhit - federer hits the shot
+isserver - if server hits the shot
+winner - if shot is winner (i.e. point doesn’t end in error, as opponent doesn’t reach the ball)
+speed.diff - difference in current shot speed vs opponents last shot speed (at impact)
+speed.ratio - shot speed/opponent’s previous shot speed
+speed1 - speed of shot from impact with racquet
+o.angle - angle made by opponents previous shot
+p.angle - angle made by player’s current shot
+lag.p.angle - angle made by player’s previous shot in rally
+lag.speed.ratio - speed ratio of player’s previous in rally
+oppo.hit - coordinates of opponents previous impact
+
+
+
+
+
+##Modelling
+
+## Type 1: Simple Models, Independent of Match Score/Situation
+
+```{r t1m1}
+library(depmixS4)
+library(dplyr)
+t1.mod1 <- depmix(winner ~ 1, transition = ~ start.x + p.start.position.x + shot,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.fm1 <- fit(t1.mod1)
+summary(t1.fm1)
+```
+
 
 
