@@ -548,6 +548,10 @@ fed_pos <- fed_pos %>%
   ungroup
 ``` 
 
+
+
+
+
 ```{r fed_only}
 #remove opponents
 fed_no.opp <- fed16_df %>% 
@@ -582,6 +586,26 @@ fed_only <- fed_only %>%
 #Adjusting to remove NAs and replace with 0s for modelling
 fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 ```
+
+```{r shot types}
+dlb_pos <- filter(fed_pos, down.line.backhand == "TRUE")
+
+dlb_df <- filter(fed16_df, down.line.backhand == "TRUE")
+
+dlb_fedonly <- filter(fed_only, down.line.backhand == "TRUE")
+
+iof_fedonly <- filter(fed_only, inside.out.forehand == "TRUE")
+
+dlw_fedonly <- filter(fed_only, down.line.winner == "TRUE")
+```
+
+
+
+
+
+
+
+
 ```{r}
 ##Plots of shot and ballmark co-ordinates, angles made by shots and speed measures
 library(ggplot2)
@@ -933,7 +957,7 @@ oppo.hit - coordinates of opponents previous impact
 
 
 ##Visualisation
-```{r player baseline distance differentials}
+```{r player baseline/centre distance differentials}
 
 ggplot(longral_pos, aes(x=shot,y=p.start.position.base.diff)) +
   geom_point() +
@@ -950,11 +974,64 @@ ggplot() +
   geom_hline(yintercept = 0, linetype = "dotdash") + 
   facet_wrap(~rally.number) + 
   xlab("Shot Number")  + 
-  ylab("Distance from centre Federer and Opponent") + 
+  ylab("Distance from centre for Federer and Opponent") + 
   ggtitle("Federer vs Opponent distance from centre in rallies 10 shots or more") +
   scale_colour_manual(name = "Player", values=c("blue","red"), labels= c("Federer","Berdych"))
   
   
+```
+```{r speed/acceleration differentials}
+ggplot() + 
+  geom_path(data=longral_df, aes(x = shot, y = p.avg.speed, col="blue")) +
+  geom_path(data=longral_df, aes(x = shot, y = oppo.avg.speed, col="red")) + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Avg Movement Speed m/s  Federer and Opponent") + 
+  ggtitle("Federer vs Opponent Avg Movement Speed in Rallies 10 shots or more") +
+  scale_colour_manual(name = "Player", values=c("blue","red"), labels= c("Federer","Berdych"))
+
+ggplot(longral_pos, aes(x=shot,y=avg.player.speed.diff)) +
+  geom_path() + 
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Difference Avg Movement Speed m/s  Federer vs Opponent") + 
+  ggtitle("Federer vs Opponent difference Avg Movement Speed m/s  Federer and Opponent in rallies 10 shots or more")
+
+```
+```{r Shot Type by coordinates}
+ggplot(dlb_fedonly, aes(x=start.x,y=start.y)) + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point() + 
+  xlab("X Coordinate") + 
+  ylab("Y Coordinate") + 
+  ggtitle("Federer Down the Line Backhands By Shot Co-Ordinates") 
+
+ggplot(iof_fedonly, aes(x=start.x,y=start.y)) + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point() + 
+  xlab("X Coordinate") + 
+  ylab("Y Coordinate") + 
+  ggtitle("Federer Inside out Forehands By Shot Co-Ordinates") 
+
+ggplot(dlw_fedonly, aes(x=start.x,y=start.y)) + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point() + 
+  xlab("X Coordinate") + 
+  ylab("Y Coordinate") + 
+  ggtitle("Federer Down the Line Winners By Shot Co-Ordinates")
 ```
 
 
@@ -965,10 +1042,15 @@ ggplot() +
 ```{r t1m1}
 library(depmixS4)
 library(dplyr)
-t1.mod1 <- depmix(winner ~ 1, transition = ~ start.x + p.start.position.x + shot,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.mod1 <- depmix(winner ~ 1, transition = ~ start.x + start.y +p.start.position.x + p.start.position.y +  projected.ballmark.x + p.start.position.base.diff + p.end.position.base.diff + avg.player.speed.diff + p.start.position.centre.diff + p.end.position.centre.diff,  data = fed_only, nstates = 2, family=multinomial("identity"))
 t1.fm1 <- fit(t1.mod1)
 summary(t1.fm1)
 ```
 
 
+```{r}
+t1.mod2 <- depmix(winner ~ 1, transition = ~ start.x + start.y +p.start.position.x + p.start.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.fm2 <- fit(t1.mod2)
+summary(t1.fm2)
+```
 
