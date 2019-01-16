@@ -263,7 +263,16 @@ fed16_df <- fed16_df %>%
   mutate(p.start.position.base.dist = 11.89 - abs(p.start.position.x)) %>%
   mutate(p.end.position.base.dist = 11.89 - abs(p.end.position.x)) %>%
   mutate(oppo.start.position.base.dist = 11.89 - abs(oppo.start.position.x)) %>%
-  mutate(oppo.end.position.base.dist = 11.89 - abs(oppo.end.position.x))
+  mutate(oppo.end.position.base.dist = 11.89 - abs(oppo.end.position.x)) %>%
+  mutate(oppo.start.position.base.diff = p.start.position.base.dist - oppo.start.position.base.dist) %>%
+  mutate(p.start.position.base.diff = oppo.start.position.base.dist -p.start.position.base.dist) %>%
+  mutate(oppo.end.position.base.diff = p.end.position.base.dist - oppo.end.position.base.dist) %>%
+  mutate(p.end.position.base.diff = oppo.end.position.base.dist -p.end.position.base.dist) %>%
+  mutate(p.start.position.centre.diff = abs(oppo.start.position.y)-abs(p.start.position.y)) %>%
+  mutate(p.end.position.centre.diff = abs(oppo.end.position.y)-abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.centre.diff = abs(p.start.position.y)-abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.centre.diff = abs(p.end.position.y)-abs(oppo.end.position.y))
+  
   
 ```
 ```{r}
@@ -886,11 +895,16 @@ p.rally.anim9 <- ggplot() +
     geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
     geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
     coord_fixed() +
-  geom_point(data= seventythree_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) +
-  geom_path(data= seventythree_df, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
-  geom_point(data= seventythree_df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, colour="blue")) +
-  geom_path(data= seventythree_df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, alpha = shot)) +
-  geom_point(data= seventythree_df, aes(x=start.x, y=start.y, group = rally.number, colour="green")) +
+  geom_point(data= seventythree_df, 
+             aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) +
+  geom_path(data= seventythree_df, 
+            aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
+  geom_point(data= seventythree_df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  
+                                        group = rally.number, colour="blue")) +
+  geom_path(data= seventythree_df,aes(x=oppo.start.position.x, y=oppo.start.position.y,  
+                                      group = rally.number, alpha = shot))+
+  geom_point(data= seventythree_df, 
+             aes(x=start.x, y=start.y, group = rally.number, colour="green")) +
   transition_reveal(pos.rally.count) +
   xlab("Player Position X ") + 
   ylab("Player Position Y") + 
@@ -918,7 +932,30 @@ lag.speed.ratio - speed ratio of player’s previous in rally
 oppo.hit - coordinates of opponents previous impact
 
 
+##Visualisation
+```{r player baseline distance differentials}
 
+ggplot(longral_pos, aes(x=shot,y=p.start.position.base.diff)) +
+  geom_point() +
+  geom_path() + 
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Difference in distance from baseline Federer Vs Opponent") + 
+  ggtitle("Federer vs Opponent difference in baseline distance in rallies 10 shots or more")
+
+ggplot() + 
+  geom_path(data=longral_pos, aes(x = shot, y = p.start.position.y, col="blue")) +
+  geom_path(data=longral_pos, aes(x = shot, y = oppo.start.position.y, col="red")) +
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Distance from centre Federer and Opponent") + 
+  ggtitle("Federer vs Opponent distance from centre in rallies 10 shots or more") +
+  scale_colour_manual(name = "Player", values=c("blue","red"), labels= c("Federer","Berdych"))
+  
+  
+```
 
 
 ##Modelling
