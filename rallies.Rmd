@@ -26,7 +26,7 @@ Shaping data to recreate the variables used in ("Federer AO 2017.Rmd")'Federer v
 
 #### Sorting the matches
 
-```{r df}
+```{r }
 djo16_df <- filter(rallies, year == 2016, h2h == "DJOKOVIC CHUNG" )
 djo16_df <- arrange(djo16_df, matchid, set, game, point, shot)
 
@@ -70,8 +70,8 @@ thi17_df <- arrange(thi17_df, matchid, set, game, point, shot)
 Starting with fed16 to compare to fed17
 
 
-
-```{r df temporarily removing inversion of y axis}
+#temporarily removing inversion of y axis
+```{r  }
 
 #Reorienting shots so that all Federer's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
 fed16_df <- fed16_df %>% rowwise %>%
@@ -89,7 +89,8 @@ fed16_df <- fed16_df %>% rowwise %>%
 ```
 
 
-```{r temporarily removing inversion of y axis}
+```{r }
+#temporarily removing inversion of y axis
 #Reorienting player positions so that all Federer's & Opponents start/end positions match reoriented ballmarks
 #For Federer
 fed16_df <- fed16_df %>% rowwise %>%
@@ -104,7 +105,10 @@ fed16_df <- fed16_df %>% rowwise %>%
   #mutate(end.receiver.y = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(end.receiver.x = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.x, end.receiver.x)) 
 ```
-```{r temporarily removing inversion of y axis}
+
+```{r }
+
+#temporarily removing inversion of y axis
 #For Opponent
 fed16_df <- fed16_df %>% rowwise %>%
   mutate(start.server.x = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.x, start.server.x)) %>%
@@ -509,12 +513,12 @@ fed16_df <- fed16_df %>%
   mutate(oppo.start.server.x = ifelse(server != "FEDERER", start.server.x, 0)) 
 ```
 
-
-```{r str}
+#str
+```{r }
 #to view collums that have been truncated
 #str(fed16_df, list.len = ncol(fed16_df))
 
-str(seventythree_df, list.len = ncol(seventythree_df))
+#str(seventythree_df, list.len = ncol(seventythree_df))
 
 
 ```
@@ -526,7 +530,8 @@ str(seventythree_df, list.len = ncol(seventythree_df))
 ```{r}
 # na.omit(fed16_df)
 ```
-```{r Player/Ball Position rows }
+#Player/Ball Position rows
+```{r  }
 
 #creating new rows so that every second row start and end player positions are switched
 #Also creating new rows so that every second row in start.x,/start.y is projected ballmark
@@ -551,8 +556,8 @@ fed_pos <- fed_pos %>%
 
 
 
-
-```{r fed_only}
+##fed_only
+```{r }
 #remove opponents
 fed_no.opp <- fed16_df %>% 
   dplyr::filter(impact.player == "FEDERER")
@@ -587,7 +592,8 @@ fed_only <- fed_only %>%
 fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 ```
 
-```{r shot types}
+```{r }
+#shot types
 dlb_pos <- filter(fed_pos, down.line.backhand == "TRUE")
 
 dlb_df <- filter(fed16_df, down.line.backhand == "TRUE")
@@ -644,7 +650,8 @@ ggplot(fed_only) + geom_density(aes(speed.ratio, group = factor(winner), color=f
 ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
 ```
  
-```{r rally variables}
+```{r }
+#rally variables
 #examining rallies to look at side to side movement within rallies. Starting with the longest rally.
 longral_df <- filter(fed_pos, final.shot >= 10)
 ```
@@ -676,9 +683,9 @@ ggplot(fed16_df, aes(x=base.dist,y=o.angle)) + geom_smooth() + xlab("Distance fr
 
 
 ```
-
-```{r Top down court view}
-
+#Top down court view
+```{r }
+#
 library(plotly)
 #--- Packages Required
 # require(ggplot2)
@@ -813,7 +820,9 @@ library(grid)
 #   ggtitle("Federer positions in longest rally") 
 ```
 
-```{r static player positions}
+```{r }
+
+#static player positions
 trial_df <- filter(fed_pos, final.shot >= 14)
 
  p.rally.paths <- ggplot(trial_df, aes(x=p.start.position.x,  y=p.start.position.y))    + 
@@ -856,9 +865,9 @@ library(gganimate)
 library(tweenr)
 library(transformr)
 ```
+#player rally animation
 
-
-```{r player rally animation}
+```{r }
 
 
 p.rally.anim <- ggplot(longest_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y)) + 
@@ -958,7 +967,9 @@ oppo.hit - coordinates of opponents previous impact
 
 
 ##Visualisation
-```{r player baseline/centre distance differentials}
+```{r }
+#player baseline/centre distance differentials
+
 
 ggplot(longral_pos, aes(x=shot,y=p.start.position.base.diff)) +
   geom_point() +
@@ -981,7 +992,8 @@ ggplot() +
   
   
 ```
-```{r speed/acceleration differentials}
+```{r }
+#speed/acceleration differentials
 ggplot() + 
   geom_path(data=longral_df, aes(x = shot, y = p.avg.speed, col="blue")) +
   geom_path(data=longral_df, aes(x = shot, y = oppo.avg.speed, col="red")) + 
@@ -1000,7 +1012,8 @@ ggplot(longral_pos, aes(x=shot,y=avg.player.speed.diff)) +
   ggtitle("Federer vs Opponent difference in Avg Movement Speed m/s  Federer and Opponent in rallies 10 shots or more")
 
 ```
-```{r Shot Type by coordinates}
+```{r }
+#Shot Type by coordinates
 ggplot(dlb_fedonly, aes(x=start.x,y=start.y)) + 
   scale_x_continuous(breaks = axis_labels$x.break) +
     scale_y_continuous(breaks = axis_labels$y.break) +
@@ -1040,7 +1053,8 @@ ggplot(dlw_fedonly, aes(x=start.x,y=start.y)) +
 
 ###Replicating some models from winter project
 
-```{r t1m1}
+```{r }
+#t1m1
 library(depmixS4)
 library(dplyr)
 
