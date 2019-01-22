@@ -850,6 +850,7 @@ oppo.rally.paths <- ggplot(trial_df, aes(x=oppo.start.position.x,  y=oppo.start.
 oppo.rally.paths <- ggplotly(oppo.rally.paths)
 oppo.rally.paths
 ```
+
 ```{r}
 library(gganimate)
 library(tweenr)
@@ -996,7 +997,7 @@ ggplot(longral_pos, aes(x=shot,y=avg.player.speed.diff)) +
   facet_wrap(~rally.number) + 
   xlab("Shot Number")  + 
   ylab("Difference Avg Movement Speed m/s  Federer vs Opponent") + 
-  ggtitle("Federer vs Opponent difference Avg Movement Speed m/s  Federer and Opponent in rallies 10 shots or more")
+  ggtitle("Federer vs Opponent difference in Avg Movement Speed m/s  Federer and Opponent in rallies 10 shots or more")
 
 ```
 ```{r Shot Type by coordinates}
@@ -1037,20 +1038,71 @@ ggplot(dlw_fedonly, aes(x=start.x,y=start.y)) +
 
 ##Modelling
 
-## Type 1: Simple Models, Independent of Match Score/Situation
+###Replicating some models from winter project
 
 ```{r t1m1}
 library(depmixS4)
 library(dplyr)
-t1.mod1 <- depmix(winner ~ 1, transition = ~ start.x + start.y +p.start.position.x + p.start.position.y +  projected.ballmark.x + p.start.position.base.diff + p.end.position.base.diff + avg.player.speed.diff + p.start.position.centre.diff + p.end.position.centre.diff,  data = fed_only, nstates = 2, family=multinomial("identity"))
+
+t1.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x, data = fed_only, nstates = 2, family=multinomial("identity"))
 t1.fm1 <- fit(t1.mod1)
+
 summary(t1.fm1)
 ```
 
-
 ```{r}
-t1.mod2 <- depmix(winner ~ 1, transition = ~ start.x + start.y +p.start.position.x + p.start.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
-t1.fm2 <- fit(t1.mod2)
-summary(t1.fm2)
+# library(depmixS4)
+# t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + ser1 + ser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=list(multinomial("identity"), gaussian()))
+# t2.fm1<- fit(t2.mod1)
+# 
+# summary(t2.fm1)
 ```
 
+
+## Type 5: Simple Models with New Variables, Independent of Match Score/Situation
+
+##Type 5 Model 1
+
+Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, p.start.position.x
+```{r}
+library(depmixS4)
+t5.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + p.start.position.x,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.fm1 <- fit(t5.mod1)
+summary(t5.fm1)
+```
+
+
+###Type 5 Model 2
+
+Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, start.y, p.start.position.x, p.start.position.y
+```{r}
+library(depmixS4)
+t5.mod2 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + start.y + p.start.position.x + p.start.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.fm2 <- fit(t5.mod2)
+summary(t5.fm2)
+
+```
+
+###Type 5 Model 3
+
+Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, start.y,  p.end.position.x, p.end.position.y
+
+end positions seem to decrease iterations
+```{r}
+library(depmixS4)
+t5.mod3 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + start.y +  p.end.position.x + p.end.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.fm3 <- fit(t5.mod3)
+summary(t5.fm3)
+
+```
+
+###Type 5 Model 4
+
+Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, start.y, p.start.position.x, p.start.position.y, projected.ballmark.x
+```{r}
+library(depmixS4)
+t5.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + start.y + p.start.position.x + p.start.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.fm4 <- fit(t5.mod4)
+summary(t5.fm4)
+
+```
