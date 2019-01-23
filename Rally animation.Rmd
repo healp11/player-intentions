@@ -72,22 +72,6 @@ library(transformr)
 ```
 #player rally animation
 
-```{r }
-
-
-p.rally.anim <- ggplot(longest_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y)) + 
-  geom_point() +
-  xlab("Federer Position X ") + 
-  ylab("Federer Position Y") + 
-  ggtitle("Federer start and end positions animated for longest rally") +
-  transition_states(location.id, transition_length = 2, state_length = 2) + 
-  shadow_mark(size = 2, colour = 'grey') +
-  transition_time(pos.rally.count) 
-  
-
-  
-animate(p.rally.anim, duration = 30, fps = 10)
-```
 
 ```{r}
 p.rally.anim8 <- ggplot() + 
