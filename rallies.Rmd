@@ -867,23 +867,6 @@ library(transformr)
 ```
 #player rally animation
 
-```{r }
-
-
-p.rally.anim <- ggplot(longest_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y)) + 
-  geom_point() +
-  xlab("Federer Position X ") + 
-  ylab("Federer Position Y") + 
-  ggtitle("Federer start and end positions animated for longest rally") +
-  transition_states(location.id, transition_length = 2, state_length = 2) + 
-  shadow_mark(size = 2, colour = 'grey') +
-  transition_time(pos.rally.count) 
-  
-
-  
-animate(p.rally.anim, duration = 30, fps = 10)
-```
-
 
 
 ```{r}
@@ -895,59 +878,17 @@ longest_pos <- filter(fed_pos, final.shot == 17)
 longral_pos <- filter(fed_pos, final.shot >= 10)
 ```
 
-```{r}
-p.rally.anim8 <- ggplot() + 
-  scale_x_continuous(breaks = axis_labels$x.break) +
-    scale_y_continuous(breaks = axis_labels$y.break) +
-    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
-    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
-    coord_fixed() +
-  geom_point(data= longral_pos, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) +
-  geom_path(data= longral_pos, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
-  geom_point(data= longral_pos, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, colour="blue")) +
-  geom_path(data= longral_pos, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, alpha = shot)) +
-  geom_point(data= longral_pos, aes(x=start.x, y=start.y, group = rally.number, colour="green")) +
-  transition_reveal(pos.rally.count) +
-  facet_wrap(~rally.number ) +
-  xlab("Player Position X ") + 
-  ylab("Player Position Y") + 
-  ggtitle("Animation for Federer 2016 rallies 10 shots or more")+
-  scale_colour_manual(name = "", values=c("red","green","blue"), labels= c("Berdych","Ball","Federer"))
 
-#had to reverse geom_point colour labels for some reason
-
-animate(p.rally.anim8, duration = 30, fps = 10)
-```
 ```{r}
 seventythree_df <- filter(longral_pos, rally.number=="73")
 
 ```
+
+
+
 ```{r}
-p.rally.anim9 <- ggplot() + 
-  scale_x_continuous(breaks = axis_labels$x.break) +
-    scale_y_continuous(breaks = axis_labels$y.break) +
-    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
-    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
-    coord_fixed() +
-  geom_point(data= seventythree_df, 
-             aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) +
-  geom_path(data= seventythree_df, 
-            aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
-  geom_point(data= seventythree_df, aes(x=oppo.start.position.x, y=oppo.start.position.y,  
-                                        group = rally.number, colour="blue")) +
-  geom_path(data= seventythree_df,aes(x=oppo.start.position.x, y=oppo.start.position.y,  
-                                      group = rally.number, alpha = shot))+
-  geom_point(data= seventythree_df, 
-             aes(x=start.x, y=start.y, group = rally.number, colour="green")) +
-  transition_reveal(pos.rally.count) +
-  xlab("Player Position X ") + 
-  ylab("Player Position Y") + 
-  ggtitle("Federer 2016 Longest Rally Animation")+
-  scale_colour_manual(name = "", values=c("red","green","blue"), labels= c("Berdych","Ball","Federer"))
-
-#had to reverse geom_point colour labels for some reason
-
-animate(p.rally.anim9, duration = 30, fps = 10)
+write.csv(longral_pos,"longral.csv")
+write.csv(seventythree_df,"longest.csv")
 ```
 
 ##Glossary of added variables
@@ -1073,7 +1014,7 @@ summary(t1.fm1)
 ```
 
 
-## Type 5: Simple Models with New Variables, Independent of Match Score/Situation
+## Type 5: Simple Models with New Variables, Independent of Match Score/Situation. FOcusing on player and ball positions
 
 ##Type 5 Model 1
 
