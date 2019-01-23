@@ -932,6 +932,17 @@ ggplot() +
   scale_colour_manual(name = "Player", values=c("blue","red"), labels= c("Federer","Berdych"))
   
   
+ggplot() + 
+  geom_path(data=longral_pos, aes(x = shot, y = p.start.position.base.dist, 
+                                  yend =p.end.position.base.dist, col="blue")) +
+  geom_path(data=longral_pos, aes(x = shot, y = oppo.start.position.base.dist,
+                                  yend =oppo.end.position.base.dist,col="red")) +
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Distance from baseline for Federer and Opponent") + 
+  ggtitle("Federer vs Opponent distance from baseline in rallies 10 shots or more") +
+  scale_colour_manual(name = "Player", values=c("blue","red"), labels= c("Federer","Berdych"))
 ```
 ```{r }
 #speed/acceleration differentials
@@ -1065,11 +1076,11 @@ summary(t5.fm4)
 
 ###Type 5 Model 5
 
-Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, start.y, p.start.position.x, p.start.position.y, projected.ballmark.x
+Response: winner, p.angle Covariates: oppo.speed, start.x, p.start.position.x, projected.ballmark.x, p.start.position.base.dist
 ```{r}
 library(depmixS4)
-t5.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + start.y + p.start.position.x + p.start.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
-t5.fm4 <- fit(t5.mod4)
-summary(t5.fm4)
+t5.mod5 <- depmix(winner ~ 1, transition = ~ oppo.speed + start.x + start.y + p.start.position.x + p.start.position.base.dist + projected.ballmark.x,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.fm5 <- fit(t5.mod5)
+summary(t5.fm5)
 
 ```
