@@ -1056,6 +1056,18 @@ summary(t5.fm3)
 Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, start.y, p.start.position.x, p.start.position.y, projected.ballmark.x
 ```{r}
 library(depmixS4)
+t5.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + start.y + p.start.position.x + p.start.position.y + projected.ballmark.x ,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.fm4 <- fit(t5.mod4)
+summary(t5.fm4)
+
+```
+
+
+###Type 5 Model 5
+
+Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, start.y, p.start.position.x, p.start.position.y, projected.ballmark.x
+```{r}
+library(depmixS4)
 t5.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + start.y + p.start.position.x + p.start.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
 t5.fm4 <- fit(t5.mod4)
 summary(t5.fm4)
