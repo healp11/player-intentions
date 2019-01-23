@@ -1029,10 +1029,10 @@ summary(t1.fm1)
 
 ##Type 5 Model 1
 
-Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, p.start.position.x
+Response: winner, p.angle Covariates: oppo.speed,  start.x, p.start.position.x
 ```{r}
 library(depmixS4)
-t5.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + p.start.position.x,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + start.x + p.start.position.x,  data = fed_only, nstates = 2, family=multinomial("identity"))
 t5.fm1 <- fit(t5.mod1)
 summary(t5.fm1)
 ```
@@ -1040,10 +1040,10 @@ summary(t5.fm1)
 
 ###Type 5 Model 2
 
-Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, start.y, p.start.position.x, p.start.position.y
+Response: winner, p.angle Covariates: oppo.speed,  start.x, start.y, p.start.position.x, p.start.position.y
 ```{r}
 library(depmixS4)
-t5.mod2 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + start.y + p.start.position.x + p.start.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.mod2 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y + p.start.position.x + p.start.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
 t5.fm2 <- fit(t5.mod2)
 summary(t5.fm2)
 
@@ -1051,12 +1051,12 @@ summary(t5.fm2)
 
 ###Type 5 Model 3
 
-Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, start.y,  p.end.position.x, p.end.position.y
+Response: winner, p.angle Covariates: oppo.speed,  start.x, start.y,  p.end.position.x, p.end.position.y
 
 end positions seem to decrease iterations
 ```{r}
 library(depmixS4)
-t5.mod3 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + start.y +  p.end.position.x + p.end.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.mod3 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y +  p.end.position.x + p.end.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
 t5.fm3 <- fit(t5.mod3)
 summary(t5.fm3)
 
@@ -1064,10 +1064,10 @@ summary(t5.fm3)
 
 ###Type 5 Model 4
 
-Response: winner, p.angle Covariates: oppo.speed, ser1, ser2, start.x, start.y, p.start.position.x, p.start.position.y, projected.ballmark.x
+Response: winner, p.angle Covariates: oppo.speed,  start.x, start.y, p.start.position.x, p.start.position.y, projected.ballmark.x
 ```{r}
 library(depmixS4)
-t5.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x + start.y + p.start.position.x + p.start.position.y + projected.ballmark.x ,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y + p.start.position.x + p.start.position.y + projected.ballmark.x ,  data = fed_only, nstates = 2, family=multinomial("identity"))
 t5.fm4 <- fit(t5.mod4)
 summary(t5.fm4)
 
