@@ -75,15 +75,15 @@ Starting with fed16 to compare to fed17
 
 #Reorienting shots so that all Federer's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
 fed16_df <- fed16_df %>% rowwise %>%
-  #mutate(projected.ballmark.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
-  #mutate(start.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.y, start.y))%>%
+  mutate(projected.ballmark.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(start.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.y, start.y))%>%
   mutate(projected.ballmark.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
   mutate(start.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.x, start.x)) 
 
 #Reorienting opponent shots
 fed16_df <- fed16_df %>% rowwise %>%
-  #mutate(start.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.y, start.y)) %>%
-  #mutate(projected.ballmark.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(start.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.y, start.y)) %>%
+  mutate(projected.ballmark.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
   mutate(projected.ballmark.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
   mutate(start.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.x, start.x))
 ```
@@ -94,15 +94,15 @@ fed16_df <- fed16_df %>% rowwise %>%
 #Reorienting player positions so that all Federer's & Opponents start/end positions match reoriented ballmarks
 #For Federer
 fed16_df <- fed16_df %>% rowwise %>%
+  mutate(start.server.y = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver.score == "FEDERER" & start.receiver.x >= 0, -start.receiver.y, start.receiver.y))%>%
   mutate(start.server.x = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.x, start.server.x)) %>%
-  #mutate(start.server.y = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.y, start.server.y)) %>%
-  #mutate(start.receiver.y = ifelse(receiver.score == "FEDERER" & start.receiver.x >= 0, -start.receiver.y, start.receiver.y))%>%
   mutate(start.receiver.x = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.x, start.receiver.x)) 
 
 fed16_df <- fed16_df %>% rowwise %>%
+  mutate(end.server.y = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(end.server.x = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.x, end.server.x)) %>%
-  #mutate(end.server.y = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.y, end.server.y)) %>%
-  #mutate(end.receiver.y = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(end.receiver.x = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.x, end.receiver.x)) 
 ```
 
@@ -111,15 +111,15 @@ fed16_df <- fed16_df %>% rowwise %>%
 #temporarily removing inversion of y axis
 #For Opponent
 fed16_df <- fed16_df %>% rowwise %>%
+  mutate(start.server.y = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver.score != "FEDERER" & start.receiver.x <= 0, -start.receiver.y, start.receiver.y))%>%
   mutate(start.server.x = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.x, start.server.x)) %>%
-  #mutate(start.server.y = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.y, start.server.y)) %>%
-  #mutate(start.receiver.y = ifelse(receiver.score != "FEDERER" & start.receiver.x <= 0, -start.receiver.y, start.receiver.y))%>%
   mutate(start.receiver.x = ifelse(receiver != "FEDERER" & start.receiver.x <= 0, -start.receiver.x, start.receiver.x)) 
 
 fed16_df <- fed16_df %>% rowwise %>%
+  mutate(end.server.y = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(end.server.x = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.x, end.server.x)) %>%
-  #mutate(end.server.y = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.y, end.server.y)) %>%
-  #mutate(end.receiver.y = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(end.receiver.x = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.x, end.receiver.x)) 
 ```
 
