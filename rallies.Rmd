@@ -96,12 +96,12 @@ fed16_df <- fed16_df %>% rowwise %>%
 fed16_df <- fed16_df %>% rowwise %>%
   mutate(start.server.y = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.y, start.server.y)) %>%
   mutate(start.receiver.y = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(end.server.y = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(start.server.x = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.x, start.server.x)) %>%
   mutate(start.receiver.x = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.x, start.receiver.x)) 
 
 fed16_df <- fed16_df %>% rowwise %>%
-  mutate(end.server.y = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.y, end.server.y)) %>%
-  mutate(end.receiver.y = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(end.server.x = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.x, end.server.x)) %>%
   mutate(end.receiver.x = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.x, end.receiver.x)) 
 ```
@@ -112,13 +112,13 @@ fed16_df <- fed16_df %>% rowwise %>%
 #For Opponent
 fed16_df <- fed16_df %>% rowwise %>%
   mutate(start.server.y = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.y, start.server.y)) %>%
-  mutate(start.receiver.y = ifelse(receiver.score != "FEDERER" & start.receiver.x <= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(start.receiver.y = ifelse(receiver != "FEDERER" & start.receiver.x <= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(end.server.y = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(start.server.x = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.x, start.server.x)) %>%
   mutate(start.receiver.x = ifelse(receiver != "FEDERER" & start.receiver.x <= 0, -start.receiver.x, start.receiver.x)) 
 
 fed16_df <- fed16_df %>% rowwise %>%
-  mutate(end.server.y = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.y, end.server.y)) %>%
-  mutate(end.receiver.y = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.y, end.receiver.y))%>%
   mutate(end.server.x = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.x, end.server.x)) %>%
   mutate(end.receiver.x = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.x, end.receiver.x)) 
 ```
@@ -1060,7 +1060,7 @@ summary(t1.fm1)
 
 ```{r}
 library(depmixS4)
-t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + ser1 + ser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only,  nstates = 2, family=list(multinomial("identity"), gaussian()))
+t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + ser1 + ser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=list(multinomial("identity"), gaussian()))
 t2.fm1<- fit(t2.mod1)
  
 summary(t2.fm1)
@@ -1560,29 +1560,49 @@ t6.fm40 <- fit(t6.mod40)
 summary(t6.fm40)
 ```
 
-#Type 6 model 41
-oppo.hit    
-```{r}
-library(depmixS4)
 
-t6.mod41 <- depmix(winner ~ 1, transition = ~ oppo.hit   , data = fed_only, nstates = 2, family=multinomial("identity"))
-t6.fm41<- fit(t6.mod41)
-
-summary(t6.fm41)
-```
 
 #test loop for depmix
 
-```{r}
-for(i in colnames(fed_only))
-{
-  t6.mod41 <- depmix(winner ~ 1, transition = ~ i   , data = fed_only, nstates = 2, family=multinomial("identity"))
-t6.fm41<- fit(t6.mod41)
 
-summary(t6.fm41)
+
+
+```{r}
+# recursive.factorial <- function(x) {
+# if (x == 0)    return (1)
+# else           return (x * recursive.factorial(x-1))
+# }
+
+loop_data <- fed_only[, -(1:77)]
+
+next_best_var <- function(data, column = NULL){
+  # if we know what variable to remove, remove it
+  if (!is.null(column)){
+    data <- data[, names(data) != column]
+  }
+  #if 1 variable remaining, add to model
+  if (ncol(data) == 1){
+    return(colnames(data))
+  }
+  #map over all available columns
+  
+  
+  
+  
+  
 }
 
+inside_func <- function(data, x){
+  depmix(winner ~ 1, data = data, transition = ~ x, nstates = 2, family=multinomial("identity"))
+  }
+
+# for every possible variable in data set
+Loop_trial <- ha %>% map(~ 
+  )
+   t6.mod41 <- depmix(winner ~ 1, data = fed_only, transition = ~ cova, nstates = 2, family=multinomial("identity"))
+ t6.fm41<- fit(t6.mod41)
+ 
+ summary(t6.fm41)
+ 
+ 
 ```
-
-
-
