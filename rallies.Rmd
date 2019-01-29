@@ -494,14 +494,12 @@ for (i in 1:nrow(fed16_df)) {
 }
 
 fed16_df <- fed16_df %>%
-  mutate(lag.p.angle = 0) %>%
-  mutate(lag.speed.ratio = 0)
+  group_by(rally.number) %>%
+  mutate(lag.p.angle = dplyr::lag(p.angle, n = 1, default = NA)) %>%
+  mutate(lag.speed.ratio = dplyr::lag(speed.ratio, n = 1, default = NA)) %>%
+  ungroup
 
-#Add p.angle and speed ratio of prior shot
-for (i in 3:nrow(fed16_df)) {
-  fed16_df$lag.p.angle[i] = ifelse(fed16_df$impact.player[i]==fed16_df$impact.player[i-2] & fed16_df$shot[i] >= 4, fed16_df$p.angle[i-2], 0)
-  fed16_df$lag.speed.ratio[i] = ifelse(fed16_df$impact.player[i]==fed16_df$impact.player[i-2] & fed16_df$shot[i] >= 4, fed16_df$speed.ratio[i-2], 0)
-}
+
 ```
 
 
@@ -528,7 +526,7 @@ fed16_df <- fed16_df %>%
 
 
 ```{r}
-# na.omit(fed16_df)
+#fed16_df <- na.omit(fed16_df)
 ```
 #Player/Ball Position rows
 ```{r  }
@@ -590,6 +588,8 @@ fed_only <- fed_only %>%
 
 #Adjusting to remove NAs and replace with 0s for modelling
 fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
+fed_only$lag.p.angle[is.na(fed_only$lag.p.angle)] <- 0
+fed_only$lag.lag.speed.ratio[is.na(fed_only$lag.speed.ratio)] <- 0
 ```
 
 ```{r }
@@ -1060,7 +1060,7 @@ summary(t1.fm1)
 
 ```{r}
 library(depmixS4)
-t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + ser1 + ser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=list(multinomial("identity"), gaussian()))
+t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + ser1 + ser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, na.allow = TRUE , nstates = 2, family=list(multinomial("identity"), gaussian()))
 t2.fm1<- fit(t2.mod1)
  
 summary(t2.fm1)
@@ -1121,7 +1121,7 @@ summary(t5.fm4)
 Response: winner, p.angle Covariates: oppo.speed, start.x, p.start.position.x, projected.ballmark.x, p.start.position.base.dist
 ```{r}
 library(depmixS4)
-t5.mod5 <- depmix(winner ~ 1, transition = ~ oppo.speed + start.x + start.y + p.start.position.x + p.start.position.base.dist + projected.ballmark.x,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.mod5 <- depmix(winner ~ 1, transition = ~ p.advantage + p.movement.angle.1 ,  data = fed_only, nstates = 2, family=multinomial("identity"))
 t5.fm5 <- fit(t5.mod5)
 summary(t5.fm5)
 
@@ -1228,11 +1228,11 @@ summary(t6.fm9)
 ```
 
 #Type 6 model 10
-oppo.avg.acceleraion
+oppo.avg.acceleration
 ```{r}
 library(depmixS4)
 
-t6.mod10 <- depmix(winner ~ 1, transition = ~ oppo.avg.acceleraion, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod10 <- depmix(winner ~ 1, transition = ~ oppo.avg.acceleration, data = fed_only, nstates = 2, family=multinomial("identity"))
 t6.fm10 <- fit(t6.mod10)
 
 summary(t6.fm10)
@@ -1401,7 +1401,7 @@ peak.player.acceleration.ratio
 ```{r}
 library(depmixS4)
 
-t6.mod26 <- depmix(winner ~ 1, transition = ~ peak.player.acceleration.ratio, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod26 <- depmix(winner ~ 1, transition = ~peak.player.acceleration.ratio, data = fed_only, nstates = 2, family=multinomial("identity"))
 t6.fm26 <- fit(t6.mod26)
 
 summary(t6.fm26)
@@ -1571,6 +1571,18 @@ t6.fm41<- fit(t6.mod41)
 summary(t6.fm41)
 ```
 
+#test loop for depmix
+
+```{r}
+for(i in colnames(fed_only))
+{
+  t6.mod41 <- depmix(winner ~ 1, transition = ~ i   , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.fm41<- fit(t6.mod41)
+
+summary(t6.fm41)
+}
+
+```
 
 
 
