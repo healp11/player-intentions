@@ -95,7 +95,7 @@ fed16_df <- fed16_df %>% rowwise %>%
 #For Federer
 fed16_df <- fed16_df %>% rowwise %>%
   mutate(start.server.y = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.y, start.server.y)) %>%
-  mutate(start.receiver.y = ifelse(receiver.score == "FEDERER" & start.receiver.x >= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(start.receiver.y = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.y, start.receiver.y))%>%
   mutate(start.server.x = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.x, start.server.x)) %>%
   mutate(start.receiver.x = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.x, start.receiver.x)) 
 
@@ -333,7 +333,7 @@ for (i in 1:nrow(fed16_df)) {
   
   
   p.movement.angle.1 <- atan(
-  ((abs(a1)-abs(a2))/(abs(b1)-abs(b2)))* 180/pi) 
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
   
   fed16_df$p.movement.angle.1[i] = ifelse(p.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.1,
                                           ifelse(p.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,360+p.movement.angle.1,
@@ -353,7 +353,7 @@ for (i in 2:nrow(fed16_df)) {
   b2 <- fed16_df$p.start.position.y[i+1]
   
   p.movement.angle.2 <- atan(
-  ((abs(a1)-abs(a2))/(abs(b1)-abs(b2)))* 180/pi) 
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
   
   fed16_df$p.movement.angle.2[i] = ifelse(p.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.2,
                                           ifelse(p.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,360+p.movement.angle.2,
@@ -376,7 +376,7 @@ for (i in 1:nrow(fed16_df)) {
   b2 <- fed16_df$oppo.end.position.y[i]
   
   oppo.movement.angle.1 <- atan(
-  ((abs(a1)-abs(a2))/(abs(b1)-abs(b2)))* 180/pi) 
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
   
   fed16_df$oppo.movement.angle.1[i] = ifelse(oppo.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0,180+oppo.movement.angle.1,
                                           ifelse(oppo.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,360+oppo.movement.angle.1,
@@ -394,7 +394,7 @@ for (i in 2:nrow(fed16_df)) {
   b2 <- fed16_df$oppo.start.position.y[i+1]
   
   oppo.movement.angle.2 <- atan(
-  ((abs(a1)-abs(a2))/(abs(b1)-abs(b2)))* 180/pi) 
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
   
   fed16_df$oppo.movement.angle.2[i] = ifelse(oppo.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+oppo.movement.angle.2,
                                           ifelse(oppo.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,360+oppo.movement.angle.2,
@@ -589,7 +589,7 @@ fed_only <- fed_only %>%
 #Adjusting to remove NAs and replace with 0s for modelling
 fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
 fed_only$lag.p.angle[is.na(fed_only$lag.p.angle)] <- 0
-fed_only$lag.lag.speed.ratio[is.na(fed_only$lag.speed.ratio)] <- 0
+fed_only$lag.speed.ratio[is.na(fed_only$lag.speed.ratio)] <- 0
 ```
 
 ```{r }
@@ -1060,7 +1060,7 @@ summary(t1.fm1)
 
 ```{r}
 library(depmixS4)
-t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + ser1 + ser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, na.allow = TRUE , nstates = 2, family=list(multinomial("identity"), gaussian()))
+t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + ser1 + ser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only,  nstates = 2, family=list(multinomial("identity"), gaussian()))
 t2.fm1<- fit(t2.mod1)
  
 summary(t2.fm1)
