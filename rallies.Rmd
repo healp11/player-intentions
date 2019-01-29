@@ -70,21 +70,21 @@ thi17_df <- arrange(thi17_df, matchid, set, game, point, shot)
 Starting with fed16 to compare to fed17
 
 
-#temporarily removing inversion of y axis
+#temporarily removing inversion of y axis 
 ```{r  }
 
 #Reorienting shots so that all Federer's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
 fed16_df <- fed16_df %>% rowwise %>%
-  mutate(projected.ballmark.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
   #mutate(projected.ballmark.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
   #mutate(start.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.y, start.y))%>%
+  mutate(projected.ballmark.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
   mutate(start.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.x, start.x)) 
 
 #Reorienting opponent shots
 fed16_df <- fed16_df %>% rowwise %>%
   #mutate(start.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.y, start.y)) %>%
-  mutate(projected.ballmark.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
   #mutate(projected.ballmark.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(projected.ballmark.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
   mutate(start.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.x, start.x))
 ```
 
