@@ -554,42 +554,44 @@ fed_pos <- fed_pos %>%
 
 
 
-##fed_only
+##fed16_only
 ```{r }
 #remove opponents
 fed_no.opp <- fed16_df %>% 
   dplyr::filter(impact.player == "FEDERER")
 
 #federer only - remove serves
-fed_only <- fed_no.opp %>%
+fed16_only <- fed_no.opp %>%
   filter(hitpoint != "S") %>%
   dplyr::select(-serveid)
 
 
 #First remove any errors for start, projected.ballmark, so that we are only looking at shots that we hit onto the other side
-#To check: ggplot(fed_only, aes(projected.ballmark.x, projected.ballmark.y)) + geom_point()
-fed_only <- fed_only %>%
+#To check: ggplot(fed16_only, aes(projected.ballmark.x, projected.ballmark.y)) + geom_point()
+fed16_only <- fed16_only %>%
   filter(oppo.hit.x >= 0) %>%
   filter(oppo.projected.ballmark.x <= 0) %>%
   filter(projected.ballmark.x >= 0)
 
 #Adding shot number cumulative count (functions as time)
 #check this for new data set .
-fed_only <- fed_only %>%
+fed16_only <- fed16_only %>%
   mutate(count = 1)
 
-  for (i in 2:nrow(fed_only)) {
-    if(fed_only$matchid[i]==fed_only$matchid[i-1]) {
-      fed_only$count[i] = fed_only$count[i-1] + 1
+  for (i in 2:nrow(fed16_only)) {
+    if(fed16_only$matchid[i]==fed16_only$matchid[i-1]) {
+      fed16_only$count[i] = fed16_only$count[i-1] + 1
     }
   }
 
   
 
 #Adjusting to remove NAs and replace with 0s for modelling
-fed_only$o.angle[is.na(fed_only$o.angle)] <- 0
-fed_only$lag.p.angle[is.na(fed_only$lag.p.angle)] <- 0
-fed_only$lag.speed.ratio[is.na(fed_only$lag.speed.ratio)] <- 0
+fed16_only$o.angle[is.na(fed16_only$o.angle)] <- 0
+fed16_only$lag.p.angle[is.na(fed16_only$lag.p.angle)] <- 0
+fed16_only$lag.speed.ratio[is.na(fed16_only$lag.speed.ratio)] <- 0
+fed16_only$p.start.x[is.na(fed16_only$p.start.x)] <- 0
+fed16_only$p.start.y[is.na(fed16_only$p.start.y)] <- 0
 ```
 
 ```{r }
@@ -598,11 +600,11 @@ dlb_pos <- filter(fed_pos, down.line.backhand == "TRUE")
 
 dlb_df <- filter(fed16_df, down.line.backhand == "TRUE")
 
-dlb_fedonly <- filter(fed_only, down.line.backhand == "TRUE")
+dlb_fedonly <- filter(fed16_only, down.line.backhand == "TRUE")
 
-iof_fedonly <- filter(fed_only, inside.out.forehand == "TRUE")
+iof_fedonly <- filter(fed16_only, inside.out.forehand == "TRUE")
 
-dlw_fedonly <- filter(fed_only, down.line.winner == "TRUE")
+dlw_fedonly <- filter(fed16_only, down.line.winner == "TRUE")
 ```
 
 
@@ -616,38 +618,38 @@ dlw_fedonly <- filter(fed_only, down.line.winner == "TRUE")
 ##Plots of shot and ballmark co-ordinates, angles made by shots and speed measures
 library(ggplot2)
 #X Co-ordinate of shot
-ggplot(fed_only, aes(x=start.x,winner)) + geom_smooth() + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
+ggplot(fed16_only, aes(x=start.x,winner)) + geom_smooth() + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
 
 #Opponents shot before
 library(hexbin)
-ggplot(fed_only, aes(x=oppo.hit.x,y=oppo.hit.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate of Oppo Shot") + ylab("Y Coordinate of Oppo Shot") + ggtitle("Count of Winners By Opponent's Shot Co-Ordinates")
+ggplot(fed16_only, aes(x=oppo.hit.x,y=oppo.hit.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate of Oppo Shot") + ylab("Y Coordinate of Oppo Shot") + ggtitle("Count of Winners By Opponent's Shot Co-Ordinates")
 ### Get help transforming this to proportion in each bin instead of raw count
 
 #Fed Shots on x-y plane
-ggplot(fed_only, aes(x=start.x,y=start.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates")
+ggplot(fed16_only, aes(x=start.x,y=start.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates")
 
 #Fed Ballmark by winner in x-y plane
-ggplot(fed_only, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Ballmark Co-Ordinates")
+ggplot(fed16_only, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Ballmark Co-Ordinates")
 
 
 #Angle of shots
-ggplot(fed_only, aes(x=o.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents Shot With Fed's Previous Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent Shot Angle")
+ggplot(fed16_only, aes(x=o.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents Shot With Fed's Previous Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent Shot Angle")
 
-ggplot(fed_only, aes(x=p.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's Shot Angle")
+ggplot(fed16_only, aes(x=p.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's Shot Angle")
 
-ggplot(fed_only) + geom_density(aes(p.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Fed Shot Angles")
+ggplot(fed16_only) + geom_density(aes(p.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Fed Shot Angles")
 
-ggplot(fed_only) + geom_density(aes(o.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Opponent Shot Angles")
+ggplot(fed16_only) + geom_density(aes(o.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Opponent Shot Angles")
 
 #Winners by oppo speed
-ggplot(fed_only) + geom_density(aes(oppo.speed, group = factor(winner), color=factor(winner)))
+ggplot(fed16_only) + geom_density(aes(oppo.speed, group = factor(winner), color=factor(winner)))
 
-ggplot(fed_only, aes(x=factor(winner),y=oppo.speed,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent Speed")
+ggplot(fed16_only, aes(x=factor(winner),y=oppo.speed,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent Speed")
 
 #Winners by speed ratio
-ggplot(fed_only) + geom_density(aes(speed.ratio, group = factor(winner), color=factor(winner)))
+ggplot(fed16_only) + geom_density(aes(speed.ratio, group = factor(winner), color=factor(winner)))
 
-ggplot(fed_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
+ggplot(fed16_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
 ```
  
 ```{r }
@@ -664,7 +666,7 @@ longest_df <- filter(fed_pos, final.shot == 17)
 
 ggplot(fed16_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For match")
 
-ggplot(fed_only, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Fed Only Speed ratio by distance from the baseline For match")
+ggplot(fed16_only, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Fed Only Speed ratio by distance from the baseline For match")
 
 ggplot(longral_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For Long Rallies")
 
@@ -677,7 +679,7 @@ ggplot(longest_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Dista
 
 ggplot(fed16_df, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Federer Shot Angle by distance from the baseline")
 
-ggplot(fed_only, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Fed only Shot Angle by distance from the baseline")
+ggplot(fed16_only, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Fed only Shot Angle by distance from the baseline")
 
 ggplot(fed16_df, aes(x=base.dist,y=o.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Berdych previous Shot") + ggtitle("Berdych Shot Angle by Federer distance from the baseline")
 
@@ -770,11 +772,11 @@ court_topdown <- ggplot() +
 ```
 ```{r}
 #Angle of movement
-ggplot(fed_only, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
+ggplot(fed16_only, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
 
-ggplot(fed_only, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
+ggplot(fed16_only, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
 
-ggplot(fed_only, aes(x=p.movement.angle.1,y=p.peak.speed)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Federers Peak Speed") + ggtitle("Winners By Federer's movement angle 1")
+ggplot(fed16_only, aes(x=p.movement.angle.1,y=p.peak.speed)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Federers Peak Speed") + ggtitle("Winners By Federer's movement angle 1")
 
 
 ```
@@ -889,6 +891,7 @@ seventythree_df <- filter(longral_pos, rally.number=="73")
 ```{r}
 write.csv(longral_pos,"longral.csv")
 write.csv(seventythree_df,"longest.csv")
+write.csv(fed16_only, "data/fed16_only.csv")
 ```
 
 ##Glossary of added variables
@@ -1052,7 +1055,7 @@ ggplot(dlw_fedonly, aes(x=start.x,y=start.y)) +
 library(depmixS4)
 library(dplyr)
 
-t1.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x, data = fed_only, nstates = 2, family=multinomial("identity"))
+t1.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t1.fm1 <- fit(t1.mod1)
 
 summary(t1.fm1)
@@ -1060,7 +1063,7 @@ summary(t1.fm1)
 
 ```{r}
 library(depmixS4)
-t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + ser1 + ser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed_only, nstates = 2, family=list(multinomial("identity"), gaussian()))
+t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + ser1 + ser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed16_only, nstates = 2, family=list(multinomial("identity"), gaussian()))
 t2.fm1<- fit(t2.mod1)
  
 summary(t2.fm1)
@@ -1074,7 +1077,7 @@ summary(t2.fm1)
 Response: winner, p.angle Covariates: oppo.speed,  start.x, p.start.position.x
 ```{r}
 library(depmixS4)
-t5.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + start.x + p.start.position.x,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + start.x + p.start.position.x,  data = fed16_only, nstates = 2, family=multinomial("identity"))
 t5.fm1 <- fit(t5.mod1)
 summary(t5.fm1)
 ```
@@ -1085,7 +1088,7 @@ summary(t5.fm1)
 Response: winner, p.angle Covariates: oppo.speed,  start.x, start.y, p.start.position.x, p.start.position.y
 ```{r}
 library(depmixS4)
-t5.mod2 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y + p.start.position.x + p.start.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.mod2 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y + p.start.position.x + p.start.position.y,  data = fed16_only, nstates = 2, family=multinomial("identity"))
 t5.fm2 <- fit(t5.mod2)
 summary(t5.fm2)
 
@@ -1098,7 +1101,7 @@ Response: winner, p.angle Covariates: oppo.speed,  start.x, start.y,  p.end.posi
 end positions seem to decrease iterations
 ```{r}
 library(depmixS4)
-t5.mod3 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y +  p.end.position.x + p.end.position.y,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.mod3 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y +  p.end.position.x + p.end.position.y,  data = fed16_only, nstates = 2, family=multinomial("identity"))
 t5.fm3 <- fit(t5.mod3)
 summary(t5.fm3)
 
@@ -1109,7 +1112,7 @@ summary(t5.fm3)
 Response: winner, p.angle Covariates: oppo.speed,  start.x, start.y, p.start.position.x, p.start.position.y, projected.ballmark.x
 ```{r}
 library(depmixS4)
-t5.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y + p.start.position.x + p.start.position.y + projected.ballmark.x ,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y + p.start.position.x + p.start.position.y + projected.ballmark.x ,  data = fed16_only, nstates = 2, family=multinomial("identity"))
 t5.fm4 <- fit(t5.mod4)
 summary(t5.fm4)
 
@@ -1121,7 +1124,7 @@ summary(t5.fm4)
 Response: winner, p.angle Covariates: oppo.speed, start.x, p.start.position.x, projected.ballmark.x, p.start.position.base.dist
 ```{r}
 library(depmixS4)
-t5.mod5 <- depmix(winner ~ 1, transition = ~ p.advantage + p.movement.angle.1 ,  data = fed_only, nstates = 2, family=multinomial("identity"))
+t5.mod5 <- depmix(winner ~ 1, transition = ~ p.advantage + p.movement.angle.1 ,  data = fed16_only, nstates = 2, family=multinomial("identity"))
 t5.fm5 <- fit(t5.mod5)
 summary(t5.fm5)
 
@@ -1134,7 +1137,7 @@ start.x
 ```{r}
 library(depmixS4)
 
-t6.mod1 <- depmix(winner ~ 1, transition = ~ start.x, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod1 <- depmix(winner ~ 1, transition = ~ start.x, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm1 <- fit(t6.mod1)
 
 summary(t6.fm1)
@@ -1145,7 +1148,7 @@ start.y
 ```{r}
 library(depmixS4)
 
-t6.mod2 <- depmix(winner ~ 1, transition = ~ start.y, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod2 <- depmix(winner ~ 1, transition = ~ start.y, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm2 <- fit(t6.mod2)
 
 summary(t6.fm2)
@@ -1156,7 +1159,7 @@ p.start.position.x
 ```{r}
 library(depmixS4)
 
-t6.mod3 <- depmix(winner ~ 1, transition = ~ p.start.position.x, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod3 <- depmix(winner ~ 1, transition = ~ p.start.position.x, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm3 <- fit(t6.mod3)
 
 summary(t6.fm3)
@@ -1167,7 +1170,7 @@ p.start.position.y
 ```{r}
 library(depmixS4)
 
-t6.mod4 <- depmix(winner ~ 1, transition = ~ p.start.position.y, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod4 <- depmix(winner ~ 1, transition = ~ p.start.position.y, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm4 <- fit(t6.mod4)
 
 summary(t6.fm4)
@@ -1178,7 +1181,7 @@ p.end.position.x
 ```{r}
 library(depmixS4)
 
-t6.mod5 <- depmix(winner ~ 1, transition = ~ p.end.position.x, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod5 <- depmix(winner ~ 1, transition = ~ p.end.position.x, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm5 <- fit(t6.mod5)
 
 summary(t6.fm5)
@@ -1189,7 +1192,7 @@ p.end.position.x
 ```{r}
 library(depmixS4)
 
-t6.mod6 <- depmix(winner ~ 1, transition = ~ p.end.position.y, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod6 <- depmix(winner ~ 1, transition = ~ p.end.position.y, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm6 <- fit(t6.mod6)
 
 summary(t6.fm6)
@@ -1200,7 +1203,7 @@ p.distance
 ```{r}
 library(depmixS4)
 
-t6.mod7 <- depmix(winner ~ 1, transition = ~ p.distance, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod7 <- depmix(winner ~ 1, transition = ~ p.distance, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm7 <- fit(t6.mod7)
 
 summary(t6.fm7)
@@ -1211,7 +1214,7 @@ oppo.avg.speed
 ```{r}
 library(depmixS4)
 
-t6.mod8 <- depmix(winner ~ 1, transition = ~ oppo.avg.speed, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod8 <- depmix(winner ~ 1, transition = ~ oppo.avg.speed, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm8 <- fit(t6.mod8)
 
 summary(t6.fm8)
@@ -1221,7 +1224,7 @@ oppo.peak.speed
 ```{r}
 library(depmixS4)
 
-t6.mod9 <- depmix(winner ~ 1, transition = ~ oppo.peak.speed, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod9 <- depmix(winner ~ 1, transition = ~ oppo.peak.speed, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm9 <- fit(t6.mod9)
 
 summary(t6.fm9)
@@ -1232,7 +1235,7 @@ oppo.avg.acceleration
 ```{r}
 library(depmixS4)
 
-t6.mod10 <- depmix(winner ~ 1, transition = ~ oppo.avg.acceleration, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod10 <- depmix(winner ~ 1, transition = ~ oppo.avg.acceleration, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm10 <- fit(t6.mod10)
 
 summary(t6.fm10)
@@ -1242,7 +1245,7 @@ oppo.peak.acceleration
 ```{r}
 library(depmixS4)
 
-t6.mod11 <- depmix(winner ~ 1, transition = ~ oppo.peak.acceleration , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod11 <- depmix(winner ~ 1, transition = ~ oppo.peak.acceleration , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm11 <- fit(t6.mod11)
 
 summary(t6.fm11)
@@ -1253,7 +1256,7 @@ p.avg.speed
 ```{r}
 library(depmixS4)
 
-t6.mod12 <- depmix(winner ~ 1, transition = ~ p.avg.speed , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod12 <- depmix(winner ~ 1, transition = ~ p.avg.speed , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm12 <- fit(t6.mod12)
 
 summary(t6.fm12)
@@ -1263,7 +1266,7 @@ p.peak.speed
 ```{r}
 library(depmixS4)
 
-t6.mod13 <- depmix(winner ~ 1, transition = ~ p.peak.speed , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod13 <- depmix(winner ~ 1, transition = ~ p.peak.speed , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm13 <- fit(t6.mod13)
 
 summary(t6.fm13)
@@ -1273,7 +1276,7 @@ p.avg.acceleration
 ```{r}
 library(depmixS4)
 
-t6.mod14 <- depmix(winner ~ 1, transition = ~ p.avg.acceleration , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod14 <- depmix(winner ~ 1, transition = ~ p.avg.acceleration , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm14 <- fit(t6.mod14)
 
 summary(t6.fm14)
@@ -1283,7 +1286,7 @@ p.peak.acceleration
 ```{r}
 library(depmixS4)
 
-t6.mod15 <- depmix(winner ~ 1, transition = ~ p.peak.acceleration , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod15 <- depmix(winner ~ 1, transition = ~ p.peak.acceleration , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm15 <- fit(t6.mod15)
 
 summary(t6.fm15)
@@ -1293,7 +1296,7 @@ oppo.work
 ```{r}
 library(depmixS4)
 
-t6.mod16 <- depmix(winner ~ 1, transition = ~ oppo.work , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod16 <- depmix(winner ~ 1, transition = ~ oppo.work , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm16 <- fit(t6.mod16)
 
 summary(t6.fm16)
@@ -1304,7 +1307,7 @@ p.work
 ```{r}
 library(depmixS4)
 
-t6.mod17 <- depmix(winner ~ 1, transition = ~ p.work , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod17 <- depmix(winner ~ 1, transition = ~ p.work , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm17 <- fit(t6.mod17)
 
 summary(t6.fm17)
@@ -1314,7 +1317,7 @@ p.advantage
 ```{r}
 library(depmixS4)
 
-t6.mod18 <- depmix(winner ~ 1, transition = ~ p.advantage, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod18 <- depmix(winner ~ 1, transition = ~ p.advantage, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm18 <- fit(t6.mod18)
 
 summary(t6.fm18)
@@ -1325,7 +1328,7 @@ avg.player.speed.diff
 ```{r}
 library(depmixS4)
 
-t6.mod19 <- depmix(winner ~ 1, transition = ~ avg.player.speed.diff, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod19 <- depmix(winner ~ 1, transition = ~ avg.player.speed.diff, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm19 <- fit(t6.mod19)
 
 summary(t6.fm19)
@@ -1335,7 +1338,7 @@ peak.player.speed.diff
 ```{r}
 library(depmixS4)
 
-t6.mod20 <- depmix(winner ~ 1, transition = ~ peak.player.speed.diff, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod20 <- depmix(winner ~ 1, transition = ~ peak.player.speed.diff, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm20 <- fit(t6.mod20)
 
 summary(t6.fm20)
@@ -1346,7 +1349,7 @@ avg.player.acceleration.diff
 ```{r}
 library(depmixS4)
 
-t6.mod21 <- depmix(winner ~ 1, transition = ~ avg.player.acceleration.diff, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod21 <- depmix(winner ~ 1, transition = ~ avg.player.acceleration.diff, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm21 <- fit(t6.mod21)
 
 summary(t6.fm21)
@@ -1358,7 +1361,7 @@ peak.player.acceleration.diff
 ```{r}
 library(depmixS4)
 
-t6.mod22 <- depmix(winner ~ 1, transition = ~ peak.player.acceleration.diff, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod22 <- depmix(winner ~ 1, transition = ~ peak.player.acceleration.diff, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm22 <- fit(t6.mod22)
 
 summary(t6.fm22)
@@ -1368,7 +1371,7 @@ avg.player.speed.ratio
 ```{r}
 library(depmixS4)
 
-t6.mod23 <- depmix(winner ~ 1, transition = ~ avg.player.speed.ratio, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod23 <- depmix(winner ~ 1, transition = ~ avg.player.speed.ratio, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm23 <- fit(t6.mod23)
 
 summary(t6.fm23)
@@ -1379,7 +1382,7 @@ peak.player.speed.ratio
 ```{r}
 library(depmixS4)
 
-t6.mod24 <- depmix(winner ~ 1, transition = ~ peak.player.speed.ratio, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod24 <- depmix(winner ~ 1, transition = ~ peak.player.speed.ratio, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm24 <- fit(t6.mod24)
 
 summary(t6.fm24)
@@ -1390,7 +1393,7 @@ avg.player.acceleration.ratio
 ```{r}
 library(depmixS4)
 
-t6.mod25 <- depmix(winner ~ 1, transition = ~ avg.player.acceleration.ratio, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod25 <- depmix(winner ~ 1, transition = ~ avg.player.acceleration.ratio, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm25 <- fit(t6.mod25)
 
 summary(t6.fm25)
@@ -1401,7 +1404,7 @@ peak.player.acceleration.ratio
 ```{r}
 library(depmixS4)
 
-t6.mod26 <- depmix(winner ~ 1, transition = ~peak.player.acceleration.ratio, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod26 <- depmix(winner ~ 1, transition = ~peak.player.acceleration.ratio, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm26 <- fit(t6.mod26)
 
 summary(t6.fm26)
@@ -1412,7 +1415,7 @@ p.rally.side.change.count
 ```{r}
 library(depmixS4)
 
-t6.mod27 <- depmix(winner ~ 1, transition = ~ p.rally.side.change.count, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod27 <- depmix(winner ~ 1, transition = ~ p.rally.side.change.count, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm27 <- fit(t6.mod27)
 
 summary(t6.fm27)
@@ -1423,7 +1426,7 @@ oppo.rally.side.change.count
 ```{r}
 library(depmixS4)
 
-t6.mod28 <- depmix(winner ~ 1, transition = ~ oppo.rally.side.change.count, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod28 <- depmix(winner ~ 1, transition = ~ oppo.rally.side.change.count, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm28 <- fit(t6.mod28)
 
 summary(t6.fm28)
@@ -1434,7 +1437,7 @@ oppo.movement.angle.1
 ```{r}
 library(depmixS4)
 
-t6.mod29 <- depmix(winner ~ 1, transition = ~ oppo.movement.angle.1, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod29 <- depmix(winner ~ 1, transition = ~ oppo.movement.angle.1, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm29 <- fit(t6.mod29)
 
 summary(t6.fm29)
@@ -1445,7 +1448,7 @@ oppo.movement.angle.2
 ```{r}
 library(depmixS4)
 
-t6.mod30 <- depmix(winner ~ 1, transition = ~ oppo.movement.angle.2, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod30 <- depmix(winner ~ 1, transition = ~ oppo.movement.angle.2, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm30 <- fit(t6.mod30)
 
 summary(t6.fm30)
@@ -1456,7 +1459,7 @@ p.movement.angle.1
 ```{r}
 library(depmixS4)
 
-t6.mod31 <- depmix(winner ~ 1, transition = ~ p.movement.angle.1, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod31 <- depmix(winner ~ 1, transition = ~ p.movement.angle.1, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm31 <- fit(t6.mod31)
 
 summary(t6.fm31)
@@ -1467,7 +1470,7 @@ p.movement.angle.2
 ```{r}
 library(depmixS4)
 
-t6.mod32 <- depmix(winner ~ 1, transition = ~ p.movement.angle.2, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod32 <- depmix(winner ~ 1, transition = ~ p.movement.angle.2, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm32 <- fit(t6.mod32)
 
 summary(t6.fm32)
@@ -1478,7 +1481,7 @@ isserver
 ```{r}
 library(depmixS4)
 
-t6.mod33 <- depmix(winner ~ 1, transition = ~ isserver, data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod33 <- depmix(winner ~ 1, transition = ~ isserver, data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm33 <- fit(t6.mod33)
 
 summary(t6.fm33)
@@ -1489,7 +1492,7 @@ speed.diff
 ```{r}
 library(depmixS4)
 
-t6.mod34 <- depmix(winner ~ 1, transition = ~ speed.diff , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod34 <- depmix(winner ~ 1, transition = ~ speed.diff , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm34 <- fit(t6.mod34)
 
 summary(t6.fm34)
@@ -1499,7 +1502,7 @@ speed.ratio
 ```{r}
 library(depmixS4)
 
-t6.mod35 <- depmix(winner ~ 1, transition = ~ speed.diff , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod35 <- depmix(winner ~ 1, transition = ~ speed.diff , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm35 <- fit(t6.mod35)
 
 summary(t6.fm35)
@@ -1510,7 +1513,7 @@ speed1
 ```{r}
 library(depmixS4)
 
-t6.mod36 <- depmix(winner ~ 1, transition = ~ speed1  , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod36 <- depmix(winner ~ 1, transition = ~ speed1  , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm36 <- fit(t6.mod36)
 
 summary(t6.fm36)
@@ -1521,7 +1524,7 @@ o.angle
 ```{r}
 library(depmixS4)
 
-t6.mod37 <- depmix(winner ~ 1, transition = ~ o.angle   , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod37 <- depmix(winner ~ 1, transition = ~ o.angle   , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm37 <- fit(t6.mod37)
 
 summary(t6.fm37)
@@ -1532,10 +1535,10 @@ p.angle
 ```{r}
 library(depmixS4)
 
-t6.mod38 <- depmix(winner ~ 1, transition = ~ p.angle    , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod38 <- depmix(winner ~ 1, transition = ~ p.angle    , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm38 <- fit(t6.mod38)
-
-summary(t6.fm38)
+t6.fm38
+# summary(t6.fm38)
 ```
 
 #Type 6 model 39
@@ -1543,7 +1546,7 @@ lag.p.angle
 ```{r}
 library(depmixS4)
 
-t6.mod39 <- depmix(winner ~ 1, transition = ~ lag.p.angle   , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod39 <- depmix(winner ~ 1, transition = ~ lag.p.angle   , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm39 <- fit(t6.mod39)
 
 summary(t6.fm39)
@@ -1554,7 +1557,7 @@ lag.speed.ratio
 ```{r}
 library(depmixS4)
 
-t6.mod40 <- depmix(winner ~ 1, transition = ~ lag.speed.ratio    , data = fed_only, nstates = 2, family=multinomial("identity"))
+t6.mod40 <- depmix(winner ~ 1, transition = ~ lag.speed.ratio    , data = fed16_only, nstates = 2, family=multinomial("identity"))
 t6.fm40 <- fit(t6.mod40)
 
 summary(t6.fm40)
@@ -1573,7 +1576,7 @@ summary(t6.fm40)
 # else           return (x * recursive.factorial(x-1))
 # }
 
-loop_data <- fed_only[, -(1:77)]
+loop_data <- fed16_only[, c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")]
 
 next_best_var <- function(data, column = NULL){
   # if we know what variable to remove, remove it
@@ -1593,16 +1596,21 @@ next_best_var <- function(data, column = NULL){
 }
 
 inside_func <- function(data, x){
-  depmix(winner ~ 1, data = data, transition = ~ x, nstates = 2, family=multinomial("identity"))
+  fm <- fit(depmix(winner ~ 1, data = data, transition = ~ x, nstates = 2, family=multinomial("identity")))
+  
+  
+  
   }
 
 # for every possible variable in data set
-Loop_trial <- ha %>% map(~ 
-  )
-   t6.mod41 <- depmix(winner ~ 1, data = fed_only, transition = ~ cova, nstates = 2, family=multinomial("identity"))
+Loop_trial <- ha %>% map(function(data,x) 
+  t6.mod41 <- depmix(winner ~ 1, data = fed16_only, transition = ~ x, nstates = 2, family=multinomial("identity")))
  t6.fm41<- fit(t6.mod41)
  
- summary(t6.fm41)
+
+ t6.fm41
  
  
 ```
+
+
