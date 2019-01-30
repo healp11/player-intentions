@@ -47,9 +47,20 @@ library(purrr)
 
 ```{r}
 library(depmixS4)
-m1 <- lapply(test_dep[c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) depmix(winner ~ 1, data = fed16_only, transition = ~ w, nstates = 2, family=multinomial("identity")))
+lapply(test_dep[c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
-fm1 <- fit(m1, verbose = FALSE, emc=em.control(rand=TRUE))
+
+```
+
+```{r}
+library(depmixS4)
+lapply(test_dep[c("winner","rally.number", "fhand", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+```
+```{r}
+library(depmixS4)
+lapply(test_dep[c("winner","rally.number", "fhand", "p.end.position.x", "p.start.position.y", "p.end.position.y",  "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 ```
 
 ```{r}
