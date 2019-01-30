@@ -1614,3 +1614,5 @@ Loop_trial <- ha %>% map(function(data,x)
 ```
 
 
+
+
