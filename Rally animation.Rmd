@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(readr)
-longral_df <- read.csv(file="longral.csv")
+longral_pos <- read.csv(file="longral.csv")
 seventythree_df <- read.csv(file="longest.csv")
 
 
