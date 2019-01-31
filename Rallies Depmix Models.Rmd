@@ -159,12 +159,44 @@ probs = posterior(fm3)
 		
 	
 ```
-
+##Identifying any correlation between best single variables
 ```{r}
-library(ggplot2)
+#x variable p.start.position.x
+cor.test(formula = ~ p.start.position.x + p.advantage,
+         data = fed16_only)
 
+cor.test(formula = ~ p.start.position.x + p.end.position.x,
+         data = fed16_only)
+
+cor.test(formula = ~ p.start.position.x + oppo.start.position.x,
+         data = fed16_only)
+
+cor.test(formula = ~ p.start.position.x + oppo.distance,
+         data = fed16_only)
+
+#x variable p.advantage
+cor.test(formula = ~ p.advantage + p.end.position.x,
+         data = fed16_only)
+
+cor.test(formula = ~ p.advantage + oppo.start.position.x,
+         data = fed16_only)
+
+cor.test(formula = ~ p.advantage + oppo.distance,
+         data = fed16_only)
+
+#x variable p.end.position.x
+cor.test(formula = ~ p.end.position.x + oppo.start.position.x,
+         data = fed16_only)
+
+cor.test(formula = ~ p.end.position.x + oppo.distance,
+         data = fed16_only)
+
+#x variable oppo.start.position.x
+cor.test(formula = ~ oppo.start.position.x + oppo.distance,
+         data = fed16_only)
 
 ```
+
 
 ##single variable models using map function
 ```{r}
