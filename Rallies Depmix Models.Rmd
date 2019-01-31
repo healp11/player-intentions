@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #Run rallies.Rmdbefore reading fed16_only.csv
 library(readr)
+library(ggplot2)
 fed16_only <-  read.csv(file = "data/fed16_only.csv")
 ```
 
@@ -121,7 +122,7 @@ fm2 <- fit(mod2)
 summary(fm2)
 ```
 
-###Fitted Depmix Model for the Five best variables found using stepwise
+###Fitted Depmix Model for the best five variable model
 ```{r}
 #Five best stepwise variables
 #p.start.position.x, oppo.start.position.x, p.start.y, oppo.distance, p.end.position.y
@@ -146,14 +147,23 @@ probs = posterior(fm2)
 ```
 
 ```{r}
-#Fitted states for five best stepwise variables
+#Fitted states for best five variable model
+#p.start.position.x, oppo.start.position.x, p.start.y, oppo.distance, p.end.position.y
 probs = posterior(fm3)
 
-	layout(1:2)
+	layout(1:3)
 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
 	
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
 		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
+		
+	
+```
+
+```{r}
+library(ggplot2)
+
+
 ```
 
 ##single variable models using map function
