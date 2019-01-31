@@ -10,59 +10,153 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+#Run rallies.Rmdbefore reading fed16_only.csv
 library(readr)
 fed16_only <-  read.csv(file = "data/fed16_only.csv")
 ```
 
+#Stepwise function to find best variables for Depmix model
 ```{r}
-fed16_dep <- fed16_only[, c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")]
+
+#choosing variables of interest
+fed16_dep <- fed16_only[, c("rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")]
 ```
 
 
 
 
 ```{r}
-test_dep <- fed16_dep
-test_dep[, names(test_dep) != "count"] -> test_dep
+# test_dep <- fed16_dep
+#test_dep[, names(test_dep) != "count"] -> test_dep
 ```
 
 
 ```{r}
 library(depmixS4)
 library(purrr)
-# for(x in fed16_dep) {
-#   
-#   map(function(data,x) t1.mod2 <- depmix(winner ~ 1, data = fed16_only, transition = ~ x, nstates = 2, family=multinomial("identity")))
-# } 
-#  t1.fm2<- fit(t1.mod2, verbose = FALSE, emc=em.control(rand=TRUE))
-#  
-# 
-# t1.fm2
-# 
-# }
- 
-```
-
-
-
-```{r}
-library(depmixS4)
-lapply(test_dep[c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
-
+library(MmgraphR)
 
 ```
 
+
+#Stepwise to find the first best variable for Depmix
+
 ```{r}
 library(depmixS4)
-lapply(test_dep[c("winner","rally.number", "fhand", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+#run through all variables to find highest log lik
+lapply(test_dep[c("rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
 ```
 ```{r}
-library(depmixS4)
-lapply(test_dep[c("winner","rally.number", "fhand", "p.end.position.x", "p.start.position.y", "p.end.position.y",  "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+#saving list as datafram
+library(tidyr)
+
+
+
 ```
 
+
+###First best variable is p.start.position.x
+```{r}
+#Running single variable model of p.start.position.x to look at coefficients
+
+mod1 <- depmix(winner ~ 1, transition = ~ p.start.position.x, data = fed16_only, nstates = 2, family=multinomial("identity"))
+fm1 <- fit(mod1)
+
+summary(fm1)
+```
+
+
+```{r}
+#Graohing fitted model states for first best variables
+
+probs = posterior(fm1)
+
+	layout(1:2)
+	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+	
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
+```
+
+
+#Stepwise to find second best variable
+
+```{r}
+library(depmixS4)
+lapply(test_dep[c("rally.number", "fhand", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+```
+
+#Stepwise to find the third best variable
+```{r}
+library(depmixS4)
+lapply(test_dep[c("rally.number", "fhand", "p.end.position.x", "p.start.position.y", "p.end.position.y",  "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+```
+#Stepwise to find the fourth best variable
+
+```{r}
+library(depmixS4)
+#third best variable is p.start.y
+lapply(test_dep[c("rally.number", "fhand", "p.end.position.x", "p.start.position.y", "p.end.position.y",  "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x",  "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + p.start.y + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+```
+#stepwise to find fifth best variable
+```{r}
+#fourth best variable is oppo.distance
+#fifith best is p.end.y
+library(depmixS4)
+#third best variable is p.start.y
+lapply(test_dep[c("rally.number", "fhand", "p.end.position.x", "p.start.position.y", "p.end.position.y",  "oppo.start.position.y", "p.distance", "p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x",  "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + p.start.y + oppo.distance + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+```
+###Fitted Depmix model for 5 variables from single variable models
+```{r}
+#Five best single variables
+#p.start.position.x, p.advantage, p.end.position.x, oppo.start.position.x, oppo.distance
+
+mod2 <- depmix(winner ~ 1, transition = ~ p.start.position.x + p.advantage + p.end.position.x + oppo.start.position.x + oppo.distance, data = fed16_only, nstates = 2, family=multinomial("identity"))
+fm2 <- fit(mod2)
+
+summary(fm2)
+```
+
+###Fitted Depmix Model for the Five best variables found using stepwise
+```{r}
+#Five best stepwise variables
+#p.start.position.x, oppo.start.position.x, p.start.y, oppo.distance, p.end.position.y
+
+mod3 <- depmix(winner ~ 1, transition = ~ p.start.position.x + oppo.start.position.x + p.start.y + oppo.distance + p.end.position.y, data = fed16_only, nstates = 2, family=multinomial("identity"))
+fm3 <- fit(mod3)
+
+summary(fm3)
+```
+
+###Graphing fitted models of five best single variables and five best stepwise variables
+
+```{r}
+#Fitted states for five best single variables
+probs = posterior(fm2)
+
+	layout(1:2)
+	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+	
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
+```
+
+```{r}
+#Fitted states for five best stepwise variables
+probs = posterior(fm3)
+
+	layout(1:2)
+	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+	
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
+```
+
+##single variable models using map function
 ```{r}
 library(depmixS4)
 test_dep %>%
@@ -70,3 +164,53 @@ test_dep %>%
  
 ```
 
+
+#test loop for depmix
+
+
+
+
+```{r}
+
+#model to automate stepwise crashes becuase of correlation between variables
+# recursive.factorial <- function(x) {
+# if (x == 0)    return (1)
+# else           return (x * recursive.factorial(x-1))
+# }
+
+# loop_data <- fed16_only[, c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")]
+# 
+# next_best_var <- function(data, column = NULL){
+#   # if we know what variable to remove, remove it
+#   if (!is.null(column)){
+#     data <- data[, names(data) != column]
+#   }
+#   #if 1 variable remaining, add to model
+#   if (ncol(data) == 1){
+#     return(colnames(data))
+#   }
+#   #map over all available columns
+#   
+#   
+#   
+#   
+#   
+# }
+# 
+# inside_func <- function(data, x){
+#   fm <- fit(depmix(winner ~ 1, data = data, transition = ~ x, nstates = 2, family=multinomial("identity")))
+#   
+#   
+#   
+#   }
+# 
+# # for every possible variable in data set
+# Loop_trial <- ha %>% map(function(data,x) 
+#   t6.mod41 <- depmix(winner ~ 1, data = fed16_only, transition = ~ x, nstates = 2, family=multinomial("identity")))
+#  t6.fm41<- fit(t6.mod41)
+#  
+# 
+#  t6.fm41
+ 
+ 
+```
