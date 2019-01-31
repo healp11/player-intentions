@@ -1143,425 +1143,7 @@ t6.fm1 <- fit(t6.mod1)
 summary(t6.fm1)
 ```
 
-#Type 6 model 2
-start.y
-```{r}
-library(depmixS4)
 
-t6.mod2 <- depmix(winner ~ 1, transition = ~ start.y, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm2 <- fit(t6.mod2)
-
-summary(t6.fm2)
-```
-
-#Type 6 model 3
-p.start.position.x
-```{r}
-library(depmixS4)
-
-t6.mod3 <- depmix(winner ~ 1, transition = ~ p.start.position.x, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm3 <- fit(t6.mod3)
-
-summary(t6.fm3)
-```
-
-#Type 6 model 4
-p.start.position.y
-```{r}
-library(depmixS4)
-
-t6.mod4 <- depmix(winner ~ 1, transition = ~ p.start.position.y, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm4 <- fit(t6.mod4)
-
-summary(t6.fm4)
-```
-
-#Type 6 model 5
-p.end.position.x
-```{r}
-library(depmixS4)
-
-t6.mod5 <- depmix(winner ~ 1, transition = ~ p.end.position.x, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm5 <- fit(t6.mod5)
-
-summary(t6.fm5)
-```
-
-#Type 6 model 6
-p.end.position.x
-```{r}
-library(depmixS4)
-
-t6.mod6 <- depmix(winner ~ 1, transition = ~ p.end.position.y, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm6 <- fit(t6.mod6)
-
-summary(t6.fm6)
-```
-
-#Type 6 model 7
-p.distance
-```{r}
-library(depmixS4)
-
-t6.mod7 <- depmix(winner ~ 1, transition = ~ p.distance, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm7 <- fit(t6.mod7)
-
-summary(t6.fm7)
-```
-
-#Type 6 model 8
-oppo.avg.speed
-```{r}
-library(depmixS4)
-
-t6.mod8 <- depmix(winner ~ 1, transition = ~ oppo.avg.speed, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm8 <- fit(t6.mod8)
-
-summary(t6.fm8)
-```
-#Type 6 model 9
-oppo.peak.speed
-```{r}
-library(depmixS4)
-
-t6.mod9 <- depmix(winner ~ 1, transition = ~ oppo.peak.speed, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm9 <- fit(t6.mod9)
-
-summary(t6.fm9)
-```
-
-#Type 6 model 10
-oppo.avg.acceleration
-```{r}
-library(depmixS4)
-
-t6.mod10 <- depmix(winner ~ 1, transition = ~ oppo.avg.acceleration, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm10 <- fit(t6.mod10)
-
-summary(t6.fm10)
-```
-#Type 6 model 11
-oppo.peak.acceleration 
-```{r}
-library(depmixS4)
-
-t6.mod11 <- depmix(winner ~ 1, transition = ~ oppo.peak.acceleration , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm11 <- fit(t6.mod11)
-
-summary(t6.fm11)
-```
-
-#Type 6 model 12
-p.avg.speed
-```{r}
-library(depmixS4)
-
-t6.mod12 <- depmix(winner ~ 1, transition = ~ p.avg.speed , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm12 <- fit(t6.mod12)
-
-summary(t6.fm12)
-```
-#Type 6 model 13
-p.peak.speed
-```{r}
-library(depmixS4)
-
-t6.mod13 <- depmix(winner ~ 1, transition = ~ p.peak.speed , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm13 <- fit(t6.mod13)
-
-summary(t6.fm13)
-```
-#Type 6 model 14
-p.avg.acceleration
-```{r}
-library(depmixS4)
-
-t6.mod14 <- depmix(winner ~ 1, transition = ~ p.avg.acceleration , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm14 <- fit(t6.mod14)
-
-summary(t6.fm14)
-```
-#Type 6 model 15
-p.peak.acceleration 
-```{r}
-library(depmixS4)
-
-t6.mod15 <- depmix(winner ~ 1, transition = ~ p.peak.acceleration , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm15 <- fit(t6.mod15)
-
-summary(t6.fm15)
-```
-#Type 6 model 16
-oppo.work
-```{r}
-library(depmixS4)
-
-t6.mod16 <- depmix(winner ~ 1, transition = ~ oppo.work , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm16 <- fit(t6.mod16)
-
-summary(t6.fm16)
-```
-
-#Type 6 model 17
-p.work
-```{r}
-library(depmixS4)
-
-t6.mod17 <- depmix(winner ~ 1, transition = ~ p.work , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm17 <- fit(t6.mod17)
-
-summary(t6.fm17)
-```
-#Type 6 model 18
-p.advantage
-```{r}
-library(depmixS4)
-
-t6.mod18 <- depmix(winner ~ 1, transition = ~ p.advantage, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm18 <- fit(t6.mod18)
-
-summary(t6.fm18)
-```
-
-#Type 6 model 19
-avg.player.speed.diff
-```{r}
-library(depmixS4)
-
-t6.mod19 <- depmix(winner ~ 1, transition = ~ avg.player.speed.diff, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm19 <- fit(t6.mod19)
-
-summary(t6.fm19)
-```
-#Type 6 model 20
-peak.player.speed.diff
-```{r}
-library(depmixS4)
-
-t6.mod20 <- depmix(winner ~ 1, transition = ~ peak.player.speed.diff, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm20 <- fit(t6.mod20)
-
-summary(t6.fm20)
-```
-
-#Type 6 model 21
-avg.player.acceleration.diff
-```{r}
-library(depmixS4)
-
-t6.mod21 <- depmix(winner ~ 1, transition = ~ avg.player.acceleration.diff, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm21 <- fit(t6.mod21)
-
-summary(t6.fm21)
-```
-
-
-#Type 6 model 22
-peak.player.acceleration.diff
-```{r}
-library(depmixS4)
-
-t6.mod22 <- depmix(winner ~ 1, transition = ~ peak.player.acceleration.diff, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm22 <- fit(t6.mod22)
-
-summary(t6.fm22)
-```
-#Type 6 model 23
-avg.player.speed.ratio
-```{r}
-library(depmixS4)
-
-t6.mod23 <- depmix(winner ~ 1, transition = ~ avg.player.speed.ratio, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm23 <- fit(t6.mod23)
-
-summary(t6.fm23)
-```
-
-#Type 6 model 24
-peak.player.speed.ratio
-```{r}
-library(depmixS4)
-
-t6.mod24 <- depmix(winner ~ 1, transition = ~ peak.player.speed.ratio, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm24 <- fit(t6.mod24)
-
-summary(t6.fm24)
-```
-
-#Type 6 model 25
-avg.player.acceleration.ratio
-```{r}
-library(depmixS4)
-
-t6.mod25 <- depmix(winner ~ 1, transition = ~ avg.player.acceleration.ratio, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm25 <- fit(t6.mod25)
-
-summary(t6.fm25)
-```
-
-#Type 6 model 26
-peak.player.acceleration.ratio
-```{r}
-library(depmixS4)
-
-t6.mod26 <- depmix(winner ~ 1, transition = ~peak.player.acceleration.ratio, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm26 <- fit(t6.mod26)
-
-summary(t6.fm26)
-```
-
-#Type 6 model 27
-p.rally.side.change.count
-```{r}
-library(depmixS4)
-
-t6.mod27 <- depmix(winner ~ 1, transition = ~ p.rally.side.change.count, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm27 <- fit(t6.mod27)
-
-summary(t6.fm27)
-```
-
-#Type 6 model 28
-oppo.rally.side.change.count
-```{r}
-library(depmixS4)
-
-t6.mod28 <- depmix(winner ~ 1, transition = ~ oppo.rally.side.change.count, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm28 <- fit(t6.mod28)
-
-summary(t6.fm28)
-```
-
-#Type 6 model 29
-oppo.movement.angle.1
-```{r}
-library(depmixS4)
-
-t6.mod29 <- depmix(winner ~ 1, transition = ~ oppo.movement.angle.1, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm29 <- fit(t6.mod29)
-
-summary(t6.fm29)
-```
-
-#Type 6 model 30
-oppo.movement.angle.2
-```{r}
-library(depmixS4)
-
-t6.mod30 <- depmix(winner ~ 1, transition = ~ oppo.movement.angle.2, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm30 <- fit(t6.mod30)
-
-summary(t6.fm30)
-```
-
-#Type 6 model 31
-p.movement.angle.1
-```{r}
-library(depmixS4)
-
-t6.mod31 <- depmix(winner ~ 1, transition = ~ p.movement.angle.1, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm31 <- fit(t6.mod31)
-
-summary(t6.fm31)
-```
-
-#Type 6 model 32
-p.movement.angle.2
-```{r}
-library(depmixS4)
-
-t6.mod32 <- depmix(winner ~ 1, transition = ~ p.movement.angle.2, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm32 <- fit(t6.mod32)
-
-summary(t6.fm32)
-```
-
-#Type 6 model 33
-isserver
-```{r}
-library(depmixS4)
-
-t6.mod33 <- depmix(winner ~ 1, transition = ~ isserver, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm33 <- fit(t6.mod33)
-
-summary(t6.fm33)
-```
-
-#Type 6 model 34
-speed.diff 
-```{r}
-library(depmixS4)
-
-t6.mod34 <- depmix(winner ~ 1, transition = ~ speed.diff , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm34 <- fit(t6.mod34)
-
-summary(t6.fm34)
-```
-#Type 6 model 35
-speed.ratio 
-```{r}
-library(depmixS4)
-
-t6.mod35 <- depmix(winner ~ 1, transition = ~ speed.diff , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm35 <- fit(t6.mod35)
-
-summary(t6.fm35)
-```
-
-#Type 6 model 36
-speed1 
-```{r}
-library(depmixS4)
-
-t6.mod36 <- depmix(winner ~ 1, transition = ~ speed1  , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm36 <- fit(t6.mod36)
-
-summary(t6.fm36)
-```
-
-#Type 6 model 37
-o.angle  
-```{r}
-library(depmixS4)
-
-t6.mod37 <- depmix(winner ~ 1, transition = ~ o.angle   , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm37 <- fit(t6.mod37)
-
-summary(t6.fm37)
-```
-
-#Type 6 model 38
-p.angle  
-```{r}
-library(depmixS4)
-
-t6.mod38 <- depmix(winner ~ 1, transition = ~ p.angle    , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm38 <- fit(t6.mod38)
-t6.fm38
-# summary(t6.fm38)
-```
-
-#Type 6 model 39
-lag.p.angle  
-```{r}
-library(depmixS4)
-
-t6.mod39 <- depmix(winner ~ 1, transition = ~ lag.p.angle   , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm39 <- fit(t6.mod39)
-
-summary(t6.fm39)
-```
-
-#Type 6 model 40
-lag.speed.ratio   
-```{r}
-library(depmixS4)
-
-t6.mod40 <- depmix(winner ~ 1, transition = ~ lag.speed.ratio    , data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm40 <- fit(t6.mod40)
-
-summary(t6.fm40)
-```
 
 
 
@@ -1615,4 +1197,40 @@ Loop_trial <- ha %>% map(function(data,x)
 
 
 
+```{r}
+
+#x variable p.start.position.x
+cor.test(formula = ~ p.start.position.x + p.advantage,
+         data = fed16_df)
+
+cor.test(formula = ~ p.start.position.x + p.end.position.x,
+         data = fed16_df)
+
+cor.test(formula = ~ p.start.position.x + oppo.start.position.x,
+         data = fed16_df)
+
+cor.test(formula = ~ p.start.position.x + oppo.distance,
+         data = fed16_df)
+
+#x variable p.advantage
+cor.test(formula = ~ p.advantage + p.end.position.x,
+         data = fed16_df)
+
+cor.test(formula = ~ p.advantage + oppo.start.position.x,
+         data = fed16_df)
+
+cor.test(formula = ~ p.advantage + oppo.distance,
+         data = fed16_df)
+
+#x variable p.end.position.x
+cor.test(formula = ~ p.end.position.x + oppo.start.position.x,
+         data = fed16_df)
+
+cor.test(formula = ~ p.end.position.x + oppo.distance,
+         data = fed16_df)
+
+#x variable oppo.start.position.x
+cor.test(formula = ~ oppo.start.position.x + oppo.distance,
+         data = fed16_df)
+```
 
