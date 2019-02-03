@@ -20,7 +20,7 @@ fed16_only <-  read.csv(file = "data/fed16_only.csv")
 ```{r}
 
 #choosing variables of interest
-fed16_dep <- fed16_only[, c("rally.number", "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "p.work", "oppo.work", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")]
+fed16_dep <- fed16_only[, c("rally.number", "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")]
 ```
 
 
@@ -41,7 +41,7 @@ library(MmgraphR)
 ```{r}
 
 #run through all variables to find highest log lik
-fcov1 <- lapply(fed16_dep[c("rally.number", "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "p.work", "oppo.work", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+fcov1 <- lapply(fed16_dep[c("rally.number", "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
 ```
@@ -109,7 +109,7 @@ probs = posterior(fm1)
 
 ```{r}
 library(depmixS4)
-lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.work", "oppo.work", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
 ```
@@ -118,49 +118,88 @@ lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.x"
 ```{r}
 #second best variable is oppo.start.position.x
 library(depmixS4)
-lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.y", "p.work", "oppo.work", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 ```
 #Stepwise to find the fourth best variable
 
 ```{r}
 library(depmixS4)
 #third best variable is avg.player.speed.ratio
-lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.y", "p.work", "oppo.work", "avg.player.speed.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.y", "avg.player.speed.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 ```
 #stepwise to find fifth best variable
 ```{r}
-#fourth best variable is p.start.x
+#fourth best variable is rally.side.change.count.diff
 
-library(depmixS4)
 
-lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.y", "p.work", "oppo.work", "avg.player.speed.ratio", "lag.p.movement.angle.1", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], 
-       function(w) fit((depmix(winner ~ 1, data = fed16_only,transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + p.start.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.y", "avg.player.speed.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 ```
+
 
 
 
 #stepwise to find sixth best variable
 ```{r}
-#fifth best variable is oppo.movement.angle.2
+#fifth best variable is p.start.x
 
-library(depmixS4)
 
-lapply(fed16_dep[c("rally.number",    "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y",      "p.work", "oppo.work",   "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.start.y",  "p.start.x", "p.start.y", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + p.movement.angle.2 + oppo.distance + oppo.movement.angle.2 + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.y", "avg.player.speed.ratio", "lag.p.movement.angle.1", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+```
 
+
+#stepwise to find seventh best variable
+```{r}
+#sixth best variable is lag.p.movement.angle.1
+
+
+lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.y", "avg.player.speed.ratio", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 ```
 
 
 
 
 
+#stepwise to find eighth best variable
+```{r}
+#seventh best variable is p.start.position.y
 
 
+lapply(fed16_dep[c("rally.number", "oppo.start.position.y", "avg.player.speed.ratio", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+```
+
+#stepwise to find ninth best variable
+```{r}
+#eigth best variable is lag.p.angle
 
 
+lapply(fed16_dep[c("rally.number", "oppo.start.position.y", "avg.player.speed.ratio", "p.start.y", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + lag.p.angle + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+```
+
+#stepwise to find tenth best variable
+```{r}
+#ninth best variable is avg.player.speed.ratio
 
 
+lapply(fed16_dep[c("rally.number", "oppo.start.position.y", "p.start.y", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + lag.p.angle + avg.player.speed.ratio + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+```
+ #stepwise to find eleventh best variable
+```{r}
+#tenth best variable is rally.number
 
 
+lapply(fed16_dep[c("oppo.start.position.y", "p.start.y", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + lag.p.angle + avg.player.speed.ratio + rally.number + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+```
+
+ #stepwise to find twelth best variable
+```{r}
+#eleventh best variable is lag.speed.ratio
+
+
+lapply(fed16_dep[c("oppo.start.position.y", "p.start.y")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + lag.p.angle + avg.player.speed.ratio + rally.number + lag.speed.ratio + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+#12th best is oppo.start.position.y 13th best is p.start.y
+```
 
 
 ###Fitted Depmix model for 5 variables from single variable models
@@ -174,12 +213,12 @@ fm2 <- fit(mod2)
 summary(fm2)
 ```
 
-###Fitted Depmix Model for the best five variable model
+###Fitted Depmix Model for the best thirteen variable model
 ```{r}
 #Five best stepwise variables
 #p.start.position.x, oppo.start.position.x, p.start.y, oppo.distance, p.end.position.y
 
-mod3 <- depmix(winner ~ 1, transition = ~ p.start.position.x + oppo.start.position.x + p.start.y + oppo.distance + p.end.position.y, data = fed16_only, nstates = 2, family=multinomial("identity"))
+mod3 <- depmix(winner ~ 1, transition = ~p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + lag.p.angle + avg.player.speed.ratio + rally.number + lag.speed.ratio + oppo.start.position.y + p.start.y, data = fed16_only, nstates = 2, family=multinomial("identity"))
 fm3 <- fit(mod3)
 
 summary(fm3)
@@ -199,8 +238,8 @@ probs = posterior(fm2)
 ```
 
 ```{r}
-#Fitted states for best five variable model
-#p.start.position.x, oppo.start.position.x, p.start.y, oppo.distance, p.end.position.y
+#Fitted states for best thirteen variable model
+#p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + lag.p.angle + avg.player.speed.ratio + rally.number + lag.speed.ratio + oppo.start.position.y + p.start.y
 probs = posterior(fm3)
 
 	layout(1:3)
