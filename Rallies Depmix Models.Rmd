@@ -18,9 +18,16 @@ fed16_only <-  read.csv(file = "data/fed16_only.csv")
 
 #Stepwise function to find best variables for Depmix model
 ```{r}
+library(dplyr)
 
 #choosing variables of interest
 fed16_dep <- fed16_only[, c("rally.number", "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")]
+
+fed16_scale <- fed16_only[, c("rally.number", "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff", "player.total.shot.number")]
+
+fed16_scale <- as.data.frame(lapply(fed16_dep[c("rally.number", "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(x) (x-min(x))/(max(x)-min(x))))
+
+fed16_scale <- fed16_scale %>% mutate(player.total.shot.number = row_number())
 ```
 
 
@@ -202,16 +209,7 @@ lapply(fed16_dep[c("oppo.start.position.y", "p.start.y")], function(w) fit((depm
 ```
 
 
-###Fitted Depmix model for 5 variables from single variable models
-```{r}
-#Five best single variables
-#p.start.position.x, p.advantage, p.end.position.x, oppo.start.position.x, oppo.distance
 
-mod2 <- depmix(winner ~ 1, transition = ~ p.start.position.x + p.advantage + p.end.position.x + oppo.start.position.x + oppo.distance, data = fed16_only, nstates = 2, family=multinomial("identity"))
-fm2 <- fit(mod2)
-
-summary(fm2)
-```
 
 ###Fitted Depmix Model for the best thirteen variable model
 ```{r}
@@ -224,25 +222,16 @@ fm3 <- fit(mod3)
 summary(fm3)
 ```
 
-###Graphing fitted models of five best single variables and five best stepwise variables
+###Graphing fitted models of best stepwise variables
 
-```{r}
-#Fitted states for five best single variables
-probs = posterior(fm2)
 
-	layout(1:2)
-	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
-	
-	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
-		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
-```
 
 ```{r}
 #Fitted states for best thirteen variable model
 #p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + lag.p.angle + avg.player.speed.ratio + rally.number + lag.speed.ratio + oppo.start.position.y + p.start.y
 probs = posterior(fm3)
 
-	layout(1:3)
+	layout(1:2)
 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
 	
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
@@ -252,6 +241,38 @@ probs = posterior(fm3)
 ```
 
 
+###visualising chosen variables to compare to hidden states model
+
+```{r}
+
+#question max in the game is note max  possible (ie 1 is a few metres back from the net)
+	
+attach(fed16_scale)
+par(mfrow=c(2,1))
+
+ggplot() + 
+  geom_path(data=fed16_scale, aes(x = player.total.shot.number, y = p.start.position.x)) +
+  xlab("Federer Shot Number")  + 
+  ylab(" Federer start position x coordinates for Federer shots") + 
+  ggtitle("Federer 2016 start position x coordinates scaled") 
+  
+
+ggplot() + 
+  geom_path(data=fed16_scale, aes(x = player.total.shot.number, y = oppo.start.position.x)) +
+  xlab("Federer Shot Number")  + 
+  ylab(" Opponent start position x coordinates for Federer shots") + 
+  ggtitle("Federer 2016 opponent start position x coordinates scaled") 
+   
+```
+
+```{r}
+library(tidyr)
+fed16_move<- fed16_scale %>%
+  gather(key = vars, value = measurement, p.start.position.x, oppo.start.position.x, avg.player.speed.ratio, rally.side.change.count.diff, p.start.x, lag.p.movement.angle.1, p.start.position.y, lag.p.angle, avg.player.speed.ratio, rally.number, lag.speed.ratio, oppo.start.position.y, p.start.y)
+
+ggplot(fed16_move, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+
+```
 
 
 #test loop for depmix
