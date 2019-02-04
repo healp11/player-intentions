@@ -226,7 +226,7 @@ fed16_df <- fed16_df %>%
 #player and opponent work
 fed16_df <- fed16_df %>%
   mutate(oppo.work = ifelse(server != "FEDERER", server.work,0)+ifelse(server == "FEDERER", receiver.work,0)) %>%
-  mutate(p.work = ifelse(server == "FEDERER", server.work,0)+ifelse(server != "FEDERER", receiver.work,0))
+  mutate(p.work = ifelse(server == "FEDERER", server.work,0)+ifelse(server != "FEDERER", receiver.work,0)) 
 
 #player and opponent advantage
 fed16_df <- fed16_df %>%
@@ -299,15 +299,21 @@ fed16_df <- fed16_df %>%
   mutate(oppo.side.change.count = ifelse(oppo.start.position.y <= 0 & oppo.end.position.y >= 0, 1, ifelse(oppo.start.position.y >= 0 & oppo.end.position.y <= 0, 1, 0))) %>%
   mutate(oppo.side.change.cumsum = cumsum(oppo.side.change.count)) 
   
-  
+
+
   
   
 ```
 ```{r}
+#Within rally tally of side change count and distance run
 fed16_df <- fed16_df %>%
   group_by(rally.number ) %>%
   dplyr::mutate(p.rally.side.change.count = cumsum(p.side.change.count)) %>%
   dplyr::mutate(oppo.rally.side.change.count = cumsum(oppo.side.change.count)) %>%
+  dplyr::mutate(rally.side.change.count.diff = p.rally.side.change.count-oppo.rally.side.change.count) %>%
+  dplyr::mutate(oppo.rally.distance.run = cumsum(oppo.distance)) %>%
+  dplyr::mutate(p.rally.distance.run = cumsum(p.distance)) %>%
+  dplyr::mutate(rally.distance.run.ratio = p.rally.distance.run/oppo.rally.distance.run) %>%
   ungroup
  
 ```
@@ -497,6 +503,8 @@ fed16_df <- fed16_df %>%
   group_by(rally.number) %>%
   mutate(lag.p.angle = dplyr::lag(p.angle, n = 1, default = NA)) %>%
   mutate(lag.speed.ratio = dplyr::lag(speed.ratio, n = 1, default = NA)) %>%
+  mutate(lag.p.movement.angle.1 = dplyr::lag(p.movement.angle.1, n = 1, default = NA)) %>%
+  mutate(lag.p.movement.angle.2 = dplyr::lag(p.movement.angle.2, n = 1, default = NA)) %>%
   ungroup
 
 
@@ -592,6 +600,10 @@ fed16_only$lag.p.angle[is.na(fed16_only$lag.p.angle)] <- 0
 fed16_only$lag.speed.ratio[is.na(fed16_only$lag.speed.ratio)] <- 0
 fed16_only$p.start.x[is.na(fed16_only$p.start.x)] <- 0
 fed16_only$p.start.y[is.na(fed16_only$p.start.y)] <- 0
+fed16_only$lag.p.movement.angle.1[is.na(fed16_only$lag.p.movement.angle.1)] <- 0
+fed16_only$lag.p.movement.angle.2[is.na(fed16_only$lag.p.movement.angle.2)] <- 0
+
+fed16_only <- fed16_only %>% mutate(player.total.shot.number = row_number())
 ```
 
 ```{r }
@@ -947,7 +959,7 @@ oppo.movement.angle.1
 oppo.movement.angle.2
 p.movement.angle.1
 p.movement.angle.2
-more?
+
 
 
 
@@ -1197,40 +1209,5 @@ Loop_trial <- ha %>% map(function(data,x)
 
 
 
-```{r}
 
-#x variable p.start.position.x
-cor.test(formula = ~ p.start.position.x + p.advantage,
-         data = fed16_df)
-
-cor.test(formula = ~ p.start.position.x + p.end.position.x,
-         data = fed16_df)
-
-cor.test(formula = ~ p.start.position.x + oppo.start.position.x,
-         data = fed16_df)
-
-cor.test(formula = ~ p.start.position.x + oppo.distance,
-         data = fed16_df)
-
-#x variable p.advantage
-cor.test(formula = ~ p.advantage + p.end.position.x,
-         data = fed16_df)
-
-cor.test(formula = ~ p.advantage + oppo.start.position.x,
-         data = fed16_df)
-
-cor.test(formula = ~ p.advantage + oppo.distance,
-         data = fed16_df)
-
-#x variable p.end.position.x
-cor.test(formula = ~ p.end.position.x + oppo.start.position.x,
-         data = fed16_df)
-
-cor.test(formula = ~ p.end.position.x + oppo.distance,
-         data = fed16_df)
-
-#x variable oppo.start.position.x
-cor.test(formula = ~ oppo.start.position.x + oppo.distance,
-         data = fed16_df)
-```
 
