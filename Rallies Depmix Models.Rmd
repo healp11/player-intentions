@@ -67,14 +67,7 @@ fcov1_df %>%
 
 ```
 
-# ```{r}
-# test <- (unclass(fcov1[1:24]))
-# ```
-# 
-# 
-# ```{r}
-# lapply(unclass(test), '[[', 1)
-# ```
+
 
 #Looking for any correlation between chosen variables greater than 50%
 ```{r}
@@ -92,13 +85,7 @@ corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"
 ```
 
 
-##single variable models using map function
-```{r}
-library(depmixS4)
-fed16_dep %>%
-  map(function(w)  fit((depmix(winner ~ 1, data = fed16_only, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)) )
- 
-```
+
 
 
 
@@ -113,9 +100,7 @@ summary(fm1)
 
 
 ```
-```{r}
-un(fcov1)
-```
+
 
 
 ```{r}
@@ -137,6 +122,22 @@ probs = posterior(fm1)
 library(depmixS4)
 fcov2 <- lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
+fcov2_df <-  as.data.frame(
+  c(logLik(fcov1$rally.number), logLik(fcov1$p.start.position.y),
+    logLik(fcov1$oppo.start.position.x), logLik(fcov1$oppo.start.position.y),
+    logLik(fcov1$avg.player.speed.ratio), logLik(fcov1$avg.player.acceleration.ratio),
+    logLik(fcov1$lag.p.movement.angle.1), logLik(fcov1$p.start.x), logLik(fcov1$p.start.y),
+    logLik(fcov1$lag.p.angle), logLik(fcov1$lag.speed.ratio),
+    logLik(fcov1$rally.side.change.count.diff))
+  )
+
+fcov2_df$newcolumn<-c("rally.number", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")
+
+names(fcov2_df) <- c("convergence.loglik", "Variables")
+
+fcov2_df %>% 
+   slice(which.max(convergence.loglik))
+
 
 ```
 
@@ -145,6 +146,21 @@ fcov2 <- lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.po
 #second best variable is oppo.start.position.x
 library(depmixS4)
 fcov3 <- lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+fcov3_df <-  as.data.frame(
+  c(logLik(fcov1$rally.number), logLik(fcov1$p.start.position.y), logLik(fcov1$oppo.start.position.y),
+    logLik(fcov1$avg.player.speed.ratio), logLik(fcov1$avg.player.acceleration.ratio),
+    logLik(fcov1$lag.p.movement.angle.1), logLik(fcov1$p.start.x), logLik(fcov1$p.start.y),
+    logLik(fcov1$lag.p.angle), logLik(fcov1$lag.speed.ratio),
+    logLik(fcov1$rally.side.change.count.diff))
+  )
+
+fcov3_df$newcolumn<-c("rally.number", "p.start.position.y", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")
+
+names(fcov3_df) <- c("convergence.loglik", "Variables")
+
+fcov3_df %>% 
+   slice(which.max(convergence.loglik))
 ```
 #Stepwise to find the fourth best variable
 
@@ -286,10 +302,20 @@ ggplot() +
 
 ```{r}
 library(tidyr)
-fed16_move<- fed16_scale %>%
-  gather(key = vars, value = measurement, p.start.position.x, oppo.start.position.x, avg.player.speed.ratio, rally.side.change.count.diff, p.start.x, lag.p.movement.angle.1, p.start.position.y, lag.p.angle, avg.player.speed.ratio, rally.number, lag.speed.ratio, oppo.start.position.y, p.start.y)
+fed16_plot1<- fed16_scale %>%
+  gather(key = vars, value = measurement, p.start.position.x, oppo.start.position.x, avg.player.speed.ratio, rally.side.change.count.diff)
 
-ggplot(fed16_move, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+fed16_plot2<- fed16_scale %>%
+  gather(key = vars, value = measurement, p.start.x, lag.p.movement.angle.1, p.start.position.y, lag.p.angle)
+
+fed16_plot3<- fed16_scale %>%
+  gather(key = vars, value = measurement, avg.player.speed.ratio, lag.speed.ratio, oppo.start.position.y, p.start.y)
+
+ggplot(fed16_plot1, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+
+ggplot(fed16_plot2, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+
+ggplot(fed16_plot3, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
 
 ```
 
@@ -297,7 +323,14 @@ ggplot(fed16_move, aes(x=player.total.shot.number,y=measurement)) + geom_line(co
 #test loop for depmix
 
 
-
+##single variable models using map function
+```{r}
+#for use with loop
+# library(depmixS4)
+# fed16_dep %>%
+#   map(function(w)  fit((depmix(winner ~ 1, data = fed16_only, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)) )
+#  
+```
 
 ```{r}
 
