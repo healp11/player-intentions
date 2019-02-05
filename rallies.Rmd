@@ -253,7 +253,12 @@ fed16_df <- fed16_df %>%
   mutate(avg.player.acceleration.diff = (p.avg.acceleration)-(oppo.avg.acceleration)) %>%
   mutate(peak.player.acceleration.diff = (p.peak.acceleration)-(oppo.peak.acceleration)) %>%
   mutate(avg.player.acceleration.ratio = (p.avg.acceleration)/(oppo.avg.acceleration)) %>%
-  mutate(peak.player.acceleration.ratio = (p.peak.acceleration)/(oppo.peak.acceleration))
+  mutate(peak.player.acceleration.ratio = (p.peak.acceleration)/(oppo.peak.acceleration)) %>%
+  mutate(p.avg.speed.match = mean(p.avg.speed)) %>%
+  mutate(oppo.avg.speed.match = mean(oppo.avg.speed)) %>%
+  mutate(p.diff.avg.shot.and.match.movement.speed = p.avg.speed - p.avg.speed.match) %>%
+  mutate(oppo.diff.avg.shot.and.match.movement.speed = oppo.avg.speed - oppo.avg.speed.match)
+  
 
 #player/opponent side distance for start/end positions
 fed16_df <- fed16_df %>%
