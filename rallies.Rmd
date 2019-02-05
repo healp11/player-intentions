@@ -299,9 +299,9 @@ fed16_df <- fed16_df %>%
 
 #Tally of the number of times player and opponent change side during rally
 fed16_df <- fed16_df %>%
-  mutate(p.side.change.count = ifelse(p.start.position.y <= 0 & p.end.position.y >= 0, 1, ifelse(p.start.position.y >= 0 & p.end.position.y <= 0, 1, 0))) %>%
+  mutate(p.side.change.count = ifelse(p.start.position.y <= 2.0575 & p.end.position.y >= 2.0575, 1, ifelse(p.start.position.y >= 2.0575 & p.end.position.y <= 2.0575, 1, 0))) %>%
   mutate(p.side.change.cumsum = cumsum(p.side.change.count)) %>%
-  mutate(oppo.side.change.count = ifelse(oppo.start.position.y <= 0 & oppo.end.position.y >= 0, 1, ifelse(oppo.start.position.y >= 0 & oppo.end.position.y <= 0, 1, 0))) %>%
+  mutate(oppo.side.change.count = ifelse(oppo.start.position.y <= 2.0575 & oppo.end.position.y >= 2.0575, 1, ifelse(oppo.start.position.y >= 2.0575 & oppo.end.position.y <= 2.0575, 1, 0))) %>%
   mutate(oppo.side.change.cumsum = cumsum(oppo.side.change.count)) 
   
 
@@ -347,8 +347,8 @@ for (i in 1:nrow(fed16_df)) {
   ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
   
   fed16_df$p.movement.angle.1[i] = ifelse(p.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.1,
-                                          ifelse(p.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,360+p.movement.angle.1,
-                                                 ifelse(p.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.1,p.movement.angle.1)))
+                                          ifelse(p.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,abs(p.movement.angle.1),
+                                                 ifelse(p.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0, 90+p.movement.angle.1,p.movement.angle.1)))
                                                                                                             
 }
 
@@ -367,8 +367,8 @@ for (i in 2:nrow(fed16_df)) {
   ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
   
   fed16_df$p.movement.angle.2[i] = ifelse(p.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.2,
-                                          ifelse(p.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,360+p.movement.angle.2,
-                                                 ifelse(p.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.2,p.movement.angle.2)))
+                                          ifelse(p.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,abs(p.movement.angle.2),
+                                                 ifelse(p.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+p.movement.angle.2,p.movement.angle.2)))
   
 }  
   
@@ -390,8 +390,8 @@ for (i in 1:nrow(fed16_df)) {
   ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
   
   fed16_df$oppo.movement.angle.1[i] = ifelse(oppo.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0,180+oppo.movement.angle.1,
-                                          ifelse(oppo.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,360+oppo.movement.angle.1,
-                                                 ifelse(oppo.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0,180+oppo.movement.angle.1,p.movement.angle.1)))
+                                          ifelse(oppo.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,abs(oppo.movement.angle.1),
+                                                 ifelse(oppo.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0,90+oppo.movement.angle.1,p.movement.angle.1)))
   
   
 }
@@ -408,8 +408,8 @@ for (i in 2:nrow(fed16_df)) {
   ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
   
   fed16_df$oppo.movement.angle.2[i] = ifelse(oppo.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+oppo.movement.angle.2,
-                                          ifelse(oppo.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,360+oppo.movement.angle.2,
-                                                 ifelse(oppo.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 180+oppo.movement.angle.2,oppo.movement.angle.2)))
+                                          ifelse(oppo.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,abs(oppo.movement.angle.2),
+                                                 ifelse(oppo.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+oppo.movement.angle.2,oppo.movement.angle.2)))
 }
 ```
 
@@ -516,7 +516,30 @@ fed16_df <- fed16_df %>%
 ```
 
 
+```{r}
+#variables for speed of ball at the start of shot arcs
 
+fed16_df <- fed16_df %>%
+  mutate(p.start.shot.speed = ifelse(impact.player == "FEDERER", speed.start, 0)) %>%
+  mutate(oppo.start.shot.speed = ifelse(impact.player != "FEDERER", speed.start, 0)) %>%
+  mutate(avg.p.start.shot.speed = mean(p.start.shot.speed)) %>%
+  mutate(avg.oppo.start.shot.speed = mean(oppo.start.shot.speed)) %>%
+  mutate(diff.p.avg.and.current.shot.speed = p.start.shot.speed- avg.p.start.shot.speed) %>%
+  mutate(diff.oppo.avg.and.current.shot.speed = oppo.start.shot.speed- avg.oppo.start.shot.speed) 
+
+
+  
+```
+
+```{r}
+
+fed16_df <- fed16_df %>%
+  group_by(rally.number) %>%
+  mutate(lag.diff.oppo.avg.and.current.shot.speed = dplyr::lag(diff.oppo.avg.and.current.shot.speed, n = 1, default = NA)) %>%
+  ungroup
+
+
+```
 
 
 ```{r}
@@ -607,9 +630,25 @@ fed16_only$p.start.shot.x[is.na(fed16_only$p.start.shot.x)] <- 0
 fed16_only$p.start.shot.y[is.na(fed16_only$p.start.shot.y)] <- 0
 fed16_only$lag.p.movement.angle.1[is.na(fed16_only$lag.p.movement.angle.1)] <- 0
 fed16_only$lag.p.movement.angle.2[is.na(fed16_only$lag.p.movement.angle.2)] <- 0
+fed16_only$lag.diff.oppo.avg.and.current.shot.speed[is.na(fed16_only$lag.diff.oppo.avg.and.current.shot.speed)] <- 0
+
 
 fed16_only <- fed16_only %>% mutate(player.total.shot.number = row_number())
 ```
+
+```{r}
+#making y positions absolute for fed16_only as this is more relevant for the depmix model
+
+fed16_only <- fed16_only %>%
+  mutate(p.start.position.y = abs(p.start.position.y)) %>%
+  mutate(p.end.position.y = abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.y = abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.y = abs(oppo.end.position.y))  
+  
+  
+
+```
+
 
 ```{r }
 #shot types
