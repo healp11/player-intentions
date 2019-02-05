@@ -21,7 +21,7 @@ fed16_only <-  read.csv(file = "data/fed16_only.csv")
 library(dplyr)
 
 #choosing variables of interest
-fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed")]
+fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "lag.p.angle", "rally.side.change.count.diff", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed")]
 
 
 
@@ -31,9 +31,9 @@ fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y",     "op
 
 ```{r}
 #scaling variables from 0 min to 1 max for comparison to hidden states plot
-fed16_scale <- fed16_only[, c(  "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff", "player.total.shot.number")]
+fed16_scale <- fed16_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "lag.p.angle", "rally.side.change.count.diff", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed")]
 
-fed16_scale <- as.data.frame(lapply(fed16_dep[c( "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(x) (x-min(x))/(max(x)-min(x))))
+fed16_scale <- as.data.frame(lapply(fed16_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "lag.p.angle", "rally.side.change.count.diff", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed")], function(x) (x-min(x))/(max(x)-min(x))))
 
 fed16_scale <- cbind(fed16_scale, winner = fed16_only$winner)
 
