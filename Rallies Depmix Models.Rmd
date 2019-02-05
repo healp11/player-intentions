@@ -23,14 +23,20 @@ library(dplyr)
 #choosing variables of interest
 fed16_dep <- fed16_only[, c("rally.number", "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")]
 
+
+
+
+```
+
+
+```{r}
+#scaling variables from 0 min to 1 max for comparison to hidden states plot
 fed16_scale <- fed16_only[, c("rally.number", "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff", "player.total.shot.number")]
 
 fed16_scale <- as.data.frame(lapply(fed16_dep[c("rally.number", "p.start.position.x", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(x) (x-min(x))/(max(x)-min(x))))
 
 fed16_scale <- fed16_scale %>% mutate(player.total.shot.number = row_number())
 ```
-
-
 
 
 
@@ -41,8 +47,23 @@ library(MmgraphR)
 
 ```
 
+#Looking for any correlation between chosen variables greater than 50%
+```{r}
+corMat <- cor(fed16_dep)
+corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
+#Removed some variables with significant correlation with other variables above 50%:
+#p.end.position.x, p.end.position.y,oppo.end.position.x, oppo.end.position.y, p.rally.side.change.count,oppo.rally.side.change.count, p.advantage, p.distance, oppo.distance, fhand, p.advantage, rally.distance.run.ratio
+```
 
-#Stepwise to find the first best variable for Depmix
+```{r}
+# cor.test(formula = ~ avg.player.speed.ratio + rally.distance.run.ratio,
+#          data = fed16_only)
+
+
+```
+
+#Stepwise to find best variables for Depmix
+##Stepwise for first best variable
 
 ```{r}
 
@@ -62,29 +83,11 @@ fcov1_df$newcolumn<-c("rally.number", "p.start.position.x", "p.start.position.y"
 
 names(fcov1_df) <- c("convergence.loglik", "Variables")
 
+
 fcov1_df %>% 
    slice(which.max(convergence.loglik))
 
 ```
-
-
-
-#Looking for any correlation between chosen variables greater than 50%
-```{r}
-corMat <- cor(fed16_dep)
-corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
-#Removed some variables with significant correlation with other variables above 50%:
-#p.end.position.x, p.end.position.y,oppo.end.position.x, oppo.end.position.y, p.rally.side.change.count,oppo.rally.side.change.count, p.advantage, p.distance, oppo.distance, fhand, p.advantage, rally.distance.run.ratio
-```
-
-```{r}
-# cor.test(formula = ~ avg.player.speed.ratio + rally.distance.run.ratio,
-#          data = fed16_only)
-
-
-```
-
-
 
 
 
@@ -116,7 +119,7 @@ probs = posterior(fm1)
 ```
 
 
-#Stepwise to find second best variable
+##Stepwise to find second best variable
 
 ```{r}
 library(depmixS4)
@@ -131,7 +134,7 @@ fcov2_df <-  as.data.frame(
     logLik(fcov1$rally.side.change.count.diff))
   )
 
-fcov2_df$newcolumn<-c("rally.number", "p.start.position.y",     "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")
+fcov2_df$newcolumn<-c("rally.number", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")
 
 names(fcov2_df) <- c("convergence.loglik", "Variables")
 
@@ -141,7 +144,7 @@ fcov2_df %>%
 
 ```
 
-#Stepwise to find the third best variable
+##Stepwise to find the third best variable
 ```{r}
 #second best variable is oppo.start.position.x
 library(depmixS4)
@@ -162,14 +165,14 @@ names(fcov3_df) <- c("convergence.loglik", "Variables")
 fcov3_df %>% 
    slice(which.max(convergence.loglik))
 ```
-#Stepwise to find the fourth best variable
+##Stepwise to find the fourth best variable
 
 ```{r}
 library(depmixS4)
 #third best variable is avg.player.speed.ratio
 fcov4 <- lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.position.y", "avg.player.speed.ratio", "lag.p.movement.angle.1", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio", "rally.side.change.count.diff")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 ```
-#stepwise to find fifth best variable
+##Stepwise to find fifth best variable
 ```{r}
 #fourth best variable is rally.side.change.count.diff
 
@@ -181,7 +184,7 @@ fcov5 <- lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.po
 
 
 
-#stepwise to find sixth best variable
+##Stepwise to find sixth best variable
 ```{r}
 #fifth best variable is p.start.x
 
@@ -190,7 +193,7 @@ fcov6 <- lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.po
 ```
 
 
-#stepwise to find seventh best variable
+##Stepwise to find seventh best variable
 ```{r}
 #sixth best variable is lag.p.movement.angle.1
 
@@ -202,7 +205,7 @@ fcov7 <- lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.po
 
 
 
-#stepwise to find eighth best variable
+##Stepwise to find eighth best variable
 ```{r}
 #seventh best variable is p.start.position.y
 
@@ -210,7 +213,7 @@ fcov7 <- lapply(fed16_dep[c("rally.number", "p.start.position.y", "oppo.start.po
 fcov8 <- lapply(fed16_dep[c("rally.number", "oppo.start.position.y", "avg.player.speed.ratio", "p.start.y", "lag.p.angle", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 ```
 
-#stepwise to find ninth best variable
+##Stepwise to find ninth best variable
 ```{r}
 #eigth best variable is lag.p.angle
 
@@ -218,14 +221,14 @@ fcov8 <- lapply(fed16_dep[c("rally.number", "oppo.start.position.y", "avg.player
 fcov9 <- lapply(fed16_dep[c("rally.number", "oppo.start.position.y", "avg.player.speed.ratio", "p.start.y", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + lag.p.angle + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 ```
 
-#stepwise to find tenth best variable
+##Stepwise to find tenth best variable
 ```{r}
 #ninth best variable is avg.player.speed.ratio
 
 
 fcov10 <- lapply(fed16_dep[c("rally.number", "oppo.start.position.y", "p.start.y", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + lag.p.angle + avg.player.speed.ratio + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 ```
- #stepwise to find eleventh best variable
+##Stepwise to find eleventh best variable
 ```{r}
 #tenth best variable is rally.number
 
@@ -233,7 +236,7 @@ fcov10 <- lapply(fed16_dep[c("rally.number", "oppo.start.position.y", "p.start.y
 fcov11 <- lapply(fed16_dep[c("oppo.start.position.y", "p.start.y", "lag.speed.ratio")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ p.start.position.x + oppo.start.position.x + avg.player.speed.ratio + rally.side.change.count.diff + p.start.x + lag.p.movement.angle.1 + p.start.position.y + lag.p.angle + avg.player.speed.ratio + rally.number + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 ```
 
- #stepwise to find twelth best variable
+##stepwise to find twelth best variable
 ```{r}
 #eleventh best variable is lag.speed.ratio
 
@@ -246,7 +249,7 @@ fcov12 <- lapply(fed16_dep[c("oppo.start.position.y", "p.start.y")], function(w)
 
 
 
-###Fitted Depmix Model for the best thirteen variable model
+#Fitted Depmix Model for the best thirteen variable model
 ```{r}
 #Five best stepwise variables
 #p.start.position.x, oppo.start.position.x, p.start.y, oppo.distance, p.end.position.y
@@ -276,7 +279,7 @@ probs = posterior(fm3)
 ```
 
 
-###visualising chosen variables to compare to hidden states model
+###Visualising chosen variables to compare to hidden states model
 
 ```{r}
 
