@@ -450,13 +450,13 @@ fed16_df <- fed16_df %>%
 
 #Adding angles
 fed16_df <- fed16_df %>%
-  mutate(p.start.x = NA) %>%
-  mutate(p.start.y = NA)
+  mutate(p.start.shot.x = NA) %>%
+  mutate(p.start.shot.y = NA)
 
 for (i in 3:nrow(fed16_df)) {
   if(fed16_df$impact.player[i] == fed16_df$impact.player[i-2] & fed16_df$shot[i] == fed16_df$shot[i-2] + 2) {
-    fed16_df$p.start.x[i]=fed16_df$start.x[i-2]
-    fed16_df$p.start.y[i]=fed16_df$start.y[i-2]
+    fed16_df$p.start.shot.x[i]=fed16_df$start.x[i-2]
+    fed16_df$p.start.shot.y[i]=fed16_df$start.y[i-2]
   }
 }
 
@@ -466,8 +466,8 @@ fed16_df <- fed16_df %>%
   mutate(o.angle = NA)
   
 for (i in 1:nrow(fed16_df)) {
-  x1 <- fed16_df$p.start.x[i]
-  y1 <- fed16_df$p.start.y[i]
+  x1 <- fed16_df$p.start.shot.x[i]
+  y1 <- fed16_df$p.start.shot.y[i]
   x2 <- fed16_df$oppo.hit.x[i]
   y2 <- fed16_df$oppo.hit.y[i]
   x3 <- fed16_df$oppo.projected.ballmark.x[i]
@@ -598,8 +598,8 @@ fed16_only <- fed16_only %>%
 fed16_only$o.angle[is.na(fed16_only$o.angle)] <- 0
 fed16_only$lag.p.angle[is.na(fed16_only$lag.p.angle)] <- 0
 fed16_only$lag.speed.ratio[is.na(fed16_only$lag.speed.ratio)] <- 0
-fed16_only$p.start.x[is.na(fed16_only$p.start.x)] <- 0
-fed16_only$p.start.y[is.na(fed16_only$p.start.y)] <- 0
+fed16_only$p.start.shot.x[is.na(fed16_only$p.start.shot.x)] <- 0
+fed16_only$p.start.shot.y[is.na(fed16_only$p.start.shot.y)] <- 0
 fed16_only$lag.p.movement.angle.1[is.na(fed16_only$lag.p.movement.angle.1)] <- 0
 fed16_only$lag.p.movement.angle.2[is.na(fed16_only$lag.p.movement.angle.2)] <- 0
 
@@ -918,7 +918,7 @@ speed1 - speed of shot from impact with racquet
 o.angle - angle made by opponents previous shot
 p.angle - angle made by player’s current shot
 lag.p.angle - angle made by player’s previous shot in rally
-lag.speed.ratio - speed ratio of player’s previous in rally
+lag.speed.ratio - speed ratio of player’s previous shot in rally
 oppo.hit - coordinates of opponents previous impact
 
 Summer Research Project
@@ -1170,7 +1170,7 @@ summary(t6.fm1)
 # else           return (x * recursive.factorial(x-1))
 # }
 
-loop_data <- fed16_only[, c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.x", "p.start.y", "lag.p.angle", "lag.speed.ratio")]
+loop_data <- fed16_only[, c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.shot.x", "p.start.shot.y", "lag.p.angle", "lag.speed.ratio")]
 
 next_best_var <- function(data, column = NULL){
   # if we know what variable to remove, remove it
