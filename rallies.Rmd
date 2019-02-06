@@ -70,7 +70,7 @@ thi17_df <- arrange(thi17_df, matchid, set, game, point, shot)
 Starting with fed16 to compare to fed17
 
 
-#temporarily removing inversion of y axis 
+ 
 ```{r  }
 
 #Reorienting shots so that all Federer's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
@@ -1139,133 +1139,48 @@ t2.fm1<- fit(t2.mod1)
 summary(t2.fm1)
 ```
 
-
-## Type 5: Simple Models with New Variables, Independent of Match Score/Situation. FOcusing on player and ball positions
-
-##Type 5 Model 1
-
-Response: winner, p.angle Covariates: oppo.speed,  start.x, p.start.position.x
-```{r}
-library(depmixS4)
-t5.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + start.x + p.start.position.x,  data = fed16_only, nstates = 2, family=multinomial("identity"))
-t5.fm1 <- fit(t5.mod1)
-summary(t5.fm1)
-```
-
-
-###Type 5 Model 2
-
-Response: winner, p.angle Covariates: oppo.speed,  start.x, start.y, p.start.position.x, p.start.position.y
-```{r}
-library(depmixS4)
-t5.mod2 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y + p.start.position.x + p.start.position.y,  data = fed16_only, nstates = 2, family=multinomial("identity"))
-t5.fm2 <- fit(t5.mod2)
-summary(t5.fm2)
-
-```
-
-###Type 5 Model 3
-
-Response: winner, p.angle Covariates: oppo.speed,  start.x, start.y,  p.end.position.x, p.end.position.y
-
-end positions seem to decrease iterations
-```{r}
-library(depmixS4)
-t5.mod3 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y +  p.end.position.x + p.end.position.y,  data = fed16_only, nstates = 2, family=multinomial("identity"))
-t5.fm3 <- fit(t5.mod3)
-summary(t5.fm3)
-
-```
-
-###Type 5 Model 4
-
-Response: winner, p.angle Covariates: oppo.speed,  start.x, start.y, p.start.position.x, p.start.position.y, projected.ballmark.x
-```{r}
-library(depmixS4)
-t5.mod4 <- depmix(winner ~ 1, transition = ~ oppo.speed +  start.x + start.y + p.start.position.x + p.start.position.y + projected.ballmark.x ,  data = fed16_only, nstates = 2, family=multinomial("identity"))
-t5.fm4 <- fit(t5.mod4)
-summary(t5.fm4)
-
-```
-
-
-###Type 5 Model 5
-
-Response: winner, p.angle Covariates: oppo.speed, start.x, p.start.position.x, projected.ballmark.x, p.start.position.base.dist
-```{r}
-library(depmixS4)
-t5.mod5 <- depmix(winner ~ 1, transition = ~ p.advantage + p.movement.angle.1 ,  data = fed16_only, nstates = 2, family=multinomial("identity"))
-t5.fm5 <- fit(t5.mod5)
-summary(t5.fm5)
-
-```
-#Type 6 Model 
-Looking at variables individually to determine best fit. Looking for lowest log likelihood. 
-
-#Type 6 model 1
-start.x
-```{r}
-library(depmixS4)
-
-t6.mod1 <- depmix(winner ~ 1, transition = ~ start.x, data = fed16_only, nstates = 2, family=multinomial("identity"))
-t6.fm1 <- fit(t6.mod1)
-
-summary(t6.fm1)
-```
-
-
-
-
-
-#test loop for depmix
-
-
-
-
 ```{r}
 # recursive.factorial <- function(x) {
 # if (x == 0)    return (1)
 # else           return (x * recursive.factorial(x-1))
 # }
 
-loop_data <- fed16_only[, c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.shot.x", "p.start.shot.y", "lag.p.angle", "lag.speed.ratio")]
-
-next_best_var <- function(data, column = NULL){
-  # if we know what variable to remove, remove it
-  if (!is.null(column)){
-    data <- data[, names(data) != column]
-  }
-  #if 1 variable remaining, add to model
-  if (ncol(data) == 1){
-    return(colnames(data))
-  }
-  #map over all available columns
-  
-  
-  
-  
-  
-}
-
-inside_func <- function(data, x){
-  fm <- fit(depmix(winner ~ 1, data = data, transition = ~ x, nstates = 2, family=multinomial("identity")))
-  
-  
-  
-  }
-
-# for every possible variable in data set
-Loop_trial <- ha %>% map(function(data,x) 
-  t6.mod41 <- depmix(winner ~ 1, data = fed16_only, transition = ~ x, nstates = 2, family=multinomial("identity")))
- t6.fm41<- fit(t6.mod41)
- 
-
- t6.fm41
- 
- 
+# loop_data <- fed16_only[, c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.shot.x", "p.start.shot.y", "lag.p.angle", "lag.speed.ratio")]
+# 
+# next_best_var <- function(data, column = NULL){
+#   # if we know what variable to remove, remove it
+#   if (!is.null(column)){
+#     data <- data[, names(data) != column]
+#   }
+#   #if 1 variable remaining, add to model
+#   if (ncol(data) == 1){
+#     return(colnames(data))
+#   }
+#   #map over all available columns
+#   
+#   
+#   
+#   
+#   
+# }
+# 
+# inside_func <- function(data, x){
+#   fm <- fit(depmix(winner ~ 1, data = data, transition = ~ x, nstates = 2, family=multinomial("identity")))
+#   
+#   
+#   
+#   }
+# 
+# # for every possible variable in data set
+# Loop_trial <- ha %>% map(function(data,x) 
+#   t6.mod41 <- depmix(winner ~ 1, data = fed16_only, transition = ~ x, nstates = 2, family=multinomial("identity")))
+#  t6.fm41<- fit(t6.mod41)
+#  
+# 
+#  t6.fm41
+#  
+#  
 ```
-
-
 
 
 
