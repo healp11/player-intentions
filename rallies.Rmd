@@ -656,7 +656,8 @@ fed16_only <- fed16_only %>%
   mutate(p.start.position.y = abs(p.start.position.y)) %>%
   mutate(p.end.position.y = abs(p.end.position.y)) %>%
   mutate(oppo.start.position.y = abs(oppo.start.position.y)) %>%
-  mutate(oppo.end.position.y = abs(oppo.end.position.y))  
+  mutate(oppo.end.position.y = abs(oppo.end.position.y))%>%
+  mutate(p.start.shot.y =abs(p.start.shot.y))
   
   
 
