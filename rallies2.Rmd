@@ -1,0 +1,11 @@
+---
+title: "Rallies 2"
+author: "Pat Healy"
+date: "6 February 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
