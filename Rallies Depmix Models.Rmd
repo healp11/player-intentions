@@ -11,10 +11,24 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 #Run rallies.Rmd before reading fed16_only.csv
+#Run rallies2.Rmd before reading all other csv files
 library(readr)
 library(ggplot2)
 fed16_only <-  read.csv(file = "data/fed16_only.csv")
 ```
+
+```{r}
+#reading and joining csv files with new variables for additionals matches
+fed17_only <-  read.csv(file = "data/fed17_only.csv")
+fed18_only <-  read.csv(file = "data/fed18_only.csv")
+```
+
+```{r}
+#joining all federer matches
+fed_only <- rbind(fed16_only, fed17_only, fed18_only)
+
+```
+
 #Training data fo Depmix Model Feder vs Berdych 2016
 ##Using stepwise to find best variables for Depmix model
 ```{r}
@@ -22,8 +36,6 @@ library(dplyr)
 
 #choosing variables of interest
 fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "lag.p.angle", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed", "lag.oppo.height.off.net")]
-
-
 
 
 ```
@@ -119,7 +131,7 @@ fm1_df <- fm1_df[ -c(2, 6, 14:15) ]
 
 
 ```{r}
-#Plotting states for best thirteen variable model
+#Plotting states for training model fed16
 #p.start.position.x, oppo.start.position.x, oppo.diff.avg.shot.and.match.movement.speed, p.diff.avg.shot.and.match.movement.speed, lag.p.angle, oppo.rally.side.change.count, lag.diff.oppo.avg.and.current.shot.speed, diff.p.avg.and.current.shot.speed, p.movement.angle.1, lag.oppo.height.off.net, oppo.start.position.y
 probs = posterior(fm1)
 
@@ -153,6 +165,53 @@ ggduo(fm1_df, 10:11, 13, showStrips = FALSE)
 # ggplot(fed16_scale, aes(x=lag.diff.oppo.avg.and.current.shot.speed,y=S1)) + geom_point()
 
 ```
+
+
+#TestingTraining Data on multiple Fed vs Berdych matches 2016, 2017 & 2018
+```{r}
+library(dplyr)
+
+#choosing variables of interest
+fed_dep <- fed_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "lag.p.angle", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed", "lag.oppo.height.off.net")]
+
+
+
+
+```
+
+
+```{r}
+#scaling variables from 0 min to 1 max for comparison to hidden states plot
+fed_scale <- fed_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "lag.p.angle", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed", "lag.oppo.height.off.net")]
+
+#error in scaling as two variables not created correcctly in rallies2
+fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "lag.p.angle", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed", "lag.oppo.height.off.net")], function(y) (y-min(y))/(max(y)-min(y))))
+
+#adding winner and total shot number to the df for analysis
+fed_scale <- cbind(fed_scale, winner = fed_only$winner)
+
+fed_scale <- fed_scale %>% mutate(player.total.shot.number = row_number())
+```
+
+
+```{r}
+#Checking correlation with more observations added
+# corMat2 <- cor(fed_dep)
+# corMat2_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
+
+# no correlation found with chosen variables in expanded data set
+```
+
+```{r}
+
+#check significance if any correlation found
+    #cor.test(formula = ~  lag.oppo.height.off.net + S1,
+             #data = fm1_df)
+
+
+```
+##test model 1 
+
 
 #Stepwise to find best variables for Depmix for Federer vs Berdych 2016 
 ##Stepwise for first best variable
