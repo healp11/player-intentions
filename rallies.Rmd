@@ -298,10 +298,11 @@ fed16_df <- fed16_df %>%
 ```{r}
 
 #Tally of the number of times player and opponent change side during rally
+#Defining change of side as having travelled from a location 2.0575 or more metres away from the centre on one side of the court (half the distance between centre and singles lines) to a location 2.0575 or more metres away from the centre on the other side of the court
 fed16_df <- fed16_df %>%
-  mutate(p.side.change.count = ifelse(p.start.position.y <= 2.0575 & p.end.position.y >= 2.0575, 1, ifelse(p.start.position.y >= 2.0575 & p.end.position.y <= 2.0575, 1, 0))) %>%
+  mutate(p.side.change.count = ifelse(p.start.position.y <= -2.0575 & p.end.position.y >= 2.0575, 1, ifelse(p.start.position.y >= 2.0575 & p.end.position.y <= -2.0575, 1, 0))) %>%
   mutate(p.side.change.cumsum = cumsum(p.side.change.count)) %>%
-  mutate(oppo.side.change.count = ifelse(oppo.start.position.y <= 2.0575 & oppo.end.position.y >= 2.0575, 1, ifelse(oppo.start.position.y >= 2.0575 & oppo.end.position.y <= 2.0575, 1, 0))) %>%
+  mutate(oppo.side.change.count = ifelse(oppo.start.position.y <= -2.0575 & oppo.end.position.y >= 2.0575, 1, ifelse(oppo.start.position.y >= 2.0575 & oppo.end.position.y <= -2.0575, 1, 0))) %>%
   mutate(oppo.side.change.cumsum = cumsum(oppo.side.change.count)) 
   
 
@@ -309,6 +310,7 @@ fed16_df <- fed16_df %>%
   
   
 ```
+
 ```{r}
 #Within rally tally of side change count and distance run
 fed16_df <- fed16_df %>%
@@ -322,10 +324,18 @@ fed16_df <- fed16_df %>%
   ungroup
  
 ```
+```{r}
+#Seperating height over net of shots for player and opponent.
+
+fed16_df <- fed16_df %>%
+  mutate(p.height.off.net = ifelse(impact.player == "FEDERER",height.off.net,0)) %>%
+  mutate(oppo.height.off.net = ifelse(impact.player != "FEDERER", height.off.net,0)) 
+  
+```
 
 
 ```{r}
-#Adding angles for player & opposition movement from start position[i] to end position[i] as well as end position[i] to start position[i+1]. Measuring the angle of movement from the baseline. With the baseline running 90 to 270 degrees and the centre service line running 0 to 180 degrees
+#Adding angles for player & opposition movement from start position[i] to end position[i] as well as end position[i] to start position[i+1]. Measuring the angle of movement from the baseline. Directly towards the net is 0 deg. Directly away from the net is 180 deg.
 
 
 fed16_df <- fed16_df %>%
@@ -510,6 +520,7 @@ fed16_df <- fed16_df %>%
   mutate(lag.speed.ratio = dplyr::lag(speed.ratio, n = 1, default = NA)) %>%
   mutate(lag.p.movement.angle.1 = dplyr::lag(p.movement.angle.1, n = 1, default = NA)) %>%
   mutate(lag.p.movement.angle.2 = dplyr::lag(p.movement.angle.2, n = 1, default = NA)) %>%
+  mutate(lag.oppo.height.off.net = dplyr::lag(oppo.height.off.net, n = 1, default = NA)) %>%
   ungroup
 
 
@@ -631,6 +642,8 @@ fed16_only$p.start.shot.y[is.na(fed16_only$p.start.shot.y)] <- 0
 fed16_only$lag.p.movement.angle.1[is.na(fed16_only$lag.p.movement.angle.1)] <- 0
 fed16_only$lag.p.movement.angle.2[is.na(fed16_only$lag.p.movement.angle.2)] <- 0
 fed16_only$lag.diff.oppo.avg.and.current.shot.speed[is.na(fed16_only$lag.diff.oppo.avg.and.current.shot.speed)] <- 0
+fed16_only$lag.oppo.height.off.net[is.na(fed16_only$lag.oppo.height.off.net)] <- 0
+
 
 
 fed16_only <- fed16_only %>% mutate(player.total.shot.number = row_number())
