@@ -223,6 +223,7 @@ fed17_df <- fed17_df %>%
   
 ```
 
+
 ```{r}
 
 #player speed and acceleration differences and ratios
@@ -234,7 +235,11 @@ fed17_df <- fed17_df %>%
   mutate(avg.player.acceleration.diff = (p.avg.acceleration)-(oppo.avg.acceleration)) %>%
   mutate(peak.player.acceleration.diff = (p.peak.acceleration)-(oppo.peak.acceleration)) %>%
   mutate(avg.player.acceleration.ratio = (p.avg.acceleration)/(oppo.avg.acceleration)) %>%
-  mutate(peak.player.acceleration.ratio = (p.peak.acceleration)/(oppo.peak.acceleration)) %>%
+  mutate(peak.player.acceleration.ratio = (p.peak.acceleration)/(oppo.peak.acceleration)) 
+
+fed17_df[is.na(fed17_df)] <- 0
+  
+fed17_df <- fed17_df %>%  
   mutate(p.avg.speed.match = mean(p.avg.speed)) %>%
   mutate(oppo.avg.speed.match = mean(oppo.avg.speed)) %>%
   mutate(p.diff.avg.shot.and.match.movement.speed = p.avg.speed - p.avg.speed.match) %>%
@@ -265,6 +270,9 @@ fed17_df <- fed17_df %>%
   
   
 ```
+
+
+
 ```{r}
 #player/ opponent shortest distances for start/end positions 
 fed17_df <- fed17_df %>%
@@ -629,6 +637,7 @@ fed17_only <- fed17_only %>%
 ```
 ```{r}
 #Save output
+fed17_only[is.na(fed17_only)] <- 0
 write.csv(fed17_only, "data/fed17_only.csv")
 ```
 
@@ -783,6 +792,10 @@ fed18_df <- fed18_df %>%
   
   
 ```
+```{r}
+fed18_df[is.na(fed18_df)] <- 0
+```
+
 
 ```{r}
 
@@ -1193,6 +1206,7 @@ fed18_only <- fed18_only %>%
 ```
 ```{r}
 #Save output
+fed18_only[is.na(fed18_only)] <- 0
 write.csv(fed18_only, "data/fed18_only.csv")
 ```
 
