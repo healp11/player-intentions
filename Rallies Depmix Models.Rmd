@@ -88,13 +88,11 @@ library(MmgraphR)
 "p.start.position.y": Numeric y location of player at the start of the shot.    
 "oppo.start.position.x": Numeric x location of opponent at the start of the shot. 
 "oppo.start.position.y": Numeric y location of opponent at the start of the shot.
-: 
-"p.diff.avg.shot.and.match.movement.speed": 
-"p.movement.angle.1": 
+"p.diff.avg.shot.and.match.movement.speed": The difference in m/s of the players average movement speed  from start to end of shot comapared to average movement speed through the match
+"p.movement.angle.1": The angle 
 "p.start.shot.x": Numerical x coordinate of the ball at the start of its arc for players shot.
 "p.start.shot.y": Numerical y coordinate of the ball at the start of its arc for players shot.
 "lag.p.angle": Angle made by players previous shot in rally.
-"lag.speed.ratio": Speed ratio of players previous shot in rally.
 "oppo.rally.side.change.count":
 "lag.oppo.height.off.net"
 
@@ -147,24 +145,16 @@ probs = posterior(fm1)
 ```{r}
 #plotting a matrix to identify any correlation between depmix probabilities and chosen variables
 library(GGally)
-ggduo(fm1_df, 1:3, 13, showStrips = FALSE)
-ggduo(fm1_df, 4:6, 13, showStrips = FALSE)
-ggduo(fm1_df, 7:9, 13, showStrips = FALSE)
-ggduo(fm1_df, 10:11, 13, showStrips = FALSE)
+p1 <- ggduo(fm1_df, 1:3, 13, showStrips = FALSE)
+p2 <- ggduo(fm1_df, 4:6, 13, showStrips = FALSE)
+p3<- ggduo(fm1_df, 7:9, 13, showStrips = FALSE)
+p4<- ggduo(fm1_df, 10:11, 13, showStrips = FALSE)
 
-# ggplot(fed16_scale, aes(x=p.start.position.x,y=S1)) + geom_point()
-# ggplot(fed16_scale, aes(x=oppo.start.position.x,y=S1)) + geom_point()
-# ggplot(fed16_scale, aes(x=oppo.diff.avg.shot.and.match.movement.speed,y=S1)) + geom_point()
-# ggplot(fed16_scale, aes(x=p.diff.avg.shot.and.match.movement.speed,y=S1)) + geom_point()
-# ggplot(fed16_scale, aes(x=lag.p.angle,y=S1)) + geom_point()
-# ggplot(fed16_scale, aes(x=oppo.rally.side.change.count,y=S1)) + geom_point()
-# ggplot(fed16_scale, aes(x=oppo.start.position.x,y=S1)) + geom_point()
-# ggplot(fed16_scale, aes(x=diff.p.avg.and.current.shot.speed,y=S1)) + geom_point()
-# ggplot(fed16_scale, aes(x=p.movement.angle.1,y=S1)) + geom_point()
-# ggplot(fed16_scale, aes(x=lag.oppo.height.off.net,y=S1)) + geom_point()
-# ggplot(fed16_scale, aes(x=lag.diff.oppo.avg.and.current.shot.speed,y=S1)) + geom_point()
+
 
 ```
+
+
 ```{r}
 #showing correlation between variables and probaility of being in state 1
 
@@ -248,10 +238,10 @@ ftm.1_df <- ftm.1_df[ -c(2, 6) ]
 ```{r}
 #plotting a matrix to identify any correlation between depmix probabilities and chosen variables
 library(GGally)
-ggduo(ftm.1_df, 1:3, 15, showStrips = FALSE)
-ggduo(ftm.1_df, 4:6, 15, showStrips = FALSE)
-ggduo(ftm.1_df, 7:9, 15, showStrips = FALSE)
-ggduo(ftm.1_df, 10:11, 15, showStrips = FALSE)
+p5 <- ggduo(ftm.1_df, 1:3, 15, showStrips = FALSE)
+p6 <- ggduo(ftm.1_df, 4:6, 15, showStrips = FALSE)
+p7 <- ggduo(ftm.1_df, 7:9, 15, showStrips = FALSE)
+p8 <- ggduo(ftm.1_df, 10:11, 15, showStrips = FALSE)
 ```
 ```{r}
 #showing correlation between variables and probaility of being in state 1
@@ -275,7 +265,94 @@ tm.2 <- depmix(winner ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.sho
  
  summary(ftm.2)
 ```
+###plotting probabilities for test model 2
+```{r}
+#Plotting probability states for test model 2 for fed16/17/18
 
+
+#Pulling state probabilities from fitted model to add to a dataframe to look for correlation with fitted variables
+ftm.2_df <- posterior(ftm.2)
+
+ftm.2_df <- cbind(fed_scale, ftm.2_df)
+	
+#dropping columns not in the fitted depmix model
+
+ftm.2_df <- ftm.2_df[ -c(1, 3, 9) ]
+
+
+```
+```{r}
+#plotting a matrix to identify any correlation between depmix probabilities and chosen variables
+library(GGally)
+p9 <- ggduo(ftm.2_df, 1:3, 13, showStrips = FALSE)
+p10 <- ggduo(ftm.2_df, 4:6, 13, showStrips = FALSE)
+p11 <- ggduo(ftm.2_df, 7:9, 13, showStrips = FALSE)
+p12 <- ggduo(ftm.2_df, 10, 13, showStrips = FALSE)
+```
+
+```{r}
+#showing correlation between variables and probaility of being in state 1 for test model 2
+
+corftm.2 <- cor(ftm.2_df)
+corftm.2_df <- as.data.frame(apply(corftm.2, 2, function(x) ifelse (abs(x) >=-1,x,"NA")))
+corftm.2_df <- corftm.2_df[ -c(1:12) ]
+```
+
+#Saving output for presentation
+
+```{r}
+#Prob plots for training model 1
+png(filename="plot1.jpeg")
+print(p1)
+dev.off()
+
+png(filename="plot2.jpeg")
+print(p2)
+dev.off()
+
+png(filename="plot3.jpeg")
+print(p3)
+dev.off()
+
+png(filename="plot4.jpeg")
+print(p4)
+dev.off()
+
+#plots for test model 1
+png(filename="plot5.jpeg")
+print(p5)
+dev.off()
+
+png(filename="plot6.jpeg")
+print(p6)
+dev.off()
+
+png(filename="plot7.jpeg")
+print(p7)
+dev.off()
+
+png(filename="plot8.jpeg")
+print(p8)
+dev.off()
+
+#Plots for test model 2
+png(filename="plot9.jpeg")
+print(p5)
+dev.off()
+
+png(filename="plot10.jpeg")
+print(p6)
+dev.off()
+
+png(filename="plot11.jpeg")
+print(p7)
+dev.off()
+
+png(filename="plot12.jpeg")
+print(p8)
+dev.off()
+
+```
 
 #Stepwise to find best variables for Depmix for Federer vs Berdych 2016 
 ##Stepwise for first best variable
