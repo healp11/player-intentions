@@ -52,7 +52,7 @@ fed16_scale <- cbind(fed16_scale, winner = fed16_only$winner)
 fed16_scale <- fed16_scale %>% mutate(player.total.shot.number = row_number())
 ```
 
-#Looking for any correlation between chosen variables greater than 50%
+##Looking for any correlation between chosen variables greater than 50%
 ```{r}
 #Creating correlation matrix for variables of interest. Variables under 50% correlation will show as NA
 corMat <- cor(fed16_dep)
@@ -82,7 +82,7 @@ library(MmgraphR)
 
 
 
-#Glossary of chosen variables
+##Glossary of chosen variables
 
 "p.start.position.x": Numeric x location of player at the start of the shot.
 "p.start.position.y": Numeric y location of player at the start of the shot.    
@@ -101,7 +101,7 @@ library(MmgraphR)
 
 
 
-#Fitted Depmix Model for the best stepwise variable model
+##Fitted Depmix Model for the best stepwise variable model
 
 ```{r}
 # Variables fitted:
@@ -165,6 +165,14 @@ ggduo(fm1_df, 10:11, 13, showStrips = FALSE)
 # ggplot(fed16_scale, aes(x=lag.diff.oppo.avg.and.current.shot.speed,y=S1)) + geom_point()
 
 ```
+```{r}
+#showing correlation between variables and probaility of being in state 1
+
+corfm1 <- cor(fm1_df)
+corfm1_df <- as.data.frame(apply(corfm1, 2, function(x) ifelse (abs(x) >=0-1,x,"NA")))
+corfm1_df <- corfm1_df[ -c(1:12) ]
+
+```
 
 
 #TestingTraining Data on multiple Fed vs Berdych matches 2016, 2017 & 2018
@@ -189,7 +197,7 @@ fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.posi
 
 #adding winner and total shot number to the df for analysis
 fed_scale <- cbind(fed_scale, winner = fed_only$winner) 
-fed_scale <- cbind(fed_scale, matchid = fed_only$matchid) 
+
 
 ```
 
@@ -244,6 +252,15 @@ ggduo(ftm.1_df, 1:3, 15, showStrips = FALSE)
 ggduo(ftm.1_df, 4:6, 15, showStrips = FALSE)
 ggduo(ftm.1_df, 7:9, 15, showStrips = FALSE)
 ggduo(ftm.1_df, 10:11, 15, showStrips = FALSE)
+```
+```{r}
+#showing correlation between variables and probaility of being in state 1
+
+corftm.1 <- cor(ftm.1_df)
+corftm.1_df <- as.data.frame(apply(corftm.1, 2, function(x) ifelse (abs(x) >=0-1,x,"NA")))
+corftm.1_df <- corftm.1_df[ -c(1:13) ]
+
+
 ```
 
 
