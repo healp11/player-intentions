@@ -1205,7 +1205,7 @@ fed18_only <- fed18_only %>%
 
 ```
 ```{r}
-#Save output
+#Save output & remove any NA's for modelling
 fed18_only[is.na(fed18_only)] <- 0
 write.csv(fed18_only, "data/fed18_only.csv")
 ```
