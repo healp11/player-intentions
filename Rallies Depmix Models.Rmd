@@ -172,7 +172,7 @@ ggduo(fm1_df, 10:11, 13, showStrips = FALSE)
 library(dplyr)
 
 #choosing variables of interest
-fed_dep <- fed_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "lag.p.angle", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed", "lag.oppo.height.off.net")]
+fed_dep <- fed_only[, c("p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "lag.p.angle", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed", "lag.oppo.height.off.net")]
 
 
 
@@ -188,16 +188,16 @@ fed_scale <- fed_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.st
 fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "lag.p.angle", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed", "lag.oppo.height.off.net")], function(y) (y-min(y))/(max(y)-min(y))))
 
 #adding winner and total shot number to the df for analysis
-fed_scale <- cbind(fed_scale, winner = fed_only$winner)
+fed_scale <- cbind(fed_scale, winner = fed_only$winner) 
+fed_scale <- cbind(fed_scale, matchid = fed_only$matchid) 
 
-fed_scale <- fed_scale %>% mutate(player.total.shot.number = row_number())
 ```
 
 
 ```{r}
 #Checking correlation with more observations added
-# corMat2 <- cor(fed_dep)
-# corMat2_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
+ corMat2 <- cor(fed_dep)
+ corMat2_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
 
 # no correlation found with chosen variables in expanded data set
 ```
@@ -210,7 +210,17 @@ fed_scale <- fed_scale %>% mutate(player.total.shot.number = row_number())
 
 
 ```
-##test model 1 
+##fitted test model 1 Running stepwise from training model on Federer vs Berdych 2016/17/18
+
+
+```{r}
+# Variables fitted:
+#p.start.position.x, oppo.start.position.x, oppo.diff.avg.shot.and.match.movement.speed, p.diff.avg.shot.and.match.movement.speed, lag.p.angle, oppo.rally.side.change.count, lag.diff.oppo.avg.and.current.shot.speed, diff.p.avg.and.current.shot.speed, p.movement.angle.1, lag.oppo.height.off.net, oppo.start.position.y
+ tm1 <- depmix(winner ~ 1, transition = ~ p.start.position.x + oppo.start.position.x + oppo.diff.avg.shot.and.match.movement.speed + p.diff.avg.shot.and.match.movement.speed + lag.p.angle + oppo.rally.side.change.count + lag.diff.oppo.avg.and.current.shot.speed + diff.p.avg.and.current.shot.speed + p.movement.angle.1 + lag.oppo.height.off.net + oppo.start.position.y, data = fed16_scale, nstates = 2, family=multinomial("identity"))
+ ftm1 <- fit(tm1)
+ 
+ summary(ftm1)
+```
 
 
 #Stepwise to find best variables for Depmix for Federer vs Berdych 2016 
