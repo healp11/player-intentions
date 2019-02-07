@@ -175,7 +175,7 @@ corfm1_df <- corfm1_df[ -c(1:12) ]
 ```
 
 
-#TestingTraining Data on multiple Fed vs Berdych matches 2016, 2017 & 2018
+#Testing Training Data on multiple Fed vs Berdych matches 2016, 2017 & 2018
 ```{r}
 library(dplyr)
 
@@ -218,7 +218,7 @@ fed_scale <- cbind(fed_scale, winner = fed_only$winner)
 
 
 ```
-##fitted test model 1 Running stepwise from training model on Federer vs Berdych 2016/17/18
+##Test set 1 fitted model 1: Running stepwise from training model on Federer vs Berdych 2016/17/18
 
 
 ```{r}
@@ -264,13 +264,26 @@ corftm.1_df <- corftm.1_df[ -c(1:13) ]
 ```
 
 
+##Test set 1 test model 2
+```{r}
+#Running a stepwise test on observations from Federer vs Berdych 16/17/18 provided a better set of 10 variables for the depmix model
+#p.movement.angle.1, oppo.diff.avg.shot.and.match.movement.speed, p.start.shot.x, lag.p.angle, diff.p.avg.and.current.shot.speed, p.start.position.y, lag.oppo.height.off.net, oppo.rally.side.change.count, oppo.start.position.y, lag.diff.oppo.avg.and.current.shot.speed
+
+#running this model on the scaled fed_only data set
+tm.2 <- depmix(winner ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.shot.x + lag.p.angle + diff.p.avg.and.current.shot.speed + p.start.position.y + lag.oppo.height.off.net + oppo.rally.side.change.count + oppo.start.position.y + lag.diff.oppo.avg.and.current.shot.speed, data = fed_scale, nstates = 2, family=multinomial("identity"))
+ ftm.2 <- fit(tm.2)
+ 
+ summary(ftm.2)
+```
+
+
 #Stepwise to find best variables for Depmix for Federer vs Berdych 2016 
 ##Stepwise for first best variable
 
 ```{r}
 
 #run through all variables to find highest log lik
-fcov1 <- lapply(fed16_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "lag.p.angle", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed", "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed16_only, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+fcov1 <- lapply(fed16_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "lag.p.angle", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed", "lag.diff.oppo.avg.and.current.shot.speed", "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
 #Pulling covergence log likelihoods into a dataframe
@@ -922,7 +935,7 @@ tm1.fcov11_df %>%
    slice(which.max(convergence.loglik))
 ```
 
-#test loop for depmix
+#Incomplete code for a loop for stepwise testing to find the best model for depmix
 
 
 ##single variable models using map function
