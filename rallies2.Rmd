@@ -412,6 +412,12 @@ for (i in 2:nrow(fed17_df)) {
 }
 ```
 
+```{r}
+#speed of player ad opponent shots in m/s at the start of the shot arc
+fed17_df<- fed17_df %>%
+  mutate(p.start.shot.speed = ifelse(impact.player == "FEDERER", speed.start, 0)) %>%
+  mutate(oppo.start.shot.speed = ifelse(impact.player != "FEDERER", speed.start, 0)) 
+```
 
 ```{r}
 #code for this chunk relatively unchanged
@@ -510,36 +516,15 @@ fed17_df <- fed17_df %>%
   mutate(lag.p.movement.angle.1 = dplyr::lag(p.movement.angle.1, n = 1, default = NA)) %>%
   mutate(lag.p.movement.angle.2 = dplyr::lag(p.movement.angle.2, n = 1, default = NA)) %>%
   mutate(lag.oppo.height.off.net = dplyr::lag(oppo.height.off.net, n = 1, default = NA)) %>%
+  mutate(lag.p.start.shot.speed = dplyr::lag(p.start.shot.speed, n = 1, default = NA)) %>%
+  mutate(lag.oppo.start.shot.speed = dplyr::lag(oppo.start.shot.speed, n = 1, default = NA)) %>%
   ungroup
 
 
 ```
 
 
-```{r}
-#variables for speed of ball at the start of shot arcs
 
-fed17_df <- fed17_df %>%
-  mutate(p.start.shot.speed = ifelse(impact.player == "FEDERER", speed.start, 0)) %>%
-  mutate(oppo.start.shot.speed = ifelse(impact.player != "FEDERER", speed.start, 0)) %>%
-  mutate(avg.p.start.shot.speed = mean(p.start.shot.speed)) %>%
-  mutate(avg.oppo.start.shot.speed = mean(oppo.start.shot.speed)) %>%
-  mutate(diff.p.avg.and.current.shot.speed = p.start.shot.speed- avg.p.start.shot.speed) %>%
-  mutate(diff.oppo.avg.and.current.shot.speed = oppo.start.shot.speed- avg.oppo.start.shot.speed) 
-
-
-  
-```
-
-```{r}
-
-fed17_df <- fed17_df %>%
-  group_by(rally.number) %>%
-  mutate(lag.diff.oppo.avg.and.current.shot.speed = dplyr::lag(diff.oppo.avg.and.current.shot.speed, n = 1, default = NA)) %>%
-  ungroup
-
-
-```
 
 
 ```{r}
@@ -614,13 +599,28 @@ fed17_only$p.start.shot.x[is.na(fed17_only$p.start.shot.x)] <- 0
 fed17_only$p.start.shot.y[is.na(fed17_only$p.start.shot.y)] <- 0
 fed17_only$lag.p.movement.angle.1[is.na(fed17_only$lag.p.movement.angle.1)] <- 0
 fed17_only$lag.p.movement.angle.2[is.na(fed17_only$lag.p.movement.angle.2)] <- 0
-fed17_only$lag.diff.oppo.avg.and.current.shot.speed[is.na(fed17_only$lag.diff.oppo.avg.and.current.shot.speed)] <- 0
 fed17_only$lag.oppo.height.off.net[is.na(fed17_only$lag.oppo.height.off.net)] <- 0
 
 
 
 fed17_only <- fed17_only %>% mutate(player.total.shot.number = row_number())
 ```
+
+
+```{r}
+#variables for speed of ball at the start of shot arcs
+
+fed17_only <- fed17_only %>%
+  mutate(avg.p.start.shot.speed = mean(p.start.shot.speed)) %>%
+  mutate(avg.lag.oppo.start.shot.speed = mean(lag.oppo.start.shot.speed)) %>%
+  mutate(diff.p.avg.and.current.shot.speed = p.start.shot.speed- avg.p.start.shot.speed) %>%
+  mutate(diff.lag.oppo.avg.and.current.shot.speed = lag.oppo.start.shot.speed- avg.lag.oppo.start.shot.speed) 
+
+
+  
+```
+
+
 
 ```{r}
 #making y positions absolute for fed17_only as this is more relevant for the depmix model
@@ -977,6 +977,12 @@ for (i in 2:nrow(fed18_df)) {
                                                  ifelse(oppo.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+oppo.movement.angle.2,oppo.movement.angle.2)))
 }
 ```
+```{r}
+#speed of player ad opponent shots in m/s at the start of the shot arc
+fed18_df<- fed18_df %>%
+  mutate(p.start.shot.speed = ifelse(impact.player == "FEDERER", speed.start, 0)) %>%
+  mutate(oppo.start.shot.speed = ifelse(impact.player != "FEDERER", speed.start, 0)) 
+```
 
 
 ```{r}
@@ -1076,36 +1082,15 @@ fed18_df <- fed18_df %>%
   mutate(lag.p.movement.angle.1 = dplyr::lag(p.movement.angle.1, n = 1, default = NA)) %>%
   mutate(lag.p.movement.angle.2 = dplyr::lag(p.movement.angle.2, n = 1, default = NA)) %>%
   mutate(lag.oppo.height.off.net = dplyr::lag(oppo.height.off.net, n = 1, default = NA)) %>%
+  mutate(lag.p.start.shot.speed = dplyr::lag(p.start.shot.speed, n = 1, default = NA)) %>%
+  mutate(lag.oppo.start.shot.speed = dplyr::lag(oppo.start.shot.speed, n = 1, default = NA)) %>%
   ungroup
 
 
 ```
 
 
-```{r}
-#variables for speed of ball at the start of shot arcs
 
-fed18_df <- fed18_df %>%
-  mutate(p.start.shot.speed = ifelse(impact.player == "FEDERER", speed.start, 0)) %>%
-  mutate(oppo.start.shot.speed = ifelse(impact.player != "FEDERER", speed.start, 0)) %>%
-  mutate(avg.p.start.shot.speed = mean(p.start.shot.speed)) %>%
-  mutate(avg.oppo.start.shot.speed = mean(oppo.start.shot.speed)) %>%
-  mutate(diff.p.avg.and.current.shot.speed = p.start.shot.speed- avg.p.start.shot.speed) %>%
-  mutate(diff.oppo.avg.and.current.shot.speed = oppo.start.shot.speed- avg.oppo.start.shot.speed) 
-
-
-  
-```
-
-```{r}
-
-fed18_df <- fed18_df %>%
-  group_by(rally.number) %>%
-  mutate(lag.diff.oppo.avg.and.current.shot.speed = dplyr::lag(diff.oppo.avg.and.current.shot.speed, n = 1, default = NA)) %>%
-  ungroup
-
-
-```
 
 
 ```{r}
@@ -1139,6 +1124,7 @@ fed18_pos <- fed18_pos %>%
   mutate(pos.rally.count= 1:n()) %>%
   ungroup
 ``` 
+
 
 
 
@@ -1183,13 +1169,26 @@ fed18_only$p.start.shot.x[is.na(fed18_only$p.start.shot.x)] <- 0
 fed18_only$p.start.shot.y[is.na(fed18_only$p.start.shot.y)] <- 0
 fed18_only$lag.p.movement.angle.1[is.na(fed18_only$lag.p.movement.angle.1)] <- 0
 fed18_only$lag.p.movement.angle.2[is.na(fed18_only$lag.p.movement.angle.2)] <- 0
-fed18_only$lag.diff.oppo.avg.and.current.shot.speed[is.na(fed18_only$lag.diff.oppo.avg.and.current.shot.speed)] <- 0
 fed18_only$lag.oppo.height.off.net[is.na(fed18_only$lag.oppo.height.off.net)] <- 0
 
 
 
 fed18_only <- fed18_only %>% mutate(player.total.shot.number = row_number())
 ```
+
+```{r}
+#variables for difference of the current shot in m/s from the average speed of ball at the start of shot arcs
+
+fed18_only<- fed18_only %>%
+  mutate(avg.p.start.shot.speed = mean(p.start.shot.speed)) %>%
+  mutate(avg.lag.oppo.start.shot.speed = mean(lag.oppo.start.shot.speed)) %>%
+  mutate(diff.p.avg.and.current.shot.speed = p.start.shot.speed- avg.p.start.shot.speed) %>%
+  mutate(diff.lag.oppo.avg.and.current.shot.speed = lag.oppo.start.shot.speed- avg.lag.oppo.start.shot.speed) 
+
+
+  
+```
+
 
 ```{r}
 #making y positions absolute for fed18_only as this is more relevant for the depmix model
