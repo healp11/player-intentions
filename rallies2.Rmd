@@ -138,6 +138,10 @@ fed17_df <- fed17_df %>%
 
 ```
 
+
+
+
+
 ```{r}
 
 fed17_df <- fed17_df %>%
@@ -152,7 +156,16 @@ for (i in 1:ncol(fed17_df)) {
 }
 ```
 
+```{r}
+#Combining winner, return into play and error into 1 column for three states in hidden markov model
+#If ball is in play and the shot is a winner value of 1
+#If ball is in play and the shot is not a winner value of 0
+#If the ball is out of play and thus not a winner value of -1
 
+fed17_df <- fed17_df %>%
+  mutate(winner.return.error = ifelse(is.good =="TRUE" & winner == "1",1,
+                ifelse(is.good =="TRUE" & winner == "0",0,-1)))
+```
 
 ```{r}
 col = c("set","game", "point")
@@ -708,6 +721,8 @@ fed18_df <- fed18_df %>%
 
 ```
 
+
+
 ```{r}
 
 fed18_df <- fed18_df %>%
@@ -721,6 +736,18 @@ for (i in 1:ncol(fed18_df)) {
   }
 }
 ```
+
+```{r}
+#Combining winner, return into play and error into 1 column for three states in hidden markov model
+#If ball is in play and the shot is a winner value of 1
+#If ball is in play and the shot is not a winner value of 0
+#If the ball is out of play and thus not a winner value of -1
+
+fed18_df <- fed18_df %>%
+  mutate(winner.return.error = ifelse(is.good =="TRUE" & winner == "1",1,
+                ifelse(is.good =="TRUE" & winner == "0",0,-1)))
+```
+
 
 
 
