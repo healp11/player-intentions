@@ -29,13 +29,13 @@ fed_only <- rbind(fed16_only, fed17_only, fed18_only)
 
 ```
 
-#Training data fo Depmix Model Feder vs Berdych 2016
-##Using stepwise to find best variables for Depmix model
+#Training data fo Depmix Model Federer vs Berdych 2016
+
 ```{r}
 library(dplyr)
 
 #choosing variables of interest
-fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")]
+fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
 
 
 ```
@@ -43,11 +43,12 @@ fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y", "oppo.s
 
 ```{r}
 #scaling variables from 0 min to 1 max for comparison to hidden states plot
-fed16_scale <- fed16_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")]
+fed16_scale <- fed16_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
 
-fed16_scale <- as.data.frame(lapply(fed16_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(x) (x-min(x))/(max(x)-min(x))))
+fed16_scale <- as.data.frame(lapply(fed16_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(x) (x-min(x))/(max(x)-min(x))))
 #adding winner and total shot number to the df for analysis
 fed16_scale <- cbind(fed16_scale, winner = fed16_only$winner)
+
 
 fed16_scale <- fed16_scale %>% mutate(player.total.shot.number = row_number())
 ```
@@ -113,7 +114,7 @@ library(MmgraphR)
 "oppo.diff.avg.shot.and.match.movement.speed":The difference in speed in m/s between the opponents average movement speed to retreive the current shot and their average movement speed during the match. 
  
 
-##Fitted Depmix Model for the best stepwise variable model
+##Fitted Depmix Model for the best stepwise variable model 2 states
 
 ```{r}
 # Variables fitted:
@@ -176,6 +177,28 @@ corfm1_df <- as.data.frame(apply(corfm1, 2, function(x) ifelse (abs(x) >=(-1),x,
 corfm1_df <- corfm1_df[ -c(1:5, 7) ]
 
 ```
+###Running training model 1 with 3 states
+```{r}
+# Variables fitted:
+#p.start.position.x, oppo.start.position.x, oppo.diff.avg.shot.and.match.movement.speed, p.diff.avg.shot.and.match.movement.speed, oppo.start.position.y
+#mod1.3s refers to model 1 with 3 states
+ mod1.3s <- depmix(winner.return.error ~ 1, transition = ~ p.start.position.x + oppo.start.position.x + oppo.diff.avg.shot.and.match.movement.speed + p.diff.avg.shot.and.match.movement.speed + oppo.start.position.y, data = fed16_scale, nstates = 3, family=multinomial("identity"))
+ fm1.3s <- fit(mod1.3s)
+ 
+ summary(fm1.3s)
+
+```
+```{r}
+#plotting training model 1 with 3 states
+probs = posterior(fm1.3s)
+
+	layout(1:2)
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+	
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
+		
+```
 
 
 #Testing Training Data on multiple Fed vs Berdych matches 2016, 2017 & 2018
@@ -183,7 +206,7 @@ corfm1_df <- corfm1_df[ -c(1:5, 7) ]
 library(dplyr)
 
 #choosing variables of interest
-fed_dep <- fed_only[, c("p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")]
+fed_dep <- fed_only[, c("p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
 
 
 
@@ -192,14 +215,17 @@ fed_dep <- fed_only[, c("p.start.position.x", "p.start.position.y", "oppo.start.
 
 
 ```{r}
+
+
 #scaling variables from 0 min to 1 max for comparison to hidden states plot
-fed_scale <- fed_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")]
+fed_scale <- fed_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
 
 #error in scaling as two variables not created correcctly in rallies2
-fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(y) (y-min(y))/(max(y)-min(y))))
+fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(y) (y-min(y))/(max(y)-min(y))))
 
 #adding winner and total shot number to the df for analysis
 fed_scale <- cbind(fed_scale, winner = fed_only$winner) 
+
 
 
 ```
