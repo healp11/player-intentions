@@ -66,8 +66,9 @@ thi16_df <- arrange(thi16_df, matchid, set, game, point, shot)
 thi17_df <- filter(rallies, year == 2017, h2h == "THIEM GOFFIN" )
 thi17_df <- arrange(thi17_df, matchid, set, game, point, shot)
 ```
-
-Starting with fed16 to compare to fed17
+#Creating new variables for fed16 as well as recreating variables from Winter research project. 
+(some columns in rallies data have a different classification than in federer2017 data. Such as 'is.good' replaces 'ended.in.error')(With Aces dropped we also now cannot recreate retser, retser1 or retser2 )
+Starting with Federer vs Berdych 2016
 
 
  
@@ -90,7 +91,7 @@ fed16_df <- fed16_df %>% rowwise %>%
 
 
 ```{r }
-#temporarily removing inversion of y axis
+
 #Reorienting player positions so that all Federer's & Opponents start/end positions match reoriented ballmarks
 #For Federer
 fed16_df <- fed16_df %>% rowwise %>%
@@ -108,7 +109,7 @@ fed16_df <- fed16_df %>% rowwise %>%
 
 ```{r }
 
-#temporarily removing inversion of y axis
+
 #For Opponent
 fed16_df <- fed16_df %>% rowwise %>%
   mutate(start.server.y = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.y, start.server.y)) %>%
@@ -125,8 +126,7 @@ fed16_df <- fed16_df %>% rowwise %>%
 
 
 
-#####Recreating variables from Federer AO 2017 for fed16. 
-(some columns in rallies data have a different classification than in federer2017 data. Such as 'is.good' replaces 'ended.in.error')(With Aces dropped we also now cannot recreate retser, retser1 or retser2 )
+
 
 ```{r}
 fed16_df <- fed16_df %>%
@@ -141,20 +141,10 @@ fed16_df <- fed16_df %>%
 ```
 
 ```{r}
-#use group_index
-#Want to create an index want to group by when the rally starts
-#How to create an inde on multiple rows
-#to assign an index add a new column that has 1 to n() row of a data set
-#Want to group by everything exccept shot number/ final shot number
+#Serve, return and winner classifications
 
-#changes of angles, have to show the absolute change in angles for every change in direction between shots
-#Be very clear about what the angle reference of the baseline and centre line
-#Have different columns for 1st second change in direction angle
-#make sure that everything that can be looked at in code is being looked at. 
 
-#Broom a package for forecasting and fitting for a model
-
-#Need to look at lecture 6 for fitting data
+#Create variables for winner, 1st serve and second serve
 fed16_df <- fed16_df %>%
   mutate(winner = ifelse(is.good == TRUE & lastshot == 1,1,0)) %>%
   mutate(ser1 = ifelse(serve == 1 & serve_classification == 1,1,0)) %>%
@@ -167,19 +157,27 @@ for (i in 1:ncol(fed16_df)) {
 }
 ```
 
-
 ```{r}
-#Put score differentials in when new data received
+#Combining winner, return into play and error into 1 column for three states in hidden markov model
+#If ball is in play and the shot is a winner value of 1
+#If ball is in play and the shot is not a winner value of 0
+#If the ball is out of play and thus not a winner value of -1
+
+fed16_df <- fed16_df %>%
+  mutate(winner.return.error = ifelse(is.good =="TRUE" & winner == "1",1,
+                ifelse(is.good =="TRUE" & winner == "0",0,-1)))
 ```
 
+
 ```{r}
+#Creating variable for rally number
 col = c("set","game", "point")
 rally.num = as.data.frame(group_indices_(fed16_df,.dots = col))
 colnames(rally.num)<- "rally.number"
 ```
 
 ```{r}
-
+#joining rally.number to federer16 data frame
 
 fed16_df <- fed16_df %>%
   cbind(rally.num)
@@ -648,7 +646,7 @@ fed16_only <- fed16_only %>%
 
 
 ```{r }
-#shot types
+#Creating seperate data frames for shot types useful for visualisation
 dlb_pos <- filter(fed_pos, down.line.backhand == "TRUE")
 
 dlb_df <- filter(fed16_df, down.line.backhand == "TRUE")
