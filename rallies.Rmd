@@ -793,31 +793,15 @@ court_topdown <- ggplot() +
   
 ```
 
-```{r}
-#--- Top Down Halfcourt view player side
-
-
-```
-
 
 ```{r}
 #creating new variables to get more information about player movement
 #First step is to create intermediate variables for seperating rallies when including new data which includes aces and serve returns these are included with initial mutations
 #Second step is to put a count on rallies so that we can create new variables that look at individual rallies 
-#Need help with that
+
 #create some sum of variables for change of court side shot player/opposition, rally total energy expenditure, this will be more difficult as serve and serve expenditure will be counted, change of shot f/b within rally
 
   
-```
-```{r}
-#Creating new variables for player positions/angles/speeds
-#started by reorienting server/reciever start/end positions to match reorientation of projected.ballmark
-
-#New Variables Player Distance from baseline
-#server.start.dist.from.base
-#server.end.dist.from.base
-#receiver.start.dist.from.base
-#receiver.end.dist.from.base
 ```
 
 
@@ -1021,45 +1005,50 @@ lag.speed.ratio - speed ratio of player’s previous shot in rally
 oppo.hit - coordinates of opponents previous impact
 
 Summer Research Project
-rally.number -
-oppo.start.position.x
-oppo.start.position.y
-oppo.end.position.x
-oppo.end.position.y
-p.start.position.x
-p.start.position.y
-p.end.position.x
-p.end.position.y
-oppo.distance
-p.distance
-oppo.avg.speed
-oppo.peak.speed
-oppo.avg.acceleraion
-oppo.peak.acceleration 
-p.avg.speed
-p.peak.speed
-p.avg.acceleraion
-p.peak.acceleration 
-oppo.work
-p.work
-oppo.advantage
-p.advantage
+winner.return.error - Classifies whether the current shot ended in
+rally.number - Numerical count of rally number within match
+oppo.total.changes
+p.total.changes
 avg.player.speed.diff
 peak.player.speed.diff
-avg.player.acceleration.diff
-peak.player.acceleration.diff
 avg.player.speed.ratio
 peak.player.speed.ratio
+avg.player.acceleration.diff
+peak.player.acceleration.diff
 avg.player.acceleration.ratio
 peak.player.acceleration.ratio
+p.avg.speed.match
+oppo.avg.speed.match
+p.diff.avg.shot.and.match.movement.speed
+oppo.diff.avg.shot.and.match.movement.speed
+p.side.change.count
+p.side.change.cumsum
+oppo.side.change.count
+oppo.side.change.cumsum
 p.rally.side.change.count
 oppo.rally.side.change.count
-oppo.movement.angle.1
-oppo.movement.angle.2
+rally.side.change.count.diff
+oppo.rally.distance.run
+p.rally.distance.run
+rally.distance.run.ratio
+p.height.off.net
+oppo.height.off.net
 p.movement.angle.1
 p.movement.angle.2
+oppo.movement.angle.1
+oppo.movement.angle.2
+lag.p.movement.angle.1
+lag.p.movement.angle.2
+lag.oppo.height.off.net
+lag.p.start.shot.speed
+lag.oppo.start.shot.speed
 
 
+
+
+```{r}
+glos_df <- as.data.frame(colnames(fed16_df))
+```
 
 
 
