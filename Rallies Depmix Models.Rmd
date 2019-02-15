@@ -35,7 +35,7 @@ fed_only <- rbind(fed16_only, fed17_only, fed18_only)
 library(dplyr)
 
 #choosing variables of interest
-fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
+fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
 
 
 ```
@@ -43,9 +43,9 @@ fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y", "oppo.s
 
 ```{r}
 #scaling variables from 0 min to 1 max for comparison to hidden states plot
-fed16_scale <- fed16_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
+fed16_scale <- fed16_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
 
-fed16_scale <- as.data.frame(lapply(fed16_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(x) (x-min(x))/(max(x)-min(x))))
+fed16_scale <- as.data.frame(lapply(fed16_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")], function(x) (x-min(x))/(max(x)-min(x))))
 #adding winner and total shot number to the df for analysis
 fed16_scale <- cbind(fed16_scale, winner = fed16_only$winner)
 
@@ -114,7 +114,7 @@ library(MmgraphR)
 "oppo.diff.avg.shot.and.match.movement.speed":The difference in speed in m/s between the opponents average movement speed to retreive the current shot and their average movement speed during the match. 
  
 
-##Fitted Depmix Model for the best stepwise variable model 2 states
+##Fitted Depmix Model for training model 1, 2 states
 
 ```{r}
 # Variables fitted:
@@ -154,7 +154,11 @@ probs = posterior(fm1)
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
 		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
 		
-	
+ggplot() + 
+  geom_path(data=fed16_scale, aes(x = player.total.shot.number, y = winner)) +
+  xlab("Federer shot Number")  + 
+  ylab("Actual State") + 
+  ggtitle("Actual state") 	
 ```
 
 ```{r}
@@ -188,16 +192,30 @@ corfm1_df <- corfm1_df[ -c(1:5, 7) ]
  summary(fm1.3s)
 
 ```
+
 ```{r}
 #plotting training model 1 with 3 states
 probs = posterior(fm1.3s)
 
 	layout(1:2)
- 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
 	
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+ 	
+ 
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
-		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
+		legend(x='topright', c('State1','State2', "State2"),  fill=1:3, bty='n')
 		
+		
+ggplot() + 
+  geom_path(data=fed16_scale, aes(x = player.total.shot.number, y = winner.return.error)) +
+  xlab("Federer shot Number")  + 
+  ylab("Actual State") + 
+  ggtitle("Actual state") 
+
+
+```
+```{r}
+
 ```
 
 
@@ -305,7 +323,7 @@ library(GGally)
 ```
 
 
-##Test set 1 test model 2
+##Test set 1 Training Model 2
 ```{r}
 #Running a stepwise test on observations from Federer vs Berdych 16/17/18 provided a better set of 10 variables for the depmix model
 #p.movement.angle.1, oppo.diff.avg.shot.and.match.movement.speed, p.start.position.y, oppo.rally.side.change.count 
@@ -316,7 +334,7 @@ tm.2 <- depmix(winner ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.sho
  
  summary(ftm.2)
 ```
-###plotting probabilities for test model 2
+###plotting probabilities for Training Model 2
 
 
 ```{r}
@@ -361,7 +379,7 @@ probs = posterior(ftm.2)
 ```
 ``
 
-#Stepwise to find best variables for Depmix for Federer vs Berdych 2016 
+#Stepwise to find best variables for Depmix for Federer vs Berdych 2016 (Training Model 1)
 ##Stepwise for first best variable
 
 ```{r}
@@ -651,14 +669,16 @@ ggplot() +
 
 ```{r}
 library(tidyr)
+
+
 fed16_plot1<- fed16_scale %>%
-  gather(key = vars, value = measurement, p.start.position.x, oppo.start.position.x, oppo.rally.side.change.count)
+  gather(key = vars, value = measurement, p.start.position.x, oppo.start.position.x, oppo.rally.side.change.count, p.diff.avg.shot.and.match.movement.speed)
 
 fed16_plot2<- fed16_scale %>%
-  gather(key = vars, value = measurement, p.start.shot.x, p.movement.angle.1, p.start.position.y, lag.p.angle)
+  gather(key = vars, value = measurement, p.start.shot.x, p.movement.angle.1, p.start.position.y, lag.oppo.height.off.net)
 
 fed16_plot3<- fed16_scale %>%
-  gather(key = vars, value = measurement, oppo.start.position.y, p.start.shot.y)
+  gather(key = vars, value = measurement, oppo.start.position.y, oppo.diff.avg.shot.and.match.movement.speed, diff.p.avg.and.current.shot.speed, winner.return.error )
 
 ggplot(fed16_plot1, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
 
@@ -667,7 +687,7 @@ ggplot(fed16_plot2, aes(x=player.total.shot.number,y=measurement)) + geom_line(c
 ggplot(fed16_plot3, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
 
 ```
-#Running stepwise for Federer vs Berdych 16/17/18
+#Running stepwise for Federer vs Berdych 16/17/18 (Training Model 2)
 
 ```{r}
 #run through all variables to find highest log lik
