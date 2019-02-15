@@ -1035,37 +1035,21 @@ p.diff.avg.shot.and.match.movement.speed - difference between players avereage m
 
 oppo.diff.avg.shot.and.match.movement.speed - difference between opponents avereage movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
 
-p.side.change.count
+p.rally.side.change.count - the number of times the player has run from the forehand(backhand) side to the backhand(forehand) side within the rally
 
-p.side.change.cumsum
+oppo.rally.side.change.count - the number of times the opponent has run from the forehand(backhand) side to the backhand(forehand) side within the rally
 
-oppo.side.change.count
+rally.side.change.count.diff - the difference in the number of times the player and opponent have changed sides within the rally
 
-oppo.side.change.cumsum
+rally.distance.run.ratio - the ratio player/opponent total distance run within the rally
 
-p.rally.side.change.count
+p.movement.angle.1 - The angle the player runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
 
-oppo.rally.side.change.count
+p.movement.angle.2 The angle the player runs from the end of their current shot to the start of their next shot (o.deg directly towards the net 180.deg directly away from the net)
 
-rally.side.change.count.diff
+oppo.movement.angle.1 - The angle the opponent runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
 
-oppo.rally.distance.run
-
-p.rally.distance.run
-
-rally.distance.run.ratio
-
-p.movement.angle.1
-
-p.movement.angle.2
-
-oppo.movement.angle.1
-
-oppo.movement.angle.2
-
-lag.p.movement.angle.1
-
-lag.p.movement.angle.2
+oppo.movement.angle.2 The angle the opponent runs from the end of their current shot to the start of their next shot (o.deg directly towards the net 180.deg directly away from the net)
 
 lag.oppo.height.off.net - Meters above net of opponents previous shot 
 
