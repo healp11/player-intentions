@@ -193,7 +193,7 @@ cor.ds1.fm1.2s_df <- cor.ds1.fm1.2s_df[ -c(1:5, 7) ]
 ```
 ###Plotting Data Set 1 Training Model 1 (3 states)
 ```{r}
-#plotting training model 1 with 3 states
+#plotting Data Set 1 Training Model 1 with 3 states
 probs = posterior(ds1.fm1.3s)
 
 	layout(1:2)
@@ -242,6 +242,7 @@ fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.posi
 
 #adding winner and total shot number to the df for analysis
 fed_scale <- cbind(fed_scale, winner = fed_only$winner) 
+fed_scale <- fed_scale %>% mutate(player.total.shot.number = row_number())
 
 
 
@@ -379,6 +380,34 @@ probs = posterior(ds2.fm2.2s)
 ``
 ###Data Set 2 Training Model 2 (3 States)
 
+```{r}
+#running this model on the scaled fed_only data set
+ds2.mod2.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.rally.side.change.count , data = fed_scale, nstates = 3, family=multinomial("identity"))
+ ds2.fm2.3s <- fit(ds2.mod2.3s)
+ 
+ summary(ds2.fm2.3s)
+```
+###Plotting Probabilities for Data Set 2 Training Model 2 (3 States)
+```{r}
+#plotting Data Set 2 Training Model 2 with 3 states
+probs = posterior(ds2.fm2.3s)
+
+	layout(1:2)
+	
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+ 	
+ 
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2', "State2"),  fill=1:3, bty='n')
+		
+		
+ggplot() + 
+  geom_path(data=fed_scale, aes(x = player.total.shot.number, y = winner.return.error)) +
+  xlab("Federer shot Number")  + 
+  ylab("Actual State") + 
+  ggtitle("Actual state") 
+
+```
 
 
 #Stepwise to find best variables for Depmix for Federer vs Berdych 2016 (Data Set 1, Training Model 1)
