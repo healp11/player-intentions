@@ -1005,43 +1005,73 @@ lag.speed.ratio - speed ratio of player’s previous shot in rally
 oppo.hit - coordinates of opponents previous impact
 
 Summer Research Project
-winner.return.error - Classifies whether the current shot ended in
+winner.return.error - Classifies whether the current shot ended in winner, was returned into play or ended in error
+
 rally.number - Numerical count of rally number within match
-oppo.total.changes
-p.total.changes
-avg.player.speed.diff
-peak.player.speed.diff
-avg.player.speed.ratio
-peak.player.speed.ratio
-avg.player.acceleration.diff
-peak.player.acceleration.diff
-avg.player.acceleration.ratio
-peak.player.acceleration.ratio
-p.avg.speed.match
-oppo.avg.speed.match
-p.diff.avg.shot.and.match.movement.speed
-oppo.diff.avg.shot.and.match.movement.speed
+
+p.total.changes - Number of times in the match the player has travelled from forehand(backhand) side to backhand(forehand) side 
+
+avg.player.speed.diff - difference in player and opponent average speed of movement from start of current shot to end of next in m/s
+
+peak.player.speed.diff - difference in player and opponent peak speed of movement from start of current shot to end of next in m/s
+
+avg.player.speed.ratio - ratio in player and opponent average speed of movement from start of current shot to end of next in m/s
+
+peak.player.speed.ratio - ratio in player and opponent peak speed of movement from start of current shot to end of next in m/s
+
+avg.player.acceleration.diff - difference in player and opponent average speed of movement from start of current shot to end of next in m/s
+
+peak.player.acceleration.diff - difference of player and opponent avg acceleration during shot in m/s2.
+
+avg.player.acceleration.ratio - ratio of player and opponent avg acceleration during shot in m/s2.
+
+peak.player.acceleration.ratio - ratio of player and opponent peak acceleration during shot in m/s2.
+
+p.avg.speed.match - players average speed of movement for the match in m/s
+
+oppo.avg.speed.match - opponents average speed of movement for the match in m/s
+
+p.diff.avg.shot.and.match.movement.speed - difference between players avereage movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
+
+oppo.diff.avg.shot.and.match.movement.speed - difference between opponents avereage movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
+
 p.side.change.count
+
 p.side.change.cumsum
+
 oppo.side.change.count
+
 oppo.side.change.cumsum
+
 p.rally.side.change.count
+
 oppo.rally.side.change.count
+
 rally.side.change.count.diff
+
 oppo.rally.distance.run
+
 p.rally.distance.run
+
 rally.distance.run.ratio
-p.height.off.net
-oppo.height.off.net
+
 p.movement.angle.1
+
 p.movement.angle.2
+
 oppo.movement.angle.1
+
 oppo.movement.angle.2
+
 lag.p.movement.angle.1
+
 lag.p.movement.angle.2
-lag.oppo.height.off.net
-lag.p.start.shot.speed
-lag.oppo.start.shot.speed
+
+lag.oppo.height.off.net - Meters above net of opponents previous shot 
+
+lag.p.start.shot.speed - Speed at the start of the arc in m/s of the players previous shot
+
+lag.oppo.start.shot.speed - Speed at the start of the arc in m/s of the opponents previous shot
 
 
 
