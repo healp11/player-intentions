@@ -29,7 +29,7 @@ fed_only <- rbind(fed16_only, fed17_only, fed18_only)
 
 ```
 
-#Training data fo Depmix Model Federer vs Berdych 2016
+#Training Model 1 for Data Set 1 (Federer vs Berdych 2016)
 
 ```{r}
 library(dplyr)
@@ -114,7 +114,7 @@ library(MmgraphR)
 "oppo.diff.avg.shot.and.match.movement.speed":The difference in speed in m/s between the opponents average movement speed to retreive the current shot and their average movement speed during the match. 
  
 
-##Fitted Depmix Model for training model 1, 2 states
+##Running Data Set 1 Training Model 1, (2 states)
 
 ```{r}
 # Variables fitted:
@@ -139,7 +139,7 @@ fm1_df <- cbind(fed16_scale, fm1_df)
 
 
 
-###Graphing fitted models of best stepwise variables
+###Plotting Data Set 1 Training Model 1(2 States)
 
 
 
@@ -181,7 +181,7 @@ corfm1_df <- as.data.frame(apply(corfm1, 2, function(x) ifelse (abs(x) >=(-1),x,
 corfm1_df <- corfm1_df[ -c(1:5, 7) ]
 
 ```
-###Running training model 1 with 3 states
+###Running Data Set 1, Training Model 1 (3 states)
 ```{r}
 # Variables fitted:
 #p.start.position.x, oppo.start.position.x, oppo.diff.avg.shot.and.match.movement.speed, p.diff.avg.shot.and.match.movement.speed, oppo.start.position.y
@@ -192,7 +192,7 @@ corfm1_df <- corfm1_df[ -c(1:5, 7) ]
  summary(fm1.3s)
 
 ```
-
+###Plotting Data Set 1 Training Model 1 (3 states)
 ```{r}
 #plotting training model 1 with 3 states
 probs = posterior(fm1.3s)
@@ -219,7 +219,7 @@ ggplot() +
 ```
 
 
-#Testing Training Data on multiple Fed vs Berdych matches 2016, 2017 & 2018
+#Running Training Model 1 on Data Set 2 (multiple Fed vs Berdych matches 2016, 2017 & 2018)
 ```{r}
 library(dplyr)
 
@@ -265,7 +265,7 @@ fed_scale <- cbind(fed_scale, winner = fed_only$winner)
 
 
 ```
-##Test set 1 fitted model 1: Running stepwise from training model on Federer vs Berdych 2016/17/18
+##Data Set 2 Training Model 1 (2 states)
 
 
 ```{r}
@@ -277,7 +277,7 @@ fed_scale <- cbind(fed_scale, winner = fed_only$winner)
  summary(ftm.1)
 ```
 
-###plotting probabilities for test model 1
+###Plotting Data Set 2 Training Model 1 (2 states)
 ```{r}
 probs = posterior(ftm.1)
 
@@ -323,7 +323,7 @@ library(GGally)
 ```
 
 
-##Test set 1 Training Model 2
+##Data Set 2 Training Model 2 (2 states)
 ```{r}
 #Running a stepwise test on observations from Federer vs Berdych 16/17/18 provided a better set of 10 variables for the depmix model
 #p.movement.angle.1, oppo.diff.avg.shot.and.match.movement.speed, p.start.position.y, oppo.rally.side.change.count 
@@ -334,7 +334,7 @@ tm.2 <- depmix(winner ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.sho
  
  summary(ftm.2)
 ```
-###plotting probabilities for Training Model 2
+###Plotting Probabilities Data Set 2 Training Model 2 (2 states)
 
 
 ```{r}
@@ -379,7 +379,7 @@ probs = posterior(ftm.2)
 ```
 ``
 
-#Stepwise to find best variables for Depmix for Federer vs Berdych 2016 (Training Model 1)
+#Stepwise to find best variables for Depmix for Federer vs Berdych 2016 (Data Set 1, Training Model 1)
 ##Stepwise for first best variable
 
 ```{r}
@@ -687,7 +687,7 @@ ggplot(fed16_plot2, aes(x=player.total.shot.number,y=measurement)) + geom_line(c
 ggplot(fed16_plot3, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
 
 ```
-#Running stepwise for Federer vs Berdych 16/17/18 (Training Model 2)
+#Running stepwise for Federer vs Berdych 16/17/18 (Data Set 2 Training Model 2)
 
 ```{r}
 #run through all variables to find highest log lik
