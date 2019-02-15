@@ -101,7 +101,7 @@ library(MmgraphR)
 
 "p.start.shot.y": Numerical y coordinate of the ball at the start of its arc for players shot.
 
-"oppo.rally.side.change.count":The times in the rally the opponent has travelled from more than halfway between centre on one side of the court to the other side. 
+"oppo.rally.side.change.count":The times in the rally the opponent has travelled from forehand(backhand) side to backhand(forehand) side within rally
 
 "lag.oppo.height.off.net": The height over the net in metres of the last opposition shot.
 
@@ -163,9 +163,10 @@ ggplot() +
 
 ```{r}
 #plotting a matrix to identify any correlation between depmix probabilities and chosen variables
+
 library(GGally)
-ggduo(ds1.fm1.2s_df, 1:3, 6, showStrips = FALSE)
-ggduo(ds1.fm1.2s_df, 4:5, 6, showStrips = FALSE)
+ggduo(ds1.fm1.2s_df, 1:3, 8, showStrips = FALSE)
+ggduo(ds1.fm1.2s_df, 4:5, 8, showStrips = FALSE)
 
 
 
