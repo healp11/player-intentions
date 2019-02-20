@@ -629,6 +629,9 @@ fed16_only$lag.oppo.height.off.net[is.na(fed16_only$lag.oppo.height.off.net)] <-
 
 fed16_only <- fed16_only %>% mutate(player.total.shot.number = row_number())
 ```
+```{r}
+fed16_only_plots <- fed16_only
+```
 
 ```{r}
 #making y positions absolute for fed16_only as this is more relevant for the depmix model
@@ -935,50 +938,8 @@ longral_pos <- filter(fed_pos, final.shot >= 10)
 seventythree_df <- filter(longral_pos, rally.number=="73")
 
 ```
-###plots used in presentation
-```{r}
-m12 <- ggplot(fed16_only, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
-  scale_x_continuous(breaks = axis_labels$x.break) +
-  scale_y_continuous(breaks = axis_labels$y.break) +
-  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
-  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
-  coord_fixed() +
-  geom_point(aes(alpha = winner))  +   
-  xlab("Opponent Start Position X ") + ylab("Opponent Start Position Y") +
-  ggtitle("Federer winners by Opponent Start Position")
 
-m14 <- ggplot(fed16_df, aes(x=p.start.shot.x,  y=p.start.shot.y ))    + 
-  scale_x_continuous(breaks = axis_labels$x.break) +
-  scale_y_continuous(breaks = axis_labels$y.break) +
-  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
-  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
-  coord_fixed() +
-  geom_point(aes(alpha = winner))  +   
-  xlab("Shot Position X ") + ylab("Shot Position Y") +
-  ggtitle("Federer winners by shot location")
-```
 
-```{r}
-m5 <- ggplot(fed16_only, aes(x=factor(winner),y=lag.diff.oppo.avg.and.current.shot.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by opponent current/average shot speed difference")
-
-m6 <- ggplot(fed16_only, aes(x=factor(winner),y=diff.p.avg.and.current.shot.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by player current/average shot speed difference")
-
-m7 <- ggplot(fed16_only, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by player current/average movement speed difference")
-
-m8 <- ggplot(fed16_only, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent current/average movement speed difference")
-```
-```{r}
-png(filename="plotty3.jpeg")
-print(m14)
-dev.off()
-```
-
-```{r}
-m9 <- ggplot(fed16_only, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
-```
-```{r}
-m10 <- ggplot(fed16_only, aes(x=lag.p.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's PreviousShot") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's Previous Shot Angle")
-```
 
 
 ```{r}
@@ -1008,8 +969,6 @@ Summer Research Project
 winner.return.error - Classifies whether the current shot ended in winner, was returned into play or ended in error
 
 rally.number - Numerical count of rally number within match
-
-p.total.changes - Number of times in the match the player has travelled from forehand(backhand) side to backhand(forehand) side 
 
 avg.player.speed.diff - difference in player and opponent average speed of movement from start of current shot to end of next in m/s
 
@@ -1049,7 +1008,7 @@ p.movement.angle.2 The angle the player runs from the end of their current shot 
 
 oppo.movement.angle.1 - The angle the opponent runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
 
-oppo.movement.angle.2 The angle the opponent runs from the end of their current shot to the start of their next shot (o.deg directly towards the net 180.deg directly away from the net)
+oppo.movement.angle.2 - The angle the opponent runs from the end of their current shot to the start of their next shot (o.deg directly towards the net 180.deg directly away from the net)
 
 lag.oppo.height.off.net - Meters above net of opponents previous shot 
 
@@ -1061,7 +1020,7 @@ lag.oppo.start.shot.speed - Speed at the start of the arc in m/s of the opponent
 
 
 ```{r}
-glos_df <- as.data.frame(colnames(fed16_df))
+gloss_df <- as.data.frame(colnames(fed16_df))
 ```
 
 
@@ -1228,3 +1187,186 @@ summary(t2.fm1)
 
 
 
+
+#Sorting visualisations of variables used for depmix models
+
+```{r}
+#Confirming choices through visualisation of all variabls described in glossary
+
+```
+p.start.position.x
+p.start.position.y
+```{r}
+
+ggplot(fed16_only_plots, aes(x=p.start.position.x,  y=p.start.position.y ))    + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+  scale_y_continuous(breaks = axis_labels$y.break) +
+  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+  coord_fixed() +
+  geom_point(aes(alpha = winner))  +   
+  xlab("Federer Start Position X ") + ylab("Federer Start Position Y") +
+  ggtitle("Federer winners by start position")
+
+
+```
+p.start.shot.x
+p.start.shot.y
+```{r}
+ggplot(fed16_only_plots, aes(x=p.start.shot.x,  y=p.start.shot.y ))    + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+  scale_y_continuous(breaks = axis_labels$y.break) +
+  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+  coord_fixed() +
+  geom_point(aes(alpha = winner))  +   
+  xlab("Shot Position X ") + ylab("Shot Position Y") +
+  ggtitle("Federer winners by shot location")
+```
+
+
+
+oppo.start.position.x
+oppo.start.position.y
+```{r}
+ggplot(fed16_only_plots, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+  scale_y_continuous(breaks = axis_labels$y.break) +
+  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+  coord_fixed() +
+  geom_point(aes(alpha = winner))  +   
+  xlab("Opponent Start Position X ") + ylab("Opponent Start Position Y") +
+  ggtitle("Federer winners by Opponent Start Position")
+```
+
+
+p.diff.avg.shot.and.match.movement.speed - difference between players avereage movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
+```{r}
+ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by player current/average movement speed difference")
+```
+
+
+oppo.diff.avg.shot.and.match.movement.speed - difference between opponents avereage movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
+```{r}
+ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent current/average movement speed difference")
+```
+
+(x)p.rally.side.change.count - the number of times the player has run from the forehand(backhand) side to the backhand(forehand) side within the rally
+
+(x)oppo.rally.side.change.count - the number of times the opponent has run from the forehand(backhand) side to the backhand(forehand) side within the rally
+
+(x)rally.distance.run.ratio - the ratio player/opponent total distance run within the rally
+(difference from average)
+
+p.movement.angle.1 - The angle the player runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
+```{r}
+ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
+
+ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
+
+ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=p.peak.speed)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Federers Peak Speed") + ggtitle("Winners By Federer's movement angle 1")
+
+```
+p.movement.angle.2
+
+
+oppo.movement.angle.1 - The angle the opponent runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
+```{r}
+ggplot(fed16_only_plots, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
+
+```
+
+
+(x)lag.oppo.height.off.net - Meters above net of opponents previous shot 
+
+
+(x)lag.p.start.shot.speed - Speed at the start of the arc in m/s of the players previous shot
+
+(x)lag.oppo.start.shot.speed - Speed at the start of the arc in m/s of the opponents previous shot
+
+
+```{r}
+
+
+ggplot(fed16_only_plots, aes(x=factor(winner),y=diff.p.avg.and.current.shot.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by player current/average shot speed difference")
+
+
+
+
+```
+
+
+
+
+
+
+```{r}
+ggplot(longral_pos, aes(x=shot,y=p.start.position.base.diff)) +
+  geom_point() +
+  geom_path() + 
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Difference in distance from baseline Federer Vs Opponent") + 
+  ggtitle("Federer vs Opponent difference in baseline distance in rallies 10 shots or more")
+
+ggplot() + 
+  geom_path(data=longral_pos, aes(x = shot, y = p.start.position.y, col="blue")) +
+  geom_path(data=longral_pos, aes(x = shot, y = oppo.start.position.y, col="red")) +
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Distance from centre for Federer and Opponent") + 
+  ggtitle("Federer vs Opponent distance from centre in rallies 10 shots or more") +
+  scale_colour_manual(name = "Player", values=c("blue","red"), labels= c("Federer","Berdych"))
+  
+  
+ggplot() + 
+  geom_path(data=longral_pos, aes(x = shot, y = p.start.position.base.dist, 
+                                  yend =p.end.position.base.dist, col="blue")) +
+  geom_path(data=longral_pos, aes(x = shot, y = oppo.start.position.base.dist,
+                                  yend =oppo.end.position.base.dist,col="red")) +
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Distance from baseline for Federer and Opponent") + 
+  ggtitle("Federer vs Opponent distance from baseline in rallies 10 shots or more") +
+  scale_colour_manual(name = "Player", values=c("blue","red"), labels= c("Federer","Berdych"))
+```
+
+```{r }
+#Shot Type by coordinates
+ggplot(dlb_fedonly, aes(x=start.x,y=start.y)) + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point() + 
+  xlab("X Coordinate") + 
+  ylab("Y Coordinate") + 
+  ggtitle("Federer Down the Line Backhands By Shot Co-Ordinates") 
+
+ggplot(iof_fedonly, aes(x=start.x,y=start.y)) + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point() + 
+  xlab("X Coordinate") + 
+  ylab("Y Coordinate") + 
+  ggtitle("Federer Inside out Forehands By Shot Co-Ordinates") 
+
+ggplot(dlw_fedonly, aes(x=start.x,y=start.y)) + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point() + 
+  xlab("X Coordinate") + 
+  ylab("Y Coordinate") + 
+  ggtitle("Federer Down the Line Winners By Shot Co-Ordinates")
+```
