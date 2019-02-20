@@ -1263,72 +1263,70 @@ ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=(p.diff.avg.shot.an
 
 
 oppo.diff.avg.shot.and.match.movement.speed - 
-
+Federer tends to hit more winners as Berdych runs more than 1m/s faster than his average match movement speed. This is a suitable variable for the HMM we would expect an increase in the difference to increae Federers probability of being in an attacking state. 
 ```{r}
 ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by difference in Opponent current/match avg movement speed")
 
 ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Opponent current/match avg movement speed")
 
-ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Opponent current/match avg movement speed")
+# ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Opponent current/match avg movement speed")
 
 ```
 
-(x)p.rally.side.change.count - the number of times the player has run from the forehand(backhand) side to the backhand(forehand) side within the rally
+p.rally.side.change.count - 
+Not suitable
 ```{r}
 ggplot(fed16_only_plots, aes(x=p.rally.side.change.count, y=winner)) + geom_bar(stat="identity") + xlab("Rally Side Change Count") + ylab("Proportion of Winners") + ggtitle("Winners By Number of Times Federer Changes Side in Rally")
 ```
 
 
-(x)oppo.rally.side.change.count - the number of times the opponent has run from the forehand(backhand) side to the backhand(forehand) side within the rally
+oppo.rally.side.change.count - 
+Might be suitable when looking at a greater number of rallies. 
 ```{r}
 ggplot(fed16_only_plots, aes(x=oppo.rally.side.change.count, y=winner)) + geom_bar(stat="identity") + xlab("Rally Side Change Count") + ylab("Proportion of Winners") + ggtitle("Winners By Number of Times Berdych Changes Side in Rally")
 
 ```
 
 
-(x)rally.distance.run.ratio - the ratio player/opponent total distance run within the rally
-(difference from average)
-
-p.movement.angle.1 - The angle the player runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
+p.movement.angle.1 - 
+ more than 75% of Federers Winners come when he is running less than 100 degrees in relation to the baseline. This varaiable appears suitable for HMM we would expect as Federers movement angle increases beyond 100 degrees the probability the he is an attacking state decreases.
 ```{r}
 ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's start to end movement angle")
 
 ggplot(fed16_only, aes(x=factor(winner),y=p.movement.angle.1, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Federer's start to end movement angle")
 
-ggplot(fed16_only, aes(x=factor(winner),y=p.movement.angle.1, fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by Federer's start to end movement angle")
+ggplot(fed16_only, aes(x=factor(winner),y=p.movement.angle.1, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by Federer's start to end movement angle")
 
-
-```
-p.movement.angle.2
-```{r}
-#Correlated with movement angle 1
+# ggplot(fed16_only, aes(x=factor(winner.return.error),y=p.movement.angle.1, fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by Federer's start to end movement angle")
 ```
 
 
-oppo.movement.angle.1 - The angle the opponent runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
+oppo.movement.angle.1 - 
+Need more evidence to include in model
 ```{r}
 ggplot(fed16_only_plots, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Berdych's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Berdych's start to end movement angle during Federer's shot")
 
 ggplot(fed16_only, aes(x=factor(winner),y=oppo.movement.angle.1, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Berdych's start to end movement angle during Federer's shot")
 
+ggplot(fed16_only, aes(x=factor(winner),y=oppo.movement.angle.1, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by Berdych's start to end movement angle during Federer's shot")
+
 ```
 
 
-(x)lag.oppo.height.off.net - Meters above net of opponents previous shot 
+lag.oppo.height.off.net - 
+Federer tends to hit more winners when incoming shot approaches 50cm off the height of the net. This decreases as the height of the incoming shot increases or decreases. Including this variable in the HMM. Expect the coeficcient to be small. 
 
 ```{r}
 ggplot(fed16_only_plots, aes(x=lag.oppo.height.off.net,y=winner)) + geom_smooth() + xlab("Height of opponents shot") + ylab("Proportion of Winners") + ggtitle("Winners by Height over Net of Most recent Opponent shot")
+
+
 ```
-
-
-(x)lag.oppo.start.shot.speed - Speed at the start of the arc in m/s of the opponents previous shot
 
 diff.p.avg.and.current.shot.speed
 ```{r}
 
 
 ggplot(fed16_only, aes(x=factor(winner),y=diff.p.avg.and.current.shot.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by player current/average shot speed difference")
-
 
 
 
