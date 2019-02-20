@@ -184,7 +184,7 @@ ggduo(ds1.fm1.2s_df, 4:5, 8, showStrips = FALSE)
 #showing correlation between variables and probaility of being in state 1
 
 cor.ds1.fm1.2s <- cor(ds1.fm1.2s_df)
-cor.ds1.fm1.2s_df <- cor.ds1.fm1.2s_df[ -c(1:5, 7) ]
+cor.ds1.fm1.2s_df <- cor.ds1.fm1.2s[ -c(1:5, 7) ]
 
 ```
 ###Running Data Set 1, Training Model 1 (3 states)
@@ -942,6 +942,7 @@ ds3.mod2.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1
  
  
 ```
+
 
 
 
