@@ -1195,9 +1195,10 @@ summary(t2.fm1)
 
 ```
 p.start.position.x-
-When compared to similar start position x coordinates, Federer appears more likely to hit a winner as he starts the shot closer to the net. This variable has been chosen for the HMM as we might expect that the probability of Federer being in an attacking state increases as he moves closer to the net 
+When compared to similar start position x coordinates, Federer appears more likely to hit a winner as he starts the shot closer to the net. Choosing this variable for HMM as we might expect that the probability of Federer being in an attacking state increases as he moves closer to the net( x value increases). 
 
 p.start.position.y-
+Choosing this variable for the HMM as it makes the players start position x coordinates more meaningful when included in the model. We might expect that the probability of Federer being in an attacking state increases as he moves closer to the centre(y value decreases) and to the net. Using absolute value to measure distance from centre.
 
 ```{r}
 
@@ -1214,9 +1215,11 @@ ggplot(fed16_only_plots, aes(x=p.start.position.x,  y=p.start.position.y ))    +
 
 
 
-p.start.shot.x
-Not many volleys as in 
-p.start.shot.y
+p.start.shot.x-
+Similar to Federer's start position x coordinates, the x coordinates of his shot hitpoint appears more likely to result in a winner compared to similarly distanced shots as he moves closer to the net.
+
+p.start.shot.y-
+Including in HMM to make shot x coordinates more meaningful. Using absolute to measures distance from centre. 
 ```{r}
 ggplot(fed16_only_plots, aes(x=p.start.shot.x,  y=p.start.shot.y ))    + 
   geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
@@ -1229,8 +1232,8 @@ ggplot(fed16_only_plots, aes(x=p.start.shot.x,  y=p.start.shot.y ))    +
 
 
 
-oppo.start.position.x
-When compared to similar start position x coordinates for Berdych, Federer appears more likely to hit a winner as Berdych starts the shot closer to the net.
+oppo.start.position.x-
+Federer appears more likely to hit a winner as Berdych start position x coordinates are closer to the net. (As we are analysing the rallies with all of Berdychs having positive coordinates in the HMM we would expect a decrease in Berdychs start position x coordinates to increase The probability of Federer being in an attaccking state. 
 oppo.start.position.y
 ```{r}
 ggplot(fed16_only_plots, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
