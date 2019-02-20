@@ -1248,15 +1248,24 @@ ggplot(fed16_only_plots, aes(x=oppo.start.position.x,  y=oppo.start.position.y )
 ```
 
 
-p.diff.avg.shot.and.match.movement.speed - difference between players avereage movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
+p.diff.avg.shot.and.match.movement.speed - 
+
 ```{r}
-ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by player current/average movement speed difference")
+ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by difference in Federer's current and match avg movement speed")
+
+ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Federer's current and match avg movement speed")
+
+ggplot(fed16_only_plots, aes(x=factor(winner),y=abs(p.diff.avg.shot.and.match.movement.speed), fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by absolute difference in Federer's current/match avg movement speed")
 ```
 
 
-oppo.diff.avg.shot.and.match.movement.speed - difference between opponents avereage movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
+oppo.diff.avg.shot.and.match.movement.speed - 
+
 ```{r}
-ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent current/average movement speed difference")
+ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by difference in Opponent current/match avg movement speed")
+
+ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Opponent current/match avg movement speed")
+
 ```
 
 (x)p.rally.side.change.count - the number of times the player has run from the forehand(backhand) side to the backhand(forehand) side within the rally
@@ -1280,6 +1289,8 @@ p.movement.angle.1 - The angle the player runs from the start to the end of thei
 ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's start to end movement angle")
 
 ggplot(fed16_only, aes(x=factor(winner),y=p.movement.angle.1, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Federer's start to end movement angle")
+
+ggplot(fed16_only, aes(x=factor(winner),y=p.movement.angle.1, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by Federer's start to end movement angle")
 
 
 ```
