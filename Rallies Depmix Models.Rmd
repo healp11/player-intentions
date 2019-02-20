@@ -21,11 +21,17 @@ fed16_only <-  read.csv(file = "data/fed16_only.csv")
 #reading and joining csv files with new variables for additionals matches
 fed17_only <-  read.csv(file = "data/fed17_only.csv")
 fed18_only <-  read.csv(file = "data/fed18_only.csv")
+stry16_only <-  read.csv(file = "data/stry16_only.csv")
+stry17_only <-  read.csv(file = "data/stry17_only.csv")
 ```
 
 ```{r}
-#joining all federer matches
+#Joining all Federer matches
 fed_only <- rbind(fed16_only, fed17_only, fed18_only)
+
+#Joining all Strycova matches
+stry_only <- rbind(stry16_only, stry17_only)
+
 
 ```
 
@@ -199,7 +205,7 @@ probs = posterior(ds1.fm1.3s)
 
 	layout(1:2)
 	
- 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+ 	plot(-(probs$state), type='s', main='Implied States', xlab='', ylab='State')
  	
  
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
@@ -723,7 +729,7 @@ ggplot(fed16_plot3, aes(x=player.total.shot.number,y=measurement)) + geom_line(c
 
 ```{r}
 #run through all variables to find highest log lik
-#tm2.fcov1 is test model 1 fitted covariates 1
+#tm2.fcov1 is training model 2 fitted covariates 1
 tm2.fcov1 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
@@ -836,6 +842,47 @@ tm2.fcov5_df %>%
    slice(which.max(convergence.loglik))
 
 #model stops improving at this point
+```
+
+#Running Stepwise for Data Set 3 (Strycova vs Garcia 2016/2017)
+
+
+```{r}
+
+
+#choosing variables of interest
+stry_dep <- stry_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
+
+
+```
+
+
+```{r}
+#scaling variables from 0 min to 1 max for comparison to hidden states plot
+stry_scale <- stry_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
+
+stry_scale <- as.data.frame(lapply(stry_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(x) (x-min(x))/(max(x)-min(x))))
+#adding winner and total shot number to the df for analysis
+stry_scale <- cbind(stry_scale, winner = stry_only$winner)
+
+
+stry_scale <- stry_scale %>% mutate(player.total.shot.number = row_number())
+```
+
+
+```{r}
+#Creating correlation matrix for variables of interest. Variables under 50% correlation will show as NA
+stry.corMat <- cor(stry_dep)
+stry.corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
+#Removed some variables with significant correlation with other variables above 50%:
+#p.end.position.x, p.end.position.y, oppo.end.position.x, oppo.end.position.y, p.rally.side.change.count, p.distance, oppo.distance, fhand, p.advantage, rally.distance.run.ratio, shot
+```
+
+```{r}
+ds3.mod2.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.rally.side.change.count , data = stry_scale, nstates = 3, family=multinomial("identity"))
+ ds3.fm2.3s <- fit(ds3.mod2.3s)
+ 
+ summary(ds3.fm2.3s)
 ```
 
 
