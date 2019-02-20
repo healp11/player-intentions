@@ -1194,13 +1194,14 @@ summary(t2.fm1)
 #Confirming choices through visualisation of all variabls described in glossary
 
 ```
-p.start.position.x
-p.start.position.y
+p.start.position.x-
+When compared to similar start position x coordinates, Federer appears more likely to hit a winner as he starts the shot closer to the net. This variable has been chosen for the HMM as we might expect that the probability of Federer being in an attacking state increases as he moves closer to the net 
+
+p.start.position.y-
+
 ```{r}
 
 ggplot(fed16_only_plots, aes(x=p.start.position.x,  y=p.start.position.y ))    + 
-  scale_x_continuous(breaks = axis_labels$x.break) +
-  scale_y_continuous(breaks = axis_labels$y.break) +
   geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
   geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
   coord_fixed() +
@@ -1210,12 +1211,14 @@ ggplot(fed16_only_plots, aes(x=p.start.position.x,  y=p.start.position.y ))    +
 
 
 ```
+
+
+
 p.start.shot.x
+Not many volleys as in 
 p.start.shot.y
 ```{r}
 ggplot(fed16_only_plots, aes(x=p.start.shot.x,  y=p.start.shot.y ))    + 
-  scale_x_continuous(breaks = axis_labels$x.break) +
-  scale_y_continuous(breaks = axis_labels$y.break) +
   geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
   geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
   coord_fixed() +
@@ -1227,6 +1230,7 @@ ggplot(fed16_only_plots, aes(x=p.start.shot.x,  y=p.start.shot.y ))    +
 
 
 oppo.start.position.x
+When compared to similar start position x coordinates for Berdych, Federer appears more likely to hit a winner as Berdych starts the shot closer to the net.
 oppo.start.position.y
 ```{r}
 ggplot(fed16_only_plots, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
@@ -1253,43 +1257,58 @@ ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.mov
 ```
 
 (x)p.rally.side.change.count - the number of times the player has run from the forehand(backhand) side to the backhand(forehand) side within the rally
+```{r}
+ggplot(fed16_only_plots, aes(x=p.rally.side.change.count, y=winner)) + geom_bar(stat="identity") + xlab("Rally Side Change Count") + ylab("Proportion of Winners") + ggtitle("Winners By Number of Times Federer Changes Side in Rally")
+```
+
 
 (x)oppo.rally.side.change.count - the number of times the opponent has run from the forehand(backhand) side to the backhand(forehand) side within the rally
+```{r}
+ggplot(fed16_only_plots, aes(x=oppo.rally.side.change.count, y=winner)) + geom_bar(stat="identity") + xlab("Rally Side Change Count") + ylab("Proportion of Winners") + ggtitle("Winners By Number of Times Berdych Changes Side in Rally")
+
+```
+
 
 (x)rally.distance.run.ratio - the ratio player/opponent total distance run within the rally
 (difference from average)
 
 p.movement.angle.1 - The angle the player runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
 ```{r}
-ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
+ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's start to end movement angle")
 
-ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
+ggplot(fed16_only, aes(x=factor(winner),y=p.movement.angle.1, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Federer's start to end movement angle")
 
-ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=p.peak.speed)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Federers Peak Speed") + ggtitle("Winners By Federer's movement angle 1")
 
 ```
 p.movement.angle.2
+```{r}
+#Correlated with movement angle 1
+```
 
 
 oppo.movement.angle.1 - The angle the opponent runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
 ```{r}
-ggplot(fed16_only_plots, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
+ggplot(fed16_only_plots, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Berdych's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Berdych's start to end movement angle during Federer's shot")
+
+ggplot(fed16_only, aes(x=factor(winner),y=oppo.movement.angle.1, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Berdych's start to end movement angle during Federer's shot")
 
 ```
 
 
 (x)lag.oppo.height.off.net - Meters above net of opponents previous shot 
 
+```{r}
+ggplot(fed16_only_plots, aes(x=lag.oppo.height.off.net,y=winner)) + geom_smooth() + xlab("Height of opponents shot") + ylab("Proportion of Winners") + ggtitle("Winners by Height over Net of Most recent Opponent shot")
+```
 
-(x)lag.p.start.shot.speed - Speed at the start of the arc in m/s of the players previous shot
 
 (x)lag.oppo.start.shot.speed - Speed at the start of the arc in m/s of the opponents previous shot
 
-
+diff.p.avg.and.current.shot.speed
 ```{r}
 
 
-ggplot(fed16_only_plots, aes(x=factor(winner),y=diff.p.avg.and.current.shot.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by player current/average shot speed difference")
+ggplot(fed16_only, aes(x=factor(winner),y=diff.p.avg.and.current.shot.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by player current/average shot speed difference")
 
 
 
