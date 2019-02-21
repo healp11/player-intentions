@@ -1187,6 +1187,26 @@ summary(t2.fm1)
 
 
 
+#Modelling
+Visual analysis has been used to select a number of new variables from the new data set. To extend upon the research conducted by Jeremy Forbes, winner has been chosen as the initial response variable.
+
+Covariates are...
+The covariates chosen are...(just try out shot index first)
+
+Model training has been used to identify covariates which are useful for predicting the states of many different players.A training model has been created by using a stepwise approach to identify the best combination of covariates in a chosen match data set. This training model has then been tested on a different data set for a comparison of results. The limitation of this stepwise approach is that some potentially important covariates have been ommited from the model because of correlation with other covariates. 
+
+#Training Models
+The first training model has been made using stepwise for the match data Feder vs Berdych 2016. The best combination of covariates in order of importance are...
+
+
+#Intepreting the output
+##2 state Model
+##3 State Models
+
+#Building the Animation
+Using the package GGAnimate and a topdown court outline taken from..
+
+
 
 #Sorting visualisations of variables used for depmix models
 
