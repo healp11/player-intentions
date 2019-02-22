@@ -231,7 +231,7 @@ ggplot() +
 library(dplyr)
 
 #choosing variables of interest
-fed_dep <- fed_only[, c("p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
+fed_dep <- fed_only[, c("p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
 
 
 
@@ -243,7 +243,7 @@ fed_dep <- fed_only[, c("p.start.position.x", "p.start.position.y", "oppo.start.
 
 
 #scaling variables from 0 min to 1 max for comparison to hidden states plot
-fed_scale <- fed_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
+fed_scale <- fed_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
 
 #error in scaling as two variables not created correcctly in rallies2
 fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(y) (y-min(y))/(max(y)-min(y))))
@@ -252,7 +252,11 @@ fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.posi
 fed_scale <- cbind(fed_scale, winner = fed_only$winner) 
 fed_scale <- fed_scale %>% mutate(player.total.shot.number = row_number())
 
-
+fed_scale <- fed_scale %>%
+  mutate(p.advantage.states = ifelse(p.advantage <= (-1000), 1,
+                                     ifelse(p.advantage >= 1000,3,1))) %>%
+  mutate(winner.return.error = ifelse(winner.return.error == 1,3,
+                                      ifelse(winner.return.error == 0.5,2,1)))
 
 ```
 
@@ -406,7 +410,7 @@ probs = posterior(ds2.fm2.3s)
  	
  
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
-		legend(x='topright', c('State1','State2', "State2"),  fill=1:3, bty='n')
+		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n')
 		
 		
 ggplot() + 
@@ -415,6 +419,24 @@ ggplot() +
   ylab("Actual State") + 
   ggtitle("Actual state") 
 
+```
+```{r}
+ds2.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),multinomial("identity")))
+ ds2.fm2a.3s <- fit(ds2.mod2a.3s)
+ 
+ summary(ds2.fm2a.3s)
+```
+
+```{r}
+probs = posterior(ds2.fm2a.3s)
+
+	layout(1:2)
+	
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+ 	
+ 
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n')
 ```
 
 
@@ -824,7 +846,7 @@ tm2.fcov6_df %>%
 
 
 #choosing variables of interest
-stry_dep <- stry_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
+stry_dep <- stry_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
 
 
 ```
@@ -834,10 +856,15 @@ stry_dep <- stry_only[, c( "p.start.position.x", "p.start.position.y", "oppo.sta
 #scaling variables from 0 min to 1 max for comparison to hidden states plot
 stry_scale <- stry_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
 
-stry_scale <- as.data.frame(lapply(stry_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(x) (x-min(x))/(max(x)-min(x))))
+stry_scale <- as.data.frame(lapply(stry_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(x) (x-min(x))/(max(x)-min(x))))
 #adding winner and total shot number to the df for analysis
 stry_scale <- cbind(stry_scale, winner = stry_only$winner)
-
+stry_scale <- cbind(stry_scale, p.advantage = stry_only$p.advantage)
+stry_scale <- stry_scale %>%
+  mutate(p.advantage.states = ifelse(p.advantage <= (-1000), 1,
+                                     ifelse(p.advantage >= 1000,3,1))) %>%
+  mutate(winner.return.error = ifelse(winner.return.error == 1,3,
+                                      ifelse(winner.return.error == 0.5,2,1)))
 
 stry_scale <- stry_scale %>% mutate(player.total.shot.number = row_number())
 ```
@@ -852,10 +879,22 @@ stry.corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.
 ```
 
 ```{r}
-ds3.mod2.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.rally.side.change.count , data = stry_scale, nstates = 3, family=multinomial("identity"))
- ds3.fm2.3s <- fit(ds3.mod2.3s)
+ds3.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),multinomial("identity")))
+ ds3.fm2a.3s <- fit(ds3.mod2a.3s)
  
- summary(ds3.fm2.3s)
+ summary(ds3.fm2a.3s)
+```
+```{r}
+#plotting Data Set 2 Training Model 2 with 3 states
+probs = posterior(ds3.fm2a.3s)
+
+	layout(1:2)
+	
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+ 	
+ 
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n')
 ```
 
 
