@@ -334,10 +334,10 @@ library(GGally)
 ##Data Set 2 Training Model 2 (2 states)
 ```{r}
 #Training Model 2 has the best variables from stepwise run on Data Set 2
-#p.movement.angle.1, oppo.diff.avg.shot.and.match.movement.speed, p.start.position.y, oppo.rally.side.change.count 
+#p.movement.angle.1, oppo.diff.avg.shot.and.match.movement.speed, p.start.position.y, oppo.start.position.x, oppo.start.position.y, p.diff.avg.shot.and.match.movement.speed,  lag.oppo.height.off.net
 
 #running this model on the scaled fed_only data set
-ds2.mod2.2s <- depmix(winner ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.rally.side.change.count , data = fed_scale, nstates = 2, family=multinomial("identity"))
+ds2.mod2.2s <- depmix(winner ~ 1, transition = ~p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = fed_scale, nstates = 2, family=multinomial("identity"))
  ds2.fm2.2s <- fit(ds2.mod2.2s)
  
  summary(ds2.fm2.2s)
@@ -390,7 +390,7 @@ probs = posterior(ds2.fm2.2s)
 
 ```{r}
 #running this model on the scaled fed_only data set
-ds2.mod2.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.rally.side.change.count , data = fed_scale, nstates = 3, family=multinomial("identity"))
+ds2.mod2.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = fed_scale, nstates = 3, family=multinomial("identity"))
  ds2.fm2.3s <- fit(ds2.mod2.3s)
  
  summary(ds2.fm2.3s)
