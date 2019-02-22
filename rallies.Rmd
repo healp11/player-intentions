@@ -1204,8 +1204,14 @@ The first training model has been made using stepwise for the match data Feder v
 ##3 State Models
 
 #Building the Animation
-Using the package GGAnimate and a topdown court outline taken from..
 
+Using the package GGAnimate and a topdown court outline taken from "https://github.com/mvparrot/vis-serve/blob/master/report file helper basic plots".
+The variables p.start.positionition.x, p.end.position.x, oppo.start.position.x, oppo.end.position.x, p.start.positionition.y, p.end.position.y, oppo.start.position.y, oppo.end.position.y, start.x, start.y, projected.ballmark.x and projected.ballmark.y
+
+transition_reveal has been used for filling in gaps in the player and ball position data. 
+To run transition_reveal, a single column was created for the player's start & end postition  x coordinates, they are grouped by rally number and shot number and alternating between start and end. The same thing is done for the player's position y coordinates and for the opponent's position x and y coordinates. For animating the ball position, similar columns are created alternating between the  start position and the projected ballmark for both x and y coordinates.
+
+##Visualising player state change in the animation
 
 
 #Sorting visualisations of variables used for depmix models
