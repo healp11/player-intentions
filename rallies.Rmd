@@ -540,19 +540,6 @@ fed16_df <- fed16_df %>%
   mutate(oppo.start.server.x = ifelse(server != "FEDERER", start.server.x, 0)) 
 ```
 
-#str
-```{r }
-#to view collums that have been truncated
-#str(fed16_df, list.len = ncol(fed16_df))
-
-#str(seventythree_df, list.len = ncol(seventythree_df))
-
-
-```
-
-
-
-
 
 ```{r}
 #fed16_df <- na.omit(fed16_df)
@@ -1019,9 +1006,6 @@ lag.oppo.start.shot.speed - Speed at the start of the arc in m/s of the opponent
 
 
 
-```{r}
-gloss_df <- as.data.frame(colnames(fed16_df))
-```
 
 
 
@@ -1209,12 +1193,13 @@ Using the package GGAnimate and a topdown court outline taken from "https://gith
 The variables p.start.positionition.x, p.end.position.x, oppo.start.position.x, oppo.end.position.x, p.start.positionition.y, p.end.position.y, oppo.start.position.y, oppo.end.position.y, start.x, start.y, projected.ballmark.x and projected.ballmark.y
 
 transition_reveal has been used for filling in gaps in the player and ball position data. 
-To run transition_reveal, a single column was created for the player's start & end postition  x coordinates, they are grouped by rally number and shot number and alternating between start and end. The same thing is done for the player's position y coordinates and for the opponent's position x and y coordinates. For animating the ball position, similar columns are created alternating between the  start position and the projected ballmark for both x and y coordinates.
+To run transition_reveal, a single column was created for the player's start & end postition x coordinates, they are grouped by rally number and shot number and alternate between start and end position. The same thing is done for the player's position y coordinates. As well as for the opponent's start and end position x and y coordinates. For animating the ball position, similar columns are created alternating between the start position of the ball and the projected ballmark for both x and y coordinates.
 
 ##Visualising player state change in the animation
 
+#Variable creation
 
-#Sorting visualisations of variables used for depmix models
+#Choosing variables for the model
 
 ```{r}
 #Confirming choices through visualisation of all variabls described in glossary
@@ -1236,7 +1221,9 @@ ggplot(fed16_only_plots, aes(x=p.start.position.x,  y=p.start.position.y ))    +
   xlab("Federer Start Position X ") + ylab("Federer Start Position Y") +
   ggtitle("Federer winners by start position")
 
+ggplot(fed16_only, aes(x=p.start.position.x,winner)) + geom_smooth() + xlab("X Coordinate of Player") + ylab("Proportion of Winners") + ggtitle("Federer Winners By X Co-Ordinate")
 
+ggplot(fed16_only, aes(x=p.start.position.y,winner)) + geom_smooth() + xlab("Distance from Centre of Player") + ylab("Proportion of Winners") + ggtitle("Federer Winners By Distance from Centre")
 ```
 
 
@@ -1259,7 +1246,7 @@ ggplot(fed16_only_plots, aes(x=p.start.shot.x,  y=p.start.shot.y ))    +
 
 
 oppo.start.position.x-
-Federer appears more likely to hit a winner as Berdych start position x coordinates are closer to the net. (As we are analysing the rallies with all of Berdychs having positive coordinates in the HMM we would expect a decrease in Berdychs start position x coordinates to increase The probability of Federer being in an attaccking state. 
+Federer appears more likely to hit a winner as Berdych start position x coordinates are closer to the net. (As we are analysing the rallies with all of Berdychs having positive coordinates in the HMM we would expect a decrease in Berdychs start position x coordinates to increase The probability of Federer being in an attacking state. 
 oppo.start.position.y
 ```{r}
 ggplot(fed16_only_plots, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
@@ -1271,18 +1258,21 @@ ggplot(fed16_only_plots, aes(x=oppo.start.position.x,  y=oppo.start.position.y )
   geom_point(aes(alpha = winner))  +   
   xlab("Opponent Start Position X ") + ylab("Opponent Start Position Y") +
   ggtitle("Federer winners by Opponent Start Position")
+
+ggplot(fed16_only, aes(x=oppo.start.position.x,winner)) + geom_smooth() + xlab("X Coordinate of Opponent") + ylab("Proportion of Federer Winners") + ggtitle("Federer Winners By Opponent X Co-Ordinate")
+
+ggplot(fed16_only, aes(x=oppo.start.position.y,winner)) + geom_smooth() + xlab("Distance from Centre of Opponent") + ylab("Proportion of Winners") + ggtitle("Federer Winners by Opponent Distance from Centre")
 ```
 
 
 p.diff.avg.shot.and.match.movement.speed - 
-When Federer runs approximately more than 1m/s above or below his average movement speed for match he tends to hit more winners. This variable therefore appears suitable for the HMM. Using an absolute value of the difference we would expect an increase in difference to increase the probability of Federer being in a attacking state. 
-When Considering winners, errors and returns we move back to relative difference as Federer tends to hit more errors than winners when moving approximately 1m/s slower than his avereage match movement speed
+When Federer runs approximately more than 1m/s above or below his average movement speed for match he tends to hit more winners. This variable therefore appears suitable for the HMM. (Using an absolute value of the difference we would expect an increase in difference to increase the probability of Federer being in a attacking state. (add in more info)
+When Considering winners, errors and returns we move back to relative difference as Federer tends to hit more errors than winners when moving approximately 1m/s slower than his avereage match movement speed 
 ```{r}
 ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by difference in Federer's current and match avg movement speed")
 
 ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Federer's current and match avg movement speed")
 
-ggplot(fed16_only_plots, aes(x=factor(winner),y=abs(p.diff.avg.shot.and.match.movement.speed), fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by absolute difference in Federer's current/match avg movement speed")
 
 ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=(p.diff.avg.shot.and.match.movement.speed), fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by absolute difference in Federer's current/match avg movement speed")
 ```
