@@ -124,8 +124,8 @@ library(MmgraphR)
 
 ```{r}
 # Variables fitted:
-#p.start.position.x, oppo.start.position.x, oppo.diff.avg.shot.and.match.movement.speed, p.diff.avg.shot.and.match.movement.speed, oppo.start.position.y
- ds1.mod1.2s <- depmix(winner ~ 1, transition = ~ p.start.position.x + oppo.start.position.x + oppo.diff.avg.shot.and.match.movement.speed + p.diff.avg.shot.and.match.movement.speed + oppo.start.position.y, data = fed16_scale, nstates = 2, family=multinomial("identity"))
+#p.start.position.x, lag.oppo.height.off.net, oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, diff.p.avg.and.current.shot.speed, p.movement.angle.1
+ ds1.mod1.2s <- depmix(winner ~ 1, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + diff.p.avg.and.current.shot.speed + p.movement.angle.1, data = fed16_scale, nstates = 2, family=multinomial("identity"))
  ds1.fm1.2s <- fit(ds1.mod1.2s)
  
  summary(ds1.fm1.2s)
@@ -139,7 +139,9 @@ ds1.fm1.2s_df <- cbind(fed16_scale, ds1.fm1.2s_df)
 	
 #dropping columns not in the fitted depmix model
 
- ds1.fm1.2s_df <- ds1.fm1.2s_df[ -c(2, 5:7, 10:14) ]
+ ds1.fm1.2s_df <- ds1.fm1.2s_df[ -c(2, 4, 6:8, 12:14) ]
+ 
+ 
 ```
 
 
@@ -190,9 +192,8 @@ cor.ds1.fm1.2s_df <- cor.ds1.fm1.2s[ -c(1:5, 7) ]
 ###Running Data Set 1, Training Model 1 (3 states)
 ```{r}
 # Variables fitted:
-#p.start.position.x, oppo.start.position.x, oppo.diff.avg.shot.and.match.movement.speed, p.diff.avg.shot.and.match.movement.speed, oppo.start.position.y
-#mod1.3s refers to model 1 with 3 states
- ds1.mod1.3s <- depmix(winner.return.error ~ 1, transition = ~ p.start.position.x + oppo.start.position.x + oppo.diff.avg.shot.and.match.movement.speed + p.diff.avg.shot.and.match.movement.speed + oppo.start.position.y, data = fed16_scale, nstates = 3, family=multinomial("identity"))
+#p.start.position.x, lag.oppo.height.off.net, oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, diff.p.avg.and.current.shot.speed, p.movement.angle.1
+ ds1.mod1.3s <- depmix(winner.return.error ~ 1, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + diff.p.avg.and.current.shot.speed + p.movement.angle.1, data = fed16_scale, nstates = 3, family=multinomial("identity"))
  ds1.fm1.3s <- fit(ds1.mod1.3s)
  
  summary(ds1.fm1.3s)
@@ -208,7 +209,7 @@ probs = posterior(ds1.fm1.3s)
  	plot((probs$state), type='s', main='Implied States', xlab='', ylab='State')
  	
  
-	matplot(probs[,1], type='l', main='Probabilities', ylab='Probability')
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
 		legend(x='topright', c('State1','State2', "State2"),  fill=1:3, bty='n')
 		
 		
@@ -277,8 +278,8 @@ fed_scale <- fed_scale %>% mutate(player.total.shot.number = row_number())
 
 ```{r}
 # Variables fitted:
-#p.start.position.x, oppo.start.position.x, oppo.diff.avg.shot.and.match.movement.speed, p.diff.avg.shot.and.match.movement.speed, lag.p.angle, oppo.rally.side.change.count, diff.lag.oppo.avg.and.current.shot.speed, diff.p.avg.and.current.shot.speed, p.movement.angle.1, lag.oppo.height.off.net, oppo.start.position.y
- ds2.mod1.2s <- depmix(winner ~ 1, transition = ~ p.start.position.x + oppo.start.position.x + oppo.diff.avg.shot.and.match.movement.speed + p.diff.avg.shot.and.match.movement.speed + oppo.start.position.y, data = fed_scale, nstates = 2, family=multinomial("identity"))
+#p.start.position.x, lag.oppo.height.off.net, oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, diff.p.avg.and.current.shot.speed, p.movement.angle.1
+ ds2.mod1.2s <- depmix(winner ~ 1, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + diff.p.avg.and.current.shot.speed + p.movement.angle.1, data = fed_scale, nstates = 2, family=multinomial("identity"))
  ds2.fm1.2s <- fit(ds2.mod1.2s)
  
  summary(ds2.fm1.2s)
@@ -589,7 +590,7 @@ fcov5_df %>%
 ```{r}
 #fifth best variable is diff.p.avg.and.current.shot.speed
 #run through all variables to find highest log lik
-fcov6 <- lapply(fed16_scale[c( "p.start.position.y", "oppo.start.position.y",  "p.movement.angle.1")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + diff.p.avg.and.current.shot.speed+ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+fcov6 <- lapply(fed16_scale[c( "p.start.position.y", "oppo.start.position.y",  "p.movement.angle.1")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + diff.p.avg.and.current.shot.speed + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
 #Pulling covergence log likelihoods into a dataframe
@@ -605,63 +606,10 @@ names(fcov6_df) <- c("convergence.loglik", "Variables")
 #print variable with the highest convergence log likelihood
 fcov6_df %>% 
    slice(which.max(convergence.loglik))
+
+#Model stops improving last variable added to the model is p.movement.angle.1
 ```
 
-
-##Stepwise to find seventh best variable
-```{r}
-#sixth best variable is p.movement.angle.1
-#run through all variables to find highest log lik
-fcov7 <- lapply(fed16_scale[c( "p.start.position.y", "oppo.start.position.y")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + diff.p.avg.and.current.shot.speed + p.movement.angle.1 + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
-
-
-#Pulling covergence log likelihoods into a dataframe
-fcov7_df <-  as.data.frame(
-  c(logLik(fcov7$p.start.position.y), logLik(fcov7$oppo.start.position.y) )
-  )
-
-fcov7_df$newcolumn<-c("p.start.position.y", "oppo.start.position.y")
-
-names(fcov7_df) <- c("convergence.loglik", "Variables")
-
-#print variable with the highest convergence log likelihood
-fcov7_df %>% 
-   slice(which.max(convergence.loglik))
-
-
-
-```
-
-
-
-
-
-##Stepwise to find eighth best variable
-```{r}
-#seventh best variable is lag.oppo.height.off.net
-
-
-#run through all variables to find highest log lik
-fcov8 <- lapply(fed16_scale[c( "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "oppo.rally.side.change.count", "diff.p.avg.and.current.shot.speed")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~p.start.position.x + oppo.start.position.x + oppo.diff.avg.shot.and.match.movement.speed + p.diff.avg.shot.and.match.movement.speed + p.start.shot.x +  p.movement.angle.1 + lag.oppo.height.off.net + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
-
-
-#Pulling covergence log likelihoods into a dataframe
-fcov8_df <-  as.data.frame(
-  c(logLik(fcov8$p.start.position.y), logLik(fcov8$oppo.start.position.y),
-    logLik(fcov8$oppo.rally.side.change.count),
-    logLik(fcov8$diff.p.avg.and.current.shot.speed)  )
-  )
-
-fcov8_df$newcolumn<-c("p.start.position.y","oppo.start.position.y",  "oppo.rally.side.change.count", "diff.p.avg.and.current.shot.speed")
-
-names(fcov8_df) <- c("convergence.loglik", "Variables")
-
-#print variable with the highest convergence log likelihood
-fcov8_df %>% 
-   slice(which.max(convergence.loglik))
-
-#The model stops improving at this point
-```
 
 
 
@@ -726,7 +674,7 @@ ggplot(fed16_plot3, aes(x=player.total.shot.number,y=measurement)) + geom_line(c
 ```{r}
 #run through all variables to find highest log lik
 #tm2.fcov1 is training model 2 fitted covariates 1
-tm2.fcov1 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+tm2.fcov1 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
 #Pulling covergence log likelihoods into a dataframe
@@ -734,12 +682,13 @@ tm2.fcov1_df <-  as.data.frame(
   c(logLik(tm2.fcov1$p.start.position.x), logLik(tm2.fcov1$p.start.position.y),
     logLik(tm2.fcov1$oppo.start.position.x), logLik(tm2.fcov1$oppo.start.position.y),
     logLik(tm2.fcov1$p.movement.angle.1),
-    logLik(tm2.fcov1$oppo.rally.side.change.count), logLik(tm2.fcov1$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov1$p.diff.avg.shot.and.match.movement.speed),
     logLik(tm2.fcov1$oppo.diff.avg.shot.and.match.movement.speed),
-    logLik(tm2.fcov1$diff.p.avg.and.current.shot.speed), logLik(tm2.fcov1$lag.oppo.height.off.net)  )
+    logLik(tm2.fcov1$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov1$lag.oppo.height.off.net)  )
   )
 
-tm2.fcov1_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1","oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+tm2.fcov1_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
 
 names(tm2.fcov1_df) <- c("convergence.loglik", "Variables")
 
@@ -751,19 +700,20 @@ tm2.fcov1_df %>%
 #first best variable p.movement.angle.1
 
 #run through all variables to find highest log lik
-tm2.fcov2 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+tm2.fcov2 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
 #Pulling covergence log likelihoods into a dataframe
 tm2.fcov2_df <-  as.data.frame(
   c(logLik(tm2.fcov2$p.start.position.x), logLik(tm2.fcov2$p.start.position.y),
     logLik(tm2.fcov2$oppo.start.position.x), logLik(tm2.fcov2$oppo.start.position.y),
-    logLik(tm2.fcov2$oppo.rally.side.change.count), logLik(tm2.fcov2$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov2$p.diff.avg.shot.and.match.movement.speed),
     logLik(tm2.fcov2$oppo.diff.avg.shot.and.match.movement.speed),
-    logLik(tm2.fcov2$diff.p.avg.and.current.shot.speed), logLik(tm2.fcov2$lag.oppo.height.off.net)  )
+    logLik(tm2.fcov2$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov2$lag.oppo.height.off.net)  )
   )
 
-tm2.fcov2_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+tm2.fcov2_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
 
 names(tm2.fcov2_df) <- c("convergence.loglik", "Variables")
 
@@ -775,18 +725,19 @@ tm2.fcov2_df %>%
 #second best variable is oppo.diff.avg.shot.and.match.movement.speed
 
 #run through all variables to find highest log lik
-tm2.fcov3 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+tm2.fcov3 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
 #Pulling covergence log likelihoods into a dataframe
 tm2.fcov3_df <-  as.data.frame(
   c(logLik(tm2.fcov3$p.start.position.x), logLik(tm2.fcov3$p.start.position.y),
     logLik(tm2.fcov3$oppo.start.position.x), logLik(tm2.fcov3$oppo.start.position.y),
-    logLik(tm2.fcov3$oppo.rally.side.change.count), logLik(tm2.fcov3$p.diff.avg.shot.and.match.movement.speed),
-    logLik(tm2.fcov3$diff.p.avg.and.current.shot.speed), logLik(tm2.fcov3$lag.oppo.height.off.net)  )
+    logLik(tm2.fcov3$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov3$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov3$lag.oppo.height.off.net)  )
   )
 
-tm2.fcov3_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+tm2.fcov3_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
 
 names(tm2.fcov3_df) <- c("convergence.loglik", "Variables")
 
@@ -797,18 +748,19 @@ tm2.fcov3_df %>%
 ```{r}
 #third best variable is p.start.position.y
 #run through all variables to find highest log lik
-tm2.fcov4 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+tm2.fcov4 <- lapply(fed_scale[c( "p.start.position.x", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
 #Pulling covergence log likelihoods into a dataframe
 tm2.fcov4_df <-  as.data.frame(
   c(logLik(tm2.fcov4$p.start.position.x),
     logLik(tm2.fcov4$oppo.start.position.x), logLik(tm2.fcov4$oppo.start.position.y),
-    logLik(tm2.fcov4$oppo.rally.side.change.count), logLik(tm2.fcov4$p.diff.avg.shot.and.match.movement.speed),
-    logLik(tm2.fcov4$diff.p.avg.and.current.shot.speed), logLik(tm2.fcov4$lag.oppo.height.off.net)  )
+    logLik(tm2.fcov4$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov4$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov4$lag.oppo.height.off.net)  )
   )
 
-tm2.fcov4_df$newcolumn<-c( "p.start.position.x", "oppo.start.position.x", "oppo.start.position.y", "oppo.rally.side.change.count", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+tm2.fcov4_df$newcolumn<-c( "p.start.position.x", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
 
 names(tm2.fcov4_df) <- c("convergence.loglik", "Variables")
 
@@ -817,19 +769,20 @@ tm2.fcov4_df %>%
    slice(which.max(convergence.loglik))
 ```
 ```{r}
-#fourth best variable is oppo.rally.side.change.count
+#fourth best variable is oppo.start.position.x
 #run through all variables to find highest log lik
-tm2.fcov5 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.rally.side.change.count + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+tm2.fcov5 <- lapply(fed_scale[c( "p.start.position.x", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
 
 
 #Pulling covergence log likelihoods into a dataframe
 tm2.fcov5_df <-  as.data.frame(
-  c(logLik(tm2.fcov5$p.start.position.x),
-    logLik(tm2.fcov5$oppo.start.position.x), logLik(tm2.fcov5$oppo.start.position.y), logLik(tm2.fcov5$p.diff.avg.shot.and.match.movement.speed),
-    logLik(tm2.fcov5$diff.p.avg.and.current.shot.speed), logLik(tm2.fcov5$lag.oppo.height.off.net)  )
+  c(logLik(tm2.fcov5$p.start.position.x), logLik(tm2.fcov5$oppo.start.position.y),
+    logLik(tm2.fcov5$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov5$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov5$lag.oppo.height.off.net)  )
   )
 
-tm2.fcov5_df$newcolumn<-c( "p.start.position.x", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+tm2.fcov5_df$newcolumn<-c( "p.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
 
 names(tm2.fcov5_df) <- c("convergence.loglik", "Variables")
 
@@ -839,6 +792,30 @@ tm2.fcov5_df %>%
 
 #model stops improving at this point
 ```
+```{r}
+#5th best variable alternates between oppo.start.position.y and p.diff.avg.shot.and.match.movement.speed. Adding both.
+#run through all variables to find highest log lik
+tm2.fcov6 <- lapply(fed_scale[c( "p.start.position.x", "oppo.start.position.x", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm2.fcov6_df <-  as.data.frame(
+  c(logLik(tm2.fcov6$p.start.position.x),
+    logLik(tm2.fcov6$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov6$lag.oppo.height.off.net)  )
+  )
+
+tm2.fcov6_df$newcolumn<-c( "p.start.position.x", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm2.fcov6_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm2.fcov6_df %>% 
+   slice(which.max(convergence.loglik))
+#The model stops improving after this point. Last variable added to the model is lag.oppo.height.off.net
+
+```
+
 
 #Running Stepwise for Data Set 3 (Strycova vs Garcia 2016/2017)
 
