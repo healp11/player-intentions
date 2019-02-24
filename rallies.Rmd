@@ -3775,12 +3775,13 @@ ggplot() +
 ```
 ###Federer Vs Berdych 2016/17/18
 Data Set 2
-Training Model two is the bst combination of variables from running Stepwise on Data Set 2
+Training Model two is the best combination of variables from running Stepwise on Data Set 2
 
 #Running Training Model 1 on Data Set 2 (multiple Fed vs Berdych matches 2016, 2017 & 2018)
 ```{r}
 library(dplyr)
-
+#Joining all Federer matches
+fed_only <- rbind(fed16_only, fed17_only, fed18_only)
 #choosing variables of interest
 fed_dep <- fed_only[, c("p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
 
@@ -3966,7 +3967,8 @@ ggplot() +
 
 ###Strycova
 ```{r}
-
+#Joining all Strycova matches
+stry_only <- rbind(stry16_only, stry17_only)
 
 #choosing variables of interest
 stry_dep <- stry_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
@@ -4025,6 +4027,8 @@ ds3.mod2b.3s <- depmix(p.advantage.states ~ 1, transition = ~ p.movement.angle.1
  
  summary(ds3.fm2b.3s)
 ```
+
+
 ```{r}
 #Comparing Different response variables to find the best model for three states
 #Response variable(s):winner.return.error & p.advantage.states
