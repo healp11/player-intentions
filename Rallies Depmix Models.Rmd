@@ -152,11 +152,14 @@ ds1.fm1.2s_df <- cbind(fed16_scale, ds1.fm1.2s_df)
 
 
 ```{r}
+library(dplyr)
 #Plotting states for training model fed16
 #p.start.position.x, oppo.start.position.x, oppo.diff.avg.shot.and.match.movement.speed, p.diff.avg.shot.and.match.movement.speed, lag.p.angle, oppo.rally.side.change.count, diff.lag.oppo.avg.and.current.shot.speed, diff.p.avg.and.current.shot.speed, p.movement.angle.1, lag.oppo.height.off.net, oppo.start.position.y
+
 probs = posterior(ds1.fm1.2s)
 
-	layout(1:2)
+  
+ 
  	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
 	
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
@@ -204,7 +207,7 @@ cor.ds1.fm1.2s_df <- cor.ds1.fm1.2s[ -c(1:5, 7) ]
 #plotting Data Set 1 Training Model 1 with 3 states
 probs = posterior(ds1.fm1.3s)
 
-	layout(1:2)
+	
 	
  	plot((probs$state), type='s', main='Implied States', xlab='', ylab='State')
  	
@@ -252,9 +255,8 @@ fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.posi
 fed_scale <- cbind(fed_scale, winner = fed_only$winner) 
 fed_scale <- fed_scale %>% mutate(player.total.shot.number = row_number())
 
+
 fed_scale <- fed_scale %>%
-  mutate(p.advantage.states = ifelse(p.advantage <= (-1000), 1,
-                                     ifelse(p.advantage >= 1000,3,1))) %>%
   mutate(winner.return.error = ifelse(winner.return.error == 1,3,
                                       ifelse(winner.return.error == 0.5,2,1)))
 
@@ -293,7 +295,7 @@ fed_scale <- fed_scale %>%
 ```{r}
 probs = posterior(ds2.fm1.2s)
 
-	layout(1:2)
+	
  	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
 	
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
@@ -352,7 +354,7 @@ ds2.mod2.2s <- depmix(winner ~ 1, transition = ~p.movement.angle.1 + oppo.diff.a
 ```{r}
 probs = posterior(ds2.fm2.2s)
 
-	layout(1:2)
+	
  	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
 	
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
@@ -404,7 +406,7 @@ ds2.mod2.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1
 #plotting Data Set 2 Training Model 2 with 3 states
 probs = posterior(ds2.fm2.3s)
 
-	layout(1:2)
+	
 	
  	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
  	
@@ -420,24 +422,9 @@ ggplot() +
   ggtitle("Actual state") 
 
 ```
-```{r}
-ds2.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),multinomial("identity")))
- ds2.fm2a.3s <- fit(ds2.mod2a.3s)
- 
- summary(ds2.fm2a.3s)
-```
 
-```{r}
-probs = posterior(ds2.fm2a.3s)
 
-	layout(1:2)
-	
- 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
- 	
- 
-	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
-		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n')
-```
+
 
 
 #Stepwise to find best variables for Depmix for Federer vs Berdych 2016 (Data Set 1, Training Model 1)
@@ -493,7 +480,7 @@ summary(fm1)
 
 probs = posterior(fm1)
 
-	layout(1:2)
+	
 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
 	
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
@@ -676,7 +663,7 @@ library(tidyr)
 
 
 fed16_plot1<- fed16_scale %>%
-  gather(key = vars, value = measurement, p.start.position.x, oppo.start.position.x, oppo.rally.side.change.count, p.diff.avg.shot.and.match.movement.speed)
+  gather(key = vars, value = measurement, p.start.position.x, oppo.start.position.x, p.diff.avg.shot.and.match.movement.speed)
 
 fed16_plot2<- fed16_scale %>%
   gather(key = vars, value = measurement, p.start.shot.x, p.movement.angle.1, p.start.position.y, lag.oppo.height.off.net)
@@ -861,8 +848,8 @@ stry_scale <- as.data.frame(lapply(stry_dep[c( "p.start.position.x", "p.start.po
 stry_scale <- cbind(stry_scale, winner = stry_only$winner)
 stry_scale <- cbind(stry_scale, p.advantage = stry_only$p.advantage)
 stry_scale <- stry_scale %>%
-  mutate(p.advantage.states = ifelse(p.advantage <= (-1000), 1,
-                                     ifelse(p.advantage >= 1000,3,1))) %>%
+  mutate(p.advantage.states = ifelse(p.advantage <= (-2000), 1,
+                                     ifelse(p.advantage >= 2000,3,1))) %>%
   mutate(winner.return.error = ifelse(winner.return.error == 1,3,
                                       ifelse(winner.return.error == 0.5,2,1)))
 
@@ -877,6 +864,18 @@ stry.corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.
 #Removed some variables with significant correlation with other variables above 50%:
 #p.end.position.x, p.end.position.y, oppo.end.position.x, oppo.end.position.y, p.rally.side.change.count, p.distance, oppo.distance, fhand, p.advantage, rally.distance.run.ratio, shot
 ```
+```{r}
+ds3.mod2b.3s <- depmix(p.advantage.states ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity"))
+ ds3.fm2b.3s <- fit(ds3.mod2b.3s)
+ 
+ summary(ds3.fm2b.3s)
+```
+```{r}
+ds3.mod2c.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity"))
+ ds3.fm2c.3s <- fit(ds3.mod2c.3s)
+ 
+ summary(ds3.fm2c.3s)
+```
 
 ```{r}
 ds3.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),multinomial("identity")))
@@ -884,11 +883,13 @@ ds3.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), tr
  
  summary(ds3.fm2a.3s)
 ```
+
+
 ```{r}
 #plotting Data Set 2 Training Model 2 with 3 states
 probs = posterior(ds3.fm2a.3s)
 
-	layout(1:2)
+	
 	
  	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
  	
@@ -897,6 +898,170 @@ probs = posterior(ds3.fm2a.3s)
 		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n')
 ```
 
+```{r}
+
+
+ds3.mod3.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), transition = ~ oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + p.start.position.x + lag.oppo.height.off.net + p.diff.avg.shot.and.match.movement.speed , data = stry_scale, nstates = 3, family=list(multinomial("identity"),multinomial("identity")))
+ ds3.fm3.3s <- fit(ds3.mod3.3s)
+ 
+ summary(ds3.fm3.3s)
+```
+
+
+
+
+
+
+```{r}
+#Looking for first best variable
+tm3.fcov1 <- lapply(stry_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), data = stry_scale, transition = ~ w, nstates = 2, family=list(multinomial("identity"), multinomial("identity")))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm3.fcov1_df <-  as.data.frame(
+  c(logLik(tm3.fcov1$p.start.position.x), logLik(tm3.fcov1$p.start.position.y),
+    logLik(tm3.fcov1$oppo.start.position.x), logLik(tm3.fcov1$oppo.start.position.y),
+    logLik(tm3.fcov1$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm3.fcov1$oppo.diff.avg.shot.and.match.movement.speed),
+    logLik(tm3.fcov1$diff.p.avg.and.current.shot.speed),
+    logLik(tm3.fcov1$lag.oppo.height.off.net)  )
+  )
+
+tm3.fcov1_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y",  "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm3.fcov1_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm3.fcov1_df %>% 
+   slice(which.max(convergence.loglik))
+```
+
+```{r}
+#First best variable is oppo.diff.avg.shot.and.match.movement.speed
+tm3.fcov2 <- lapply(stry_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + w, nstates = 2, family=list(multinomial("identity"), multinomial("identity")))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm3.fcov2_df <-  as.data.frame(
+  c(logLik(tm3.fcov2$p.start.position.x), logLik(tm3.fcov2$p.start.position.y),
+    logLik(tm3.fcov2$oppo.start.position.x), logLik(tm3.fcov2$oppo.start.position.y),
+    logLik(tm3.fcov2$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm3.fcov2$diff.p.avg.and.current.shot.speed),
+    logLik(tm3.fcov2$lag.oppo.height.off.net)  )
+  )
+
+tm3.fcov2_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y",  "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm3.fcov2_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm3.fcov2_df %>% 
+   slice(which.max(convergence.loglik))
+```
+```{r}
+#Second Best variable is p.start.position.y
+tm3.fcov3 <- lapply(stry_scale[c( "p.start.position.x", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + w, nstates = 2, family=list(multinomial("identity"), multinomial("identity")))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm3.fcov3_df <-  as.data.frame(
+  c(logLik(tm3.fcov3$p.start.position.x),
+    logLik(tm3.fcov3$oppo.start.position.x), logLik(tm3.fcov3$oppo.start.position.y),
+    logLik(tm3.fcov3$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm3.fcov3$diff.p.avg.and.current.shot.speed),
+    logLik(tm3.fcov3$lag.oppo.height.off.net)  )
+  )
+
+tm3.fcov3_df$newcolumn<-c( "p.start.position.x", "oppo.start.position.x", "oppo.start.position.y",  "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm3.fcov3_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm3.fcov3_df %>% 
+   slice(which.max(convergence.loglik))
+```
+```{r}
+#third best variable is p.start.posotion.x
+tm3.fcov4 <- lapply(stry_scale[c( "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + p.start.position.x + w, nstates = 2, family=list(multinomial("identity"), multinomial("identity")))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm3.fcov4_df <-  as.data.frame(
+  c(logLik(tm3.fcov4$oppo.start.position.x), logLik(tm3.fcov4$oppo.start.position.y),
+    logLik(tm3.fcov4$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm3.fcov4$diff.p.avg.and.current.shot.speed),
+    logLik(tm3.fcov4$lag.oppo.height.off.net)  )
+  )
+
+tm3.fcov4_df$newcolumn<-c("oppo.start.position.x", "oppo.start.position.y",  "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm3.fcov4_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm3.fcov4_df %>% 
+   slice(which.max(convergence.loglik))
+```
+```{r}
+#fourth best variable is lag.oppo.height.off.net
+tm3.fcov5 <- lapply(stry_scale[c( "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + p.start.position.x + lag.oppo.height.off.net + w, nstates = 2, family=list(multinomial("identity"), multinomial("identity")))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm3.fcov5_df <-  as.data.frame(
+  c(logLik(tm3.fcov5$oppo.start.position.x), logLik(tm3.fcov5$oppo.start.position.y),
+    logLik(tm3.fcov5$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm3.fcov5$diff.p.avg.and.current.shot.speed)  )
+  )
+
+tm3.fcov5_df$newcolumn<-c("oppo.start.position.x", "oppo.start.position.y",  "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed")
+
+names(tm3.fcov5_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm3.fcov5_df %>% 
+   slice(which.max(convergence.loglik))
+```
+```{r}
+#fifth best varaible is oppo.start.position.y
+tm3.fcov6 <- lapply(stry_scale[c( "oppo.start.position.x", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + p.start.position.x + lag.oppo.height.off.net + w, nstates = 2, family=list(multinomial("identity"), multinomial("identity")))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm3.fcov6_df <-  as.data.frame(
+  c(logLik(tm3.fcov6$oppo.start.position.x),
+    logLik(tm3.fcov6$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm3.fcov6$diff.p.avg.and.current.shot.speed)  )
+  )
+
+tm3.fcov6_df$newcolumn<-c("oppo.start.position.x", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed")
+
+names(tm3.fcov6_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm3.fcov6_df %>% 
+   slice(which.max(convergence.loglik))
+```
+```{r}
+#sixth best variable is p.diff.avg.shot.and.match.movement.speed
+tm3.fcov7 <- lapply(stry_scale[c( "oppo.start.position.x", "diff.p.avg.and.current.shot.speed")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + p.start.position.x + lag.oppo.height.off.net + p.diff.avg.shot.and.match.movement.speed + w, nstates = 2, family=list(multinomial("identity"), multinomial("identity")))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm3.fcov7_df <-  as.data.frame(
+  c(logLik(tm3.fcov7$oppo.start.position.x),
+    logLik(tm3.fcov7$diff.p.avg.and.current.shot.speed)  )
+  )
+
+tm3.fcov7_df$newcolumn<-c("oppo.start.position.x", "diff.p.avg.and.current.shot.speed")
+
+names(tm3.fcov7_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm3.fcov7_df %>% 
+   slice(which.max(convergence.loglik))
+
+#Model Stops improving at this point
+```
 
 #Incomplete code for a loop for stepwise testing to find the best model for depmix
 
