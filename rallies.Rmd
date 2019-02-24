@@ -4009,50 +4009,52 @@ stry.corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.
 ```
 
 
-```{r}
-#Comparing Different response variables to find the best model for three states
-#Response variable(s):winner.return.error & p.advantage.states
-#Combination of the two response variables produces the best three state model
-ds3.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),multinomial("identity")))
- ds3.fm2a.3s <- fit(ds3.mod2a.3s)
- 
- summary(ds3.fm2a.3s)
-```
+<!-- ```{r} -->
+<!-- #Comparing Different response variables to find the best model for three states -->
+<!-- #Response variable(s):winner.return.error & p.advantage.states -->
+<!-- #Combination of the two response variables produces the best three state model -->
+<!-- ds3.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),multinomial("identity"))) -->
+<!--  ds3.fm2a.3s <- fit(ds3.mod2a.3s) -->
 
-```{r}
-#Comparing Different response variables to find the best model for three states
-#Response variable(s):p.advantage.states
-ds3.mod2b.3s <- depmix(p.advantage.states ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity"))
- ds3.fm2b.3s <- fit(ds3.mod2b.3s)
- 
- summary(ds3.fm2b.3s)
-```
+<!--  summary(ds3.fm2a.3s) -->
+<!-- ``` -->
 
+<!-- ```{r} -->
+<!-- #Comparing Different response variables to find the best model for three states -->
+<!-- #Response variable(s):p.advantage.states -->
+<!-- ds3.mod2b.3s <- depmix(p.advantage.states ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity")) -->
+<!--  ds3.fm2b.3s <- fit(ds3.mod2b.3s) -->
 
-```{r}
-#Comparing Different response variables to find the best model for three states
-#Response variable(s):winner.return.error & p.advantage.states
-ds3.mod2c.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity"))
- ds3.fm2c.3s <- fit(ds3.mod2c.3s)
- 
- summary(ds3.fm2c.3s)
-```
+<!--  summary(ds3.fm2b.3s) -->
+<!-- ``` -->
 
 
+<!-- ```{r} -->
+<!-- #Commented out because of issue with crashing -->
+<!-- #Comparing Different response variables to find the best model for three states -->
+<!-- #Response variable(s):winner.return.error & p.advantage.states -->
+<!-- #Produces three states but the model sometimes crashes -->
+<!-- ds3.mod2c.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity")) -->
+<!--  ds3.fm2c.3s <- fit(ds3.mod2c.3s) -->
+
+<!--  summary(ds3.fm2c.3s) -->
+<!-- ``` -->
 
 
-```{r}
-#plotting Data Set 2 Training Model 2 with 3 states
-probs = posterior(ds3.fm2a.3s)
 
-	
-	
- 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
- 	
- 
-	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
-		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n')
-```
+
+<!-- ```{r} -->
+<!-- #plotting Data Set 2 Training Model 2 with 3 states -->
+<!-- probs = posterior(ds3.fm2a.3s) -->
+
+
+
+<!--  	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State') -->
+
+
+<!-- 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability') -->
+<!-- 		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n') -->
+<!-- ``` -->
 
 ```{r}
 
