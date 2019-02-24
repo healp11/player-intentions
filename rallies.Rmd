@@ -669,43 +669,6 @@ fed16_only <- fed16_only %>%
 
 
 
-```{r}
-##Plots of shot and ballmark co-ordinates, angles made by shots and speed 
-library(ggplot2)
-#X Co-ordinate of shot
-ggplot(fed16_only, aes(x=start.x,winner)) + geom_smooth() + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
-
-#Opponents shot before
-library(hexbin)
-ggplot(fed16_only, aes(x=oppo.hit.x,y=oppo.hit.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate of Oppo Shot") + ylab("Y Coordinate of Oppo Shot") + ggtitle("Count of Winners By Opponent's Shot Co-Ordinates")
-### Get help transforming this to proportion in each bin instead of raw count
-
-#Fed Shots on x-y plane
-ggplot(fed16_only, aes(x=start.x,y=start.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates")
-
-#Fed Ballmark by winner in x-y plane
-ggplot(fed16_only, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Ballmark Co-Ordinates")
-
-
-#Angle of shots
-ggplot(fed16_only, aes(x=o.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents Shot With Fed's Previous Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent Shot Angle")
-
-ggplot(fed16_only, aes(x=p.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's Shot Angle")
-
-ggplot(fed16_only) + geom_density(aes(p.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Fed Shot Angles")
-
-ggplot(fed16_only) + geom_density(aes(o.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Opponent Shot Angles")
-
-#Winners by oppo speed
-ggplot(fed16_only) + geom_density(aes(oppo.speed, group = factor(winner), color=factor(winner)))
-
-ggplot(fed16_only, aes(x=factor(winner),y=oppo.speed,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent Speed")
-
-#Winners by speed ratio
-ggplot(fed16_only) + geom_density(aes(speed.ratio, group = factor(winner), color=factor(winner)))
-
-ggplot(fed16_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
-```
  
 ```{r }
 #Seperating out the longest rallies from this match to visualise them through animation
@@ -716,31 +679,2377 @@ longral_df <- filter(fed16_pos, final.shot >= 10)
 longest_df <- filter(fed16_pos, final.shot == 17)
 ```
 
+
 ```{r}
-#Visulaising speed ratio
-
-ggplot(fed16_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For match")
-
-ggplot(fed16_only, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Fed Only Speed ratio by distance from the baseline For match")
-
-ggplot(longral_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For Long Rallies")
-
-ggplot(longest_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For Longest Rally")
+longest_pos <- filter(fed16_pos, final.shot == 17)
+longral_pos <- filter(fed16_pos, final.shot >= 10)
+```
 
 
+```{r}
+seventythree_df <- filter(longral_pos, rally.number=="73")
+
+```
 
 
-#Visualising player shot angles
 
-ggplot(fed16_df, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Federer Shot Angle by distance from the baseline")
 
-ggplot(fed16_only, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Fed only Shot Angle by distance from the baseline")
+```{r}
+fed16_only[is.na(fed16_only)] <- 0
 
-ggplot(fed16_df, aes(x=base.dist,y=o.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Berdych previous Shot") + ggtitle("Berdych Shot Angle by Federer distance from the baseline")
+write.csv(longral_pos,"longral.csv")
+write.csv(seventythree_df,"longest.csv")
+write.csv(fed16_only, "data/fed16_only.csv")
+```
+
+##Fed vs Berdych 2017 Data
+```{r  }
+
+#Reorienting shots so that all Federer's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
+fed17_df <- fed17_df %>% rowwise %>%
+  mutate(projected.ballmark.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(start.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.y, start.y))%>%
+  mutate(projected.ballmark.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
+  mutate(start.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.x, start.x)) 
+
+#Reorienting opponent shots
+fed17_df <- fed17_df %>% rowwise %>%
+  mutate(start.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.y, start.y)) %>%
+  mutate(projected.ballmark.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(projected.ballmark.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
+  mutate(start.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.x, start.x))
+```
+
+
+```{r }
+
+#Reorienting player positions so that all Federer's & Opponents start/end positions match reoriented ballmarks
+#For Federer
+fed17_df <- fed17_df %>% rowwise %>%
+  mutate(start.server.y = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(end.server.y = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
+  mutate(start.server.x = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.x, start.server.x)) %>%
+  mutate(start.receiver.x = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.x, start.receiver.x)) 
+
+fed17_df <- fed17_df %>% rowwise %>%
+  mutate(end.server.x = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.receiver.x = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.x, end.receiver.x)) 
+```
+
+```{r }
+
+
+#For Opponent
+fed17_df <- fed17_df %>% rowwise %>%
+  mutate(start.server.y = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver != "FEDERER" & start.receiver.x <= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(end.server.y = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.y, end.receiver.y))%>%
+  mutate(start.server.x = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.x, start.server.x)) %>%
+  mutate(start.receiver.x = ifelse(receiver != "FEDERER" & start.receiver.x <= 0, -start.receiver.x, start.receiver.x)) 
+
+fed17_df <- fed17_df %>% rowwise %>%
+  mutate(end.server.x = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.receiver.x = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.x, end.receiver.x)) 
+```
+
+
+
+```{r}
+fed17_df <- fed17_df %>%
+  mutate(lastshot = ifelse(shot == final.shot,1,0)) %>%
+  mutate(isserver = ifelse(server == impact.player,1,0)) %>%
+  mutate(fhand = ifelse(hitpoint == "F",1,0)) %>%
+  mutate(opponent = ifelse(server == "FEDERER", receiver, server)) 
+ 
+
+  
+
+```
+
+
+
+
+
+```{r}
+
+fed17_df <- fed17_df %>%
+  mutate(winner = ifelse(is.good == TRUE & lastshot == 1,1,0)) %>%
+  mutate(ser1 = ifelse(serve == 1 & serve_classification == 1,1,0)) %>%
+  mutate(ser2 = ifelse(serve == 2 & serve_classification == 1,1,0)) 
+  
+for (i in 1:ncol(fed17_df)) {
+  if(is.character(fed17_df[,i]) == TRUE) {
+    fed17_df[,i] <- as.factor(fed17_df[,i])
+  }
+}
+```
+
+```{r}
+#Combining winner, return into play and error into 1 column for three states in hidden markov model
+#If ball is in play and the shot is a winner value of 1
+#If ball is in play and the shot is not a winner value of 0
+#If the ball is out of play and thus not a winner value of -1
+
+fed17_df <- fed17_df %>%
+  mutate(winner.return.error = ifelse(is.good =="TRUE" & winner == "1",1,
+                ifelse(is.good =="TRUE" & winner == "0",0,-1)))
+```
+
+```{r}
+col = c("set","game", "point")
+rally.numfed17 = as.data.frame(group_indices_(fed17_df,.dots = col))
+colnames(rally.numfed17)<- "rally.number"
+```
+
+```{r}
+
+
+fed17_df <- fed17_df %>%
+  cbind(rally.numfed17)
+ 
+```
+
+
+
+```{r}
+
+#start/end player positions x/y
+fed17_df <- fed17_df %>%
+  mutate(oppo.start.position.x = ifelse(server != "FEDERER", start.server.x,0)+ifelse(server == "FEDERER", start.receiver.x,0))%>%
+  mutate(oppo.start.position.y = ifelse(server != "FEDERER", start.server.y,0)+ifelse(server == "FEDERER", start.receiver.y,0)) %>%
+  mutate(oppo.end.position.x = ifelse(server != "FEDERER", end.server.x,0)+ifelse(server == "FEDERER", end.receiver.x,0)) %>%
+  mutate(oppo.end.position.y = ifelse(server != "FEDERER", end.server.y,0)+ifelse(server == "FEDERER", end.receiver.y,0)) %>%
+  mutate(p.start.position.x = ifelse(server == "FEDERER", start.server.x,0)+ifelse(server != "FEDERER", start.receiver.x,0)) %>%
+  mutate(p.start.position.y = ifelse(server == "FEDERER", start.server.y,0)+ifelse(server != "FEDERER", start.receiver.y,0)) %>%
+  mutate(p.end.position.x = ifelse(server == "FEDERER", end.server.x,0)+ifelse(server != "FEDERER", end.receiver.x,0)) %>%
+  mutate(p.end.position.y = ifelse(server == "FEDERER", end.server.y,0)+ifelse(server != "FEDERER", end.receiver.y,0)) 
+  
+#player and opponent distances travelled from start of shot to end of next shot
+fed17_df <- fed17_df %>%  
+  mutate(oppo.distance = ifelse(server != "FEDERER", server.distance,0)+ifelse(server == "FEDERER", receiver.distance,0)) %>%
+  mutate(p.distance = ifelse(server == "FEDERER", server.distance,0)+ifelse(server != "FEDERER", receiver.distance,0))
+
+#player and opponent speed 
+fed17_df <- fed17_df %>%
+  mutate(p.peak.speed = ifelse(server == "FEDERER", server.peak.speed,0)+ifelse(server != "FEDERER", receiver.peak.speed,0)) %>%
+  mutate(p.avg.speed = ifelse(server == "FEDERER", server.avg.speed,0)+ifelse(server != "FEDERER", receiver.avg.speed,0)) 
+  
+
+#player and opponent acceleration
+fed17_df <- fed17_df %>%  
+  mutate(p.avg.acceleration = ifelse(server == "FEDERER", server.avg.acceleration,0)+ifelse(server != "FEDERER", receiver.avg.acceleration,0)) %>%
+  mutate(p.peak.acceleration = ifelse(server == "FEDERER", server.peak.acceleration,0)+ifelse(server != "FEDERER", receiver.peak.acceleration,0)) %>%
+  mutate(oppo.peak.speed = ifelse(server != "FEDERER", server.peak.speed,0)+ifelse(server == "FEDERER", receiver.peak.speed,0)) %>%
+  mutate(oppo.avg.speed = ifelse(server != "FEDERER", server.avg.speed,0)+ifelse(server == "FEDERER", receiver.avg.speed,0)) %>%
+  mutate(oppo.avg.acceleration = ifelse(server != "FEDERER", server.avg.acceleration,0)+ifelse(server == "FEDERER", receiver.avg.acceleration,0)) %>%
+  mutate(oppo.peak.acceleration = ifelse(server != "FEDERER", server.peak.acceleration,0)+ifelse(server == "FEDERER", receiver.peak.acceleration,0))
+
+
+#player and opponent work
+fed17_df <- fed17_df %>%
+  mutate(oppo.work = ifelse(server != "FEDERER", server.work,0)+ifelse(server == "FEDERER", receiver.work,0)) %>%
+  mutate(p.work = ifelse(server == "FEDERER", server.work,0)+ifelse(server != "FEDERER", receiver.work,0)) 
+
+#player and opponent advantage
+fed17_df <- fed17_df %>%
+  mutate(oppo.advantage =ifelse(server != "FEDERER", server.advantage,0)+ifelse(server == "FEDERER", receiver.advantage,0))%>%
+   mutate(p.advantage =ifelse(server == "FEDERER", server.advantage,0)+ifelse(server != "FEDERER", receiver.advantage,0))
+
+
+#player and opponent total changes
+fed17_df <- fed17_df %>%
+  mutate(oppo.total.changes =ifelse(server != "FEDERER", server.total.changes,0)+ifelse(server == "FEDERER", receiver.total.changes,0))%>%
+   mutate(p.total.changes =ifelse(server == "FEDERER", server.total.changes,0)+ifelse(server != "FEDERER", receiver.total.changes,0))
+  
+  
+```
+
+
+```{r}
+
+#player speed and acceleration differences and ratios
+fed17_df <- fed17_df %>%
+  mutate(avg.player.speed.diff = p.avg.speed-oppo.avg.speed) %>%
+  mutate(peak.player.speed.diff = p.peak.speed-oppo.peak.speed) %>%
+  mutate(avg.player.speed.ratio = p.avg.speed/oppo.avg.speed) %>%
+  mutate(peak.player.speed.ratio = p.peak.speed/oppo.peak.speed) %>%
+  mutate(avg.player.acceleration.diff = (p.avg.acceleration)-(oppo.avg.acceleration)) %>%
+  mutate(peak.player.acceleration.diff = (p.peak.acceleration)-(oppo.peak.acceleration)) %>%
+  mutate(avg.player.acceleration.ratio = (p.avg.acceleration)/(oppo.avg.acceleration)) %>%
+  mutate(peak.player.acceleration.ratio = (p.peak.acceleration)/(oppo.peak.acceleration)) 
+
+fed17_df[is.na(fed17_df)] <- 0
+  
+fed17_df <- fed17_df %>%  
+  mutate(p.avg.speed.match = mean(p.avg.speed)) %>%
+  mutate(oppo.avg.speed.match = mean(oppo.avg.speed)) %>%
+  mutate(p.diff.avg.shot.and.match.movement.speed = p.avg.speed - p.avg.speed.match) %>%
+  mutate(oppo.diff.avg.shot.and.match.movement.speed = oppo.avg.speed - oppo.avg.speed.match)
+  
+
+#player/opponent side distance for start/end positions
+fed17_df <- fed17_df %>%
+  mutate(p.start.position.side.dist = 4.115 - abs(p.start.position.y)) %>%
+  mutate(p.end.position.side.dist = 4.115 - abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.side.dist = 4.115 - abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.side.dist = 4.115 - abs(oppo.end.position.y))
+  
+#player/opponent base distances for start/end positions  
+fed17_df <- fed17_df %>%
+  mutate(p.start.position.base.dist = 11.89 - abs(p.start.position.x)) %>%
+  mutate(p.end.position.base.dist = 11.89 - abs(p.end.position.x)) %>%
+  mutate(oppo.start.position.base.dist = 11.89 - abs(oppo.start.position.x)) %>%
+  mutate(oppo.end.position.base.dist = 11.89 - abs(oppo.end.position.x)) %>%
+  mutate(oppo.start.position.base.diff = p.start.position.base.dist - oppo.start.position.base.dist) %>%
+  mutate(p.start.position.base.diff = oppo.start.position.base.dist -p.start.position.base.dist) %>%
+  mutate(oppo.end.position.base.diff = p.end.position.base.dist - oppo.end.position.base.dist) %>%
+  mutate(p.end.position.base.diff = oppo.end.position.base.dist -p.end.position.base.dist) %>%
+  mutate(p.start.position.centre.diff = abs(oppo.start.position.y)-abs(p.start.position.y)) %>%
+  mutate(p.end.position.centre.diff = abs(oppo.end.position.y)-abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.centre.diff = abs(p.start.position.y)-abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.centre.diff = abs(p.end.position.y)-abs(oppo.end.position.y))
+  
+  
+```
+
+
+
+```{r}
+#player/ opponent shortest distances for start/end positions 
+fed17_df <- fed17_df %>%
+  mutate(oppo.start.position.short.dist = min(oppo.start.position.side.dist, oppo.start.position.base.dist)) %>%
+   mutate(oppo.end.position.short.dist = min(oppo.end.position.side.dist, oppo.end.position.base.dist)) %>%
+  mutate(p.start.position.short.dist = min(p.start.position.side.dist, p.start.position.base.dist)) %>%
+   mutate(p.end.position.short.dist = min(p.end.position.side.dist, p.end.position.base.dist)) 
+```
+
+
+
+```{r}
+
+#Tally of the number of times player and opponent change side during rally
+#Defining change of side as having travelled from a location 2.0575 or more metres away from the centre on one side of the court (half the distance between centre and singles lines) to a location 2.0575 or more metres away from the centre on the other side of the court
+fed17_df <- fed17_df %>%
+  mutate(p.side.change.count = ifelse(p.start.position.y <= -2.0575 & p.end.position.y >= 2.0575, 1, ifelse(p.start.position.y >= 2.0575 & p.end.position.y <= -2.0575, 1, 0))) %>%
+  mutate(p.side.change.cumsum = cumsum(p.side.change.count)) %>%
+  mutate(oppo.side.change.count = ifelse(oppo.start.position.y <= -2.0575 & oppo.end.position.y >= 2.0575, 1, ifelse(oppo.start.position.y >= 2.0575 & oppo.end.position.y <= -2.0575, 1, 0))) %>%
+  mutate(oppo.side.change.cumsum = cumsum(oppo.side.change.count)) 
+  
+
+
+  
+  
+```
+
+```{r}
+#Within rally tally of side change count and distance run
+fed17_df <- fed17_df %>%
+  group_by(rally.number ) %>%
+  dplyr::mutate(p.rally.side.change.count = cumsum(p.side.change.count)) %>%
+  dplyr::mutate(oppo.rally.side.change.count = cumsum(oppo.side.change.count)) %>%
+  dplyr::mutate(rally.side.change.count.diff = p.rally.side.change.count-oppo.rally.side.change.count) %>%
+  dplyr::mutate(oppo.rally.distance.run = cumsum(oppo.distance)) %>%
+  dplyr::mutate(p.rally.distance.run = cumsum(p.distance)) %>%
+  dplyr::mutate(rally.distance.run.ratio = p.rally.distance.run/oppo.rally.distance.run) %>%
+  ungroup
+ 
+```
+```{r}
+#Seperating height over net of shots for player and opponent.
+
+fed17_df <- fed17_df %>%
+  mutate(p.height.off.net = ifelse(impact.player == "FEDERER",height.off.net,0)) %>%
+  mutate(oppo.height.off.net = ifelse(impact.player != "FEDERER", height.off.net,0)) 
+  
+```
+
+
+```{r}
+#Adding angles for player & opposition movement from start position[i] to end position[i] as well as end position[i] to start position[i+1]. Measuring the angle of movement from the baseline. Directly towards the net is 0 deg. Directly away from the net is 180 deg.
+
+
+fed17_df <- fed17_df %>%
+  mutate(p.movement.angle.1 = NA) %>%
+  mutate(p.movement.angle.2 = NA) %>%
+  mutate(oppo.movement.angle.1 = NA) %>%
+  mutate(oppo.movement.angle.2 = NA) 
+  
+  
+#player start to end movement angle  
+for (i in 1:nrow(fed17_df)) {
+  a1 <- fed17_df$p.start.position.x[i]
+  b1 <- fed17_df$p.start.position.y[i]
+  a2 <- fed17_df$p.end.position.x[i]
+  b2 <- fed17_df$p.end.position.y[i]
+  
+  
+  p.movement.angle.1 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  fed17_df$p.movement.angle.1[i] = ifelse(p.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.1,
+                                          ifelse(p.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,abs(p.movement.angle.1),
+                                                 ifelse(p.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0, 90+p.movement.angle.1,p.movement.angle.1)))
+                                                                                                            
+}
+
 
 
 ```
+```{r}
+#player end position(i) to start position (i+1) movement angle
+for (i in 2:nrow(fed17_df)) {
+  a1 <- fed17_df$p.end.position.x[i]
+  b1 <- fed17_df$p.end.position.y[i]
+  a2 <- fed17_df$p.start.position.x[i+1]
+  b2 <- fed17_df$p.start.position.y[i+1]
+  
+  p.movement.angle.2 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  fed17_df$p.movement.angle.2[i] = ifelse(p.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.2,
+                                          ifelse(p.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,abs(p.movement.angle.2),
+                                                 ifelse(p.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+p.movement.angle.2,p.movement.angle.2)))
+  
+}  
+  
+
+
+```
+
+```{r}
+# opposition start to end movement angle
+
+  
+for (i in 1:nrow(fed17_df)) {
+  a1 <- fed17_df$oppo.start.position.x[i]
+  b1 <- fed17_df$oppo.start.position.y[i]
+  a2 <- fed17_df$oppo.end.position.x[i]
+  b2 <- fed17_df$oppo.end.position.y[i]
+  
+  oppo.movement.angle.1 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  fed17_df$oppo.movement.angle.1[i] = ifelse(oppo.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0,180+oppo.movement.angle.1,
+                                          ifelse(oppo.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,abs(oppo.movement.angle.1),
+                                                 ifelse(oppo.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0,90+oppo.movement.angle.1,p.movement.angle.1)))
+  
+  
+}
+```
+```{r}
+#oppositions end[i] to start [i+1] movement angle
+for (i in 2:nrow(fed17_df)) {
+  a1 <- fed17_df$oppo.end.position.x[i]
+  b1 <- fed17_df$oppo.end.position.y[i]
+  a2 <- fed17_df$oppo.start.position.x[i+1]
+  b2 <- fed17_df$oppo.start.position.y[i+1]
+  
+  oppo.movement.angle.2 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  fed17_df$oppo.movement.angle.2[i] = ifelse(oppo.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+oppo.movement.angle.2,
+                                          ifelse(oppo.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,abs(oppo.movement.angle.2),
+                                                 ifelse(oppo.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+oppo.movement.angle.2,oppo.movement.angle.2)))
+}
+```
+
+```{r}
+#speed of player ad opponent shots in m/s at the start of the shot arc
+fed17_df<- fed17_df %>%
+  mutate(p.start.shot.speed = ifelse(impact.player == "FEDERER", speed.start, 0)) %>%
+  mutate(oppo.start.shot.speed = ifelse(impact.player != "FEDERER", speed.start, 0)) 
+```
+
+```{r}
+#code for this chunk relatively unchanged
+# replaced ballmark.x with projected.ballmark.x; speed1 replaced by speed.start
+
+fed17_df <- fed17_df %>%
+  mutate(speed.diff = NA) %>%
+  mutate(oppo.hit.x = NA) %>%
+  mutate(oppo.hit.y = NA) %>%
+  mutate(oppo.hit.z = NA) %>%
+  mutate(oppo.speed = NA) %>%
+  mutate(oppo.projected.ballmark.x = NA) %>%
+  mutate(oppo.projected.ballmark.y = NA) %>%
+  mutate(speed.ratio = NA) 
+
+
+for (i in 2:nrow(fed17_df)) {
+  if(fed17_df$shot[i] != 1) {#so that only non-serves are affected
+
+  fed17_df$speed.diff[i]=fed17_df$speed.start[i]-fed17_df$speed.start[i-1]
+  #speed difference
+  
+  fed17_df$oppo.hit.x[i]=fed17_df$start.x[i-1]
+  fed17_df$oppo.hit.y[i]=fed17_df$start.y[i-1]
+  fed17_df$oppo.hit.z[i]=fed17_df$start.z[i-1]
+  fed17_df$oppo.speed[i]=fed17_df$speed.start[i-1]
+  fed17_df$oppo.projected.ballmark.x[i]=fed17_df$projected.ballmark.x[i-1]
+  fed17_df$oppo.projected.ballmark.y[i]=fed17_df$projected.ballmark.y[i-1]
+  #oppo hit
+  
+  }
+}
+
+fed17_df <- fed17_df %>%
+  mutate(speed.ratio = speed.start/oppo.speed) %>% #speed ratio
+  mutate(side.dist = 4.115 - abs(oppo.projected.ballmark.y)) %>% #distance of oppo.projected.ballmark from sideline
+  mutate(base.dist = 11.89 - abs(oppo.projected.ballmark.x)) %>% #distance of oppo.projected.ballmark from baseline
+  mutate(short.dist = min(side.dist, base.dist)) #shortest distance from any line
+
+
+#Adding angles
+fed17_df <- fed17_df %>%
+  mutate(p.start.shot.x = NA) %>%
+  mutate(p.start.shot.y = NA)
+
+for (i in 3:nrow(fed17_df)) {
+  if(fed17_df$impact.player[i] == fed17_df$impact.player[i-2] & fed17_df$shot[i] == fed17_df$shot[i-2] + 2) {
+    fed17_df$p.start.shot.x[i]=fed17_df$start.x[i-2]
+    fed17_df$p.start.shot.y[i]=fed17_df$start.y[i-2]
+  }
+}
+
+#adding angle between fed.shot-opp.shot vector and opp.shot-opp.projected.ballmark vector
+#doing it in one line because df doesn't want to add vectors
+fed17_df <- fed17_df %>%
+  mutate(o.angle = NA)
+  
+for (i in 1:nrow(fed17_df)) {
+  x1 <- fed17_df$p.start.shot.x[i]
+  y1 <- fed17_df$p.start.shot.y[i]
+  x2 <- fed17_df$oppo.hit.x[i]
+  y2 <- fed17_df$oppo.hit.y[i]
+  x3 <- fed17_df$oppo.projected.ballmark.x[i]
+  y3 <- fed17_df$oppo.projected.ballmark.y[i]
+  
+  o.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  fed17_df$o.angle[i] = ifelse(o.angle > 90, 180-o.angle, o.angle)
+}
+
+#Now adding the angle the player hits
+fed17_df <- fed17_df %>%
+  mutate(p.angle = NA)
+  
+for (i in 1:nrow(fed17_df)) {
+  x1 <- fed17_df$oppo.hit.x[i]
+  y1 <- fed17_df$oppo.hit.y[i]
+  x2 <- fed17_df$start.x[i]
+  y2 <- fed17_df$start.y[i]
+  x3 <- fed17_df$projected.ballmark.x[i]
+  y3 <- fed17_df$projected.ballmark.y[i]
+  
+  p.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  fed17_df$p.angle[i] = ifelse(p.angle > 90, 180-p.angle, p.angle)
+}
+
+fed17_df <- fed17_df %>%
+  group_by(rally.number) %>%
+  mutate(lag.p.angle = dplyr::lag(p.angle, n = 1, default = NA)) %>%
+  mutate(lag.speed.ratio = dplyr::lag(speed.ratio, n = 1, default = NA)) %>%
+  mutate(lag.p.movement.angle.1 = dplyr::lag(p.movement.angle.1, n = 1, default = NA)) %>%
+  mutate(lag.p.movement.angle.2 = dplyr::lag(p.movement.angle.2, n = 1, default = NA)) %>%
+  mutate(lag.oppo.height.off.net = dplyr::lag(oppo.height.off.net, n = 1, default = NA)) %>%
+  mutate(lag.p.start.shot.speed = dplyr::lag(p.start.shot.speed, n = 1, default = NA)) %>%
+  mutate(lag.oppo.start.shot.speed = dplyr::lag(oppo.start.shot.speed, n = 1, default = NA)) %>%
+  ungroup
+
+
+```
+
+
+
+
+
+```{r}
+fed17_df <- fed17_df %>%
+  mutate(oppo.start.server.x = ifelse(server != "FEDERER", start.server.x, 0)) 
+```
+
+
+
+```{r  }
+
+#creating new rows so that every second row start and end player positions are switched
+#Also creating new rows so that every second row in start.x,/start.y is projected ballmark
+#this allows us to better plot player positions as well as track positions for animations
+
+joinfed17_df <- transform(fed17_df, p.start.position.x=p.end.position.x, p.start.position.y=p.end.position.y, oppo.start.position.x=oppo.end.position.x, oppo.start.position.y=oppo.end.position.y, start.x=projected.ballmark.x, start.y=projected.ballmark.y)
+
+fed17_pos <- bind_rows(fed17_df, setNames(joinfed17_df, names(fed17_df))) %>% 
+           arrange(rally.number, shot)
+
+fed17_pos <- fed17_pos %>%
+  group_by(rally.number, idx = cumsum(event == 1L)) %>%
+  mutate(location.id= row_number()) %>%
+  ungroup
+
+fed17_pos <- fed17_pos %>%
+  group_by(rally.number) %>%
+  mutate(pos.rally.count= 1:n()) %>%
+  ungroup
+``` 
+
+
+
+
+
+```{r }
+#remove opponents
+fed17_no.opp <- fed17_df %>% 
+  dplyr::filter(impact.player == "FEDERER")
+
+#federer only - remove serves
+fed17_only <- fed17_no.opp %>%
+  filter(hitpoint != "S") %>%
+  dplyr::select(-serveid)
+
+
+#First remove any errors for start, projected.ballmark, so that we are only looking at shots that we hit onto the other side
+#To check: ggplot(fed17_only, aes(projected.ballmark.x, projected.ballmark.y)) + geom_point()
+fed17_only <- fed17_only %>%
+  filter(oppo.hit.x >= 0) %>%
+  filter(oppo.projected.ballmark.x <= 0) %>%
+  filter(projected.ballmark.x >= 0)
+
+#Adding shot number cumulative count (functions as time)
+#check this for new data set .
+fed17_only <- fed17_only %>%
+  mutate(count = 1)
+
+  for (i in 2:nrow(fed17_only)) {
+    if(fed17_only$matchid[i]==fed17_only$matchid[i-1]) {
+      fed17_only$count[i] = fed17_only$count[i-1] + 1
+    }
+  }
+
+  
+
+#Adjusting to remove NAs and replace with 0s for modelling
+fed17_only$o.angle[is.na(fed17_only$o.angle)] <- 0
+fed17_only$lag.p.angle[is.na(fed17_only$lag.p.angle)] <- 0
+fed17_only$lag.speed.ratio[is.na(fed17_only$lag.speed.ratio)] <- 0
+fed17_only$p.start.shot.x[is.na(fed17_only$p.start.shot.x)] <- 0
+fed17_only$p.start.shot.y[is.na(fed17_only$p.start.shot.y)] <- 0
+fed17_only$lag.p.movement.angle.1[is.na(fed17_only$lag.p.movement.angle.1)] <- 0
+fed17_only$lag.p.movement.angle.2[is.na(fed17_only$lag.p.movement.angle.2)] <- 0
+fed17_only$lag.oppo.height.off.net[is.na(fed17_only$lag.oppo.height.off.net)] <- 0
+
+
+
+fed17_only <- fed17_only %>% mutate(player.total.shot.number = row_number())
+```
+
+
+```{r}
+#variables for speed of ball at the start of shot arcs
+
+fed17_only <- fed17_only %>%
+  mutate(avg.p.start.shot.speed = mean(p.start.shot.speed)) %>%
+  mutate(avg.lag.oppo.start.shot.speed = mean(lag.oppo.start.shot.speed)) %>%
+  mutate(diff.p.avg.and.current.shot.speed = p.start.shot.speed- avg.p.start.shot.speed) %>%
+  mutate(diff.lag.oppo.avg.and.current.shot.speed = lag.oppo.start.shot.speed- avg.lag.oppo.start.shot.speed) 
+
+
+  
+```
+
+
+
+```{r}
+#making y positions absolute for fed17_only as this is more relevant for the depmix model
+
+fed17_only <- fed17_only %>%
+  mutate(p.start.position.y = abs(p.start.position.y)) %>%
+  mutate(p.end.position.y = abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.y = abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.y = abs(oppo.end.position.y))%>%
+  mutate(p.start.shot.y =abs(p.start.shot.y))
+  
+  
+
+```
+```{r}
+#Save output
+fed17_only[is.na(fed17_only)] <- 0
+write.csv(fed17_only, "data/fed17_only.csv")
+```
+
+##Fed vs Berdych 2018 Data 
+```{r  }
+
+#Reorienting shots so that all Federer's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
+fed18_df <- fed18_df %>% rowwise %>%
+  mutate(projected.ballmark.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(start.y = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.y, start.y))%>%
+  mutate(projected.ballmark.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
+  mutate(start.x = ifelse(impact.player == "FEDERER" & start.x >= 0, -start.x, start.x)) 
+
+#Reorienting opponent shots
+fed18_df <- fed18_df %>% rowwise %>%
+  mutate(start.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.y, start.y)) %>%
+  mutate(projected.ballmark.y = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(projected.ballmark.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
+  mutate(start.x = ifelse(impact.player != "FEDERER" & start.x <= 0, -start.x, start.x))
+```
+
+
+```{r }
+
+#Reorienting player positions so that all Federer's & Opponents start/end positions match reoriented ballmarks
+#For Federer
+fed18_df <- fed18_df %>% rowwise %>%
+  mutate(start.server.y = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(end.server.y = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
+  mutate(start.server.x = ifelse(server == "FEDERER" & start.server.x >= 0, -start.server.x, start.server.x)) %>%
+  mutate(start.receiver.x = ifelse(receiver == "FEDERER" & start.receiver.x >= 0, -start.receiver.x, start.receiver.x)) 
+
+fed18_df <- fed18_df %>% rowwise %>%
+  mutate(end.server.x = ifelse(server == "FEDERER" & end.server.x >= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.receiver.x = ifelse(receiver == "FEDERER" & end.receiver.x >= 0, -end.receiver.x, end.receiver.x)) 
+```
+
+```{r }
+
+
+#For Opponent
+fed18_df <- fed18_df %>% rowwise %>%
+  mutate(start.server.y = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver != "FEDERER" & start.receiver.x <= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(end.server.y = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.y, end.receiver.y))%>%
+  mutate(start.server.x = ifelse(server != "FEDERER" & start.server.x <= 0, -start.server.x, start.server.x)) %>%
+  mutate(start.receiver.x = ifelse(receiver != "FEDERER" & start.receiver.x <= 0, -start.receiver.x, start.receiver.x)) 
+
+fed18_df <- fed18_df %>% rowwise %>%
+  mutate(end.server.x = ifelse(server != "FEDERER" & end.server.x <= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.receiver.x = ifelse(receiver != "FEDERER" & end.receiver.x <= 0, -end.receiver.x, end.receiver.x)) 
+```
+
+
+
+```{r}
+fed18_df <- fed18_df %>%
+  mutate(lastshot = ifelse(shot == final.shot,1,0)) %>%
+  mutate(isserver = ifelse(server == impact.player,1,0)) %>%
+  mutate(fhand = ifelse(hitpoint == "F",1,0)) %>%
+  mutate(opponent = ifelse(server == "FEDERER", receiver, server)) 
+ 
+
+  
+
+```
+
+
+
+```{r}
+
+fed18_df <- fed18_df %>%
+  mutate(winner = ifelse(is.good == TRUE & lastshot == 1,1,0)) %>%
+  mutate(ser1 = ifelse(serve == 1 & serve_classification == 1,1,0)) %>%
+  mutate(ser2 = ifelse(serve == 2 & serve_classification == 1,1,0)) 
+  
+for (i in 1:ncol(fed18_df)) {
+  if(is.character(fed18_df[,i]) == TRUE) {
+    fed18_df[,i] <- as.factor(fed18_df[,i])
+  }
+}
+```
+
+```{r}
+#Combining winner, return into play and error into 1 column for three states in hidden markov model
+#If ball is in play and the shot is a winner value of 1
+#If ball is in play and the shot is not a winner value of 0
+#If the ball is out of play and thus not a winner value of -1
+
+fed18_df <- fed18_df %>%
+  mutate(winner.return.error = ifelse(is.good =="TRUE" & winner == "1",1,
+                ifelse(is.good =="TRUE" & winner == "0",0,-1)))
+```
+
+
+
+
+```{r}
+col = c("set","game", "point")
+rally.numfed18 = as.data.frame(group_indices_(fed18_df,.dots = col))
+colnames(rally.numfed18)<- "rally.number"
+```
+
+```{r}
+
+
+fed18_df <- fed18_df %>%
+  cbind(rally.numfed18)
+ 
+```
+
+
+
+```{r}
+
+#start/end player positions x/y
+fed18_df <- fed18_df %>%
+  mutate(oppo.start.position.x = ifelse(server != "FEDERER", start.server.x,0)+ifelse(server == "FEDERER", start.receiver.x,0))%>%
+  mutate(oppo.start.position.y = ifelse(server != "FEDERER", start.server.y,0)+ifelse(server == "FEDERER", start.receiver.y,0)) %>%
+  mutate(oppo.end.position.x = ifelse(server != "FEDERER", end.server.x,0)+ifelse(server == "FEDERER", end.receiver.x,0)) %>%
+  mutate(oppo.end.position.y = ifelse(server != "FEDERER", end.server.y,0)+ifelse(server == "FEDERER", end.receiver.y,0)) %>%
+  mutate(p.start.position.x = ifelse(server == "FEDERER", start.server.x,0)+ifelse(server != "FEDERER", start.receiver.x,0)) %>%
+  mutate(p.start.position.y = ifelse(server == "FEDERER", start.server.y,0)+ifelse(server != "FEDERER", start.receiver.y,0)) %>%
+  mutate(p.end.position.x = ifelse(server == "FEDERER", end.server.x,0)+ifelse(server != "FEDERER", end.receiver.x,0)) %>%
+  mutate(p.end.position.y = ifelse(server == "FEDERER", end.server.y,0)+ifelse(server != "FEDERER", end.receiver.y,0)) 
+  
+#player and opponent distances travelled from start of shot to end of next shot
+fed18_df <- fed18_df %>%  
+  mutate(oppo.distance = ifelse(server != "FEDERER", server.distance,0)+ifelse(server == "FEDERER", receiver.distance,0)) %>%
+  mutate(p.distance = ifelse(server == "FEDERER", server.distance,0)+ifelse(server != "FEDERER", receiver.distance,0))
+
+#player and opponent speed 
+fed18_df <- fed18_df %>%
+  mutate(p.peak.speed = ifelse(server == "FEDERER", server.peak.speed,0)+ifelse(server != "FEDERER", receiver.peak.speed,0)) %>%
+  mutate(p.avg.speed = ifelse(server == "FEDERER", server.avg.speed,0)+ifelse(server != "FEDERER", receiver.avg.speed,0)) 
+  
+
+#player and opponent acceleration
+fed18_df <- fed18_df %>%  
+  mutate(p.avg.acceleration = ifelse(server == "FEDERER", server.avg.acceleration,0)+ifelse(server != "FEDERER", receiver.avg.acceleration,0)) %>%
+  mutate(p.peak.acceleration = ifelse(server == "FEDERER", server.peak.acceleration,0)+ifelse(server != "FEDERER", receiver.peak.acceleration,0)) %>%
+  mutate(oppo.peak.speed = ifelse(server != "FEDERER", server.peak.speed,0)+ifelse(server == "FEDERER", receiver.peak.speed,0)) %>%
+  mutate(oppo.avg.speed = ifelse(server != "FEDERER", server.avg.speed,0)+ifelse(server == "FEDERER", receiver.avg.speed,0)) %>%
+  mutate(oppo.avg.acceleration = ifelse(server != "FEDERER", server.avg.acceleration,0)+ifelse(server == "FEDERER", receiver.avg.acceleration,0)) %>%
+  mutate(oppo.peak.acceleration = ifelse(server != "FEDERER", server.peak.acceleration,0)+ifelse(server == "FEDERER", receiver.peak.acceleration,0))
+
+
+#player and opponent work
+fed18_df <- fed18_df %>%
+  mutate(oppo.work = ifelse(server != "FEDERER", server.work,0)+ifelse(server == "FEDERER", receiver.work,0)) %>%
+  mutate(p.work = ifelse(server == "FEDERER", server.work,0)+ifelse(server != "FEDERER", receiver.work,0)) 
+
+#player and opponent advantage
+fed18_df <- fed18_df %>%
+  mutate(oppo.advantage =ifelse(server != "FEDERER", server.advantage,0)+ifelse(server == "FEDERER", receiver.advantage,0))%>%
+   mutate(p.advantage =ifelse(server == "FEDERER", server.advantage,0)+ifelse(server != "FEDERER", receiver.advantage,0))
+
+
+#player and opponent total changes
+fed18_df <- fed18_df %>%
+  mutate(oppo.total.changes =ifelse(server != "FEDERER", server.total.changes,0)+ifelse(server == "FEDERER", receiver.total.changes,0))%>%
+   mutate(p.total.changes =ifelse(server == "FEDERER", server.total.changes,0)+ifelse(server != "FEDERER", receiver.total.changes,0))
+  
+  
+```
+```{r}
+fed18_df[is.na(fed18_df)] <- 0
+```
+
+
+```{r}
+
+#player speed and acceleration differences and ratios
+fed18_df <- fed18_df %>%
+  mutate(avg.player.speed.diff = p.avg.speed-oppo.avg.speed) %>%
+  mutate(peak.player.speed.diff = p.peak.speed-oppo.peak.speed) %>%
+  mutate(avg.player.speed.ratio = p.avg.speed/oppo.avg.speed) %>%
+  mutate(peak.player.speed.ratio = p.peak.speed/oppo.peak.speed) %>%
+  mutate(avg.player.acceleration.diff = (p.avg.acceleration)-(oppo.avg.acceleration)) %>%
+  mutate(peak.player.acceleration.diff = (p.peak.acceleration)-(oppo.peak.acceleration)) %>%
+  mutate(avg.player.acceleration.ratio = (p.avg.acceleration)/(oppo.avg.acceleration)) %>%
+  mutate(peak.player.acceleration.ratio = (p.peak.acceleration)/(oppo.peak.acceleration)) %>%
+  mutate(p.avg.speed.match = mean(p.avg.speed)) %>%
+  mutate(oppo.avg.speed.match = mean(oppo.avg.speed)) %>%
+  mutate(p.diff.avg.shot.and.match.movement.speed = p.avg.speed - p.avg.speed.match) %>%
+  mutate(oppo.diff.avg.shot.and.match.movement.speed = oppo.avg.speed - oppo.avg.speed.match)
+  
+
+#player/opponent side distance for start/end positions
+fed18_df <- fed18_df %>%
+  mutate(p.start.position.side.dist = 4.115 - abs(p.start.position.y)) %>%
+  mutate(p.end.position.side.dist = 4.115 - abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.side.dist = 4.115 - abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.side.dist = 4.115 - abs(oppo.end.position.y))
+  
+#player/opponent base distances for start/end positions  
+fed18_df <- fed18_df %>%
+  mutate(p.start.position.base.dist = 11.89 - abs(p.start.position.x)) %>%
+  mutate(p.end.position.base.dist = 11.89 - abs(p.end.position.x)) %>%
+  mutate(oppo.start.position.base.dist = 11.89 - abs(oppo.start.position.x)) %>%
+  mutate(oppo.end.position.base.dist = 11.89 - abs(oppo.end.position.x)) %>%
+  mutate(oppo.start.position.base.diff = p.start.position.base.dist - oppo.start.position.base.dist) %>%
+  mutate(p.start.position.base.diff = oppo.start.position.base.dist -p.start.position.base.dist) %>%
+  mutate(oppo.end.position.base.diff = p.end.position.base.dist - oppo.end.position.base.dist) %>%
+  mutate(p.end.position.base.diff = oppo.end.position.base.dist -p.end.position.base.dist) %>%
+  mutate(p.start.position.centre.diff = abs(oppo.start.position.y)-abs(p.start.position.y)) %>%
+  mutate(p.end.position.centre.diff = abs(oppo.end.position.y)-abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.centre.diff = abs(p.start.position.y)-abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.centre.diff = abs(p.end.position.y)-abs(oppo.end.position.y))
+  
+  
+```
+```{r}
+#player/ opponent shortest distances for start/end positions 
+fed18_df <- fed18_df %>%
+  mutate(oppo.start.position.short.dist = min(oppo.start.position.side.dist, oppo.start.position.base.dist)) %>%
+   mutate(oppo.end.position.short.dist = min(oppo.end.position.side.dist, oppo.end.position.base.dist)) %>%
+  mutate(p.start.position.short.dist = min(p.start.position.side.dist, p.start.position.base.dist)) %>%
+   mutate(p.end.position.short.dist = min(p.end.position.side.dist, p.end.position.base.dist)) 
+```
+
+
+
+```{r}
+
+#Tally of the number of times player and opponent change side during rally
+#Defining change of side as having travelled from a location 2.0575 or more metres away from the centre on one side of the court (half the distance between centre and singles lines) to a location 2.0575 or more metres away from the centre on the other side of the court
+fed18_df <- fed18_df %>%
+  mutate(p.side.change.count = ifelse(p.start.position.y <= -2.0575 & p.end.position.y >= 2.0575, 1, ifelse(p.start.position.y >= 2.0575 & p.end.position.y <= -2.0575, 1, 0))) %>%
+  mutate(p.side.change.cumsum = cumsum(p.side.change.count)) %>%
+  mutate(oppo.side.change.count = ifelse(oppo.start.position.y <= -2.0575 & oppo.end.position.y >= 2.0575, 1, ifelse(oppo.start.position.y >= 2.0575 & oppo.end.position.y <= -2.0575, 1, 0))) %>%
+  mutate(oppo.side.change.cumsum = cumsum(oppo.side.change.count)) 
+  
+
+
+  
+  
+```
+
+```{r}
+#Within rally tally of side change count and distance run
+fed18_df <- fed18_df %>%
+  group_by(rally.number ) %>%
+  dplyr::mutate(p.rally.side.change.count = cumsum(p.side.change.count)) %>%
+  dplyr::mutate(oppo.rally.side.change.count = cumsum(oppo.side.change.count)) %>%
+  dplyr::mutate(rally.side.change.count.diff = p.rally.side.change.count-oppo.rally.side.change.count) %>%
+  dplyr::mutate(oppo.rally.distance.run = cumsum(oppo.distance)) %>%
+  dplyr::mutate(p.rally.distance.run = cumsum(p.distance)) %>%
+  dplyr::mutate(rally.distance.run.ratio = p.rally.distance.run/oppo.rally.distance.run) %>%
+  ungroup
+ 
+```
+```{r}
+#Seperating height over net of shots for player and opponent.
+
+fed18_df <- fed18_df %>%
+  mutate(p.height.off.net = ifelse(impact.player == "FEDERER",height.off.net,0)) %>%
+  mutate(oppo.height.off.net = ifelse(impact.player != "FEDERER", height.off.net,0)) 
+  
+```
+
+
+```{r}
+#Adding angles for player & opposition movement from start position[i] to end position[i] as well as end position[i] to start position[i+1]. Measuring the angle of movement from the baseline. Directly towards the net is 0 deg. Directly away from the net is 180 deg.
+
+
+fed18_df <- fed18_df %>%
+  mutate(p.movement.angle.1 = NA) %>%
+  mutate(p.movement.angle.2 = NA) %>%
+  mutate(oppo.movement.angle.1 = NA) %>%
+  mutate(oppo.movement.angle.2 = NA) 
+  
+  
+#player start to end movement angle  
+for (i in 1:nrow(fed18_df)) {
+  a1 <- fed18_df$p.start.position.x[i]
+  b1 <- fed18_df$p.start.position.y[i]
+  a2 <- fed18_df$p.end.position.x[i]
+  b2 <- fed18_df$p.end.position.y[i]
+  
+  
+  p.movement.angle.1 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  fed18_df$p.movement.angle.1[i] = ifelse(p.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.1,
+                                          ifelse(p.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,abs(p.movement.angle.1),
+                                                 ifelse(p.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0, 90+p.movement.angle.1,p.movement.angle.1)))
+                                                                                                            
+}
+
+
+
+```
+```{r}
+#player end position(i) to start position (i+1) movement angle
+for (i in 2:nrow(fed18_df)) {
+  a1 <- fed18_df$p.end.position.x[i]
+  b1 <- fed18_df$p.end.position.y[i]
+  a2 <- fed18_df$p.start.position.x[i+1]
+  b2 <- fed18_df$p.start.position.y[i+1]
+  
+  p.movement.angle.2 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  fed18_df$p.movement.angle.2[i] = ifelse(p.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.2,
+                                          ifelse(p.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,abs(p.movement.angle.2),
+                                                 ifelse(p.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+p.movement.angle.2,p.movement.angle.2)))
+  
+}  
+  
+
+
+```
+
+```{r}
+# opposition start to end movement angle
+
+  
+for (i in 1:nrow(fed18_df)) {
+  a1 <- fed18_df$oppo.start.position.x[i]
+  b1 <- fed18_df$oppo.start.position.y[i]
+  a2 <- fed18_df$oppo.end.position.x[i]
+  b2 <- fed18_df$oppo.end.position.y[i]
+  
+  oppo.movement.angle.1 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  fed18_df$oppo.movement.angle.1[i] = ifelse(oppo.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0,180+oppo.movement.angle.1,
+                                          ifelse(oppo.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,abs(oppo.movement.angle.1),
+                                                 ifelse(oppo.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0,90+oppo.movement.angle.1,p.movement.angle.1)))
+  
+  
+}
+```
+```{r}
+#oppositions end[i] to start [i+1] movement angle
+for (i in 2:nrow(fed18_df)) {
+  a1 <- fed18_df$oppo.end.position.x[i]
+  b1 <- fed18_df$oppo.end.position.y[i]
+  a2 <- fed18_df$oppo.start.position.x[i+1]
+  b2 <- fed18_df$oppo.start.position.y[i+1]
+  
+  oppo.movement.angle.2 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  fed18_df$oppo.movement.angle.2[i] = ifelse(oppo.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+oppo.movement.angle.2,
+                                          ifelse(oppo.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,abs(oppo.movement.angle.2),
+                                                 ifelse(oppo.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+oppo.movement.angle.2,oppo.movement.angle.2)))
+}
+```
+```{r}
+#speed of player ad opponent shots in m/s at the start of the shot arc
+fed18_df<- fed18_df %>%
+  mutate(p.start.shot.speed = ifelse(impact.player == "FEDERER", speed.start, 0)) %>%
+  mutate(oppo.start.shot.speed = ifelse(impact.player != "FEDERER", speed.start, 0)) 
+```
+
+
+```{r}
+#code for this chunk relatively unchanged
+# replaced ballmark.x with projected.ballmark.x; speed1 replaced by speed.start
+
+fed18_df <- fed18_df %>%
+  mutate(speed.diff = NA) %>%
+  mutate(oppo.hit.x = NA) %>%
+  mutate(oppo.hit.y = NA) %>%
+  mutate(oppo.hit.z = NA) %>%
+  mutate(oppo.speed = NA) %>%
+  mutate(oppo.projected.ballmark.x = NA) %>%
+  mutate(oppo.projected.ballmark.y = NA) %>%
+  mutate(speed.ratio = NA) 
+
+
+for (i in 2:nrow(fed18_df)) {
+  if(fed18_df$shot[i] != 1) {#so that only non-serves are affected
+
+  fed18_df$speed.diff[i]=fed18_df$speed.start[i]-fed18_df$speed.start[i-1]
+  #speed difference
+  
+  fed18_df$oppo.hit.x[i]=fed18_df$start.x[i-1]
+  fed18_df$oppo.hit.y[i]=fed18_df$start.y[i-1]
+  fed18_df$oppo.hit.z[i]=fed18_df$start.z[i-1]
+  fed18_df$oppo.speed[i]=fed18_df$speed.start[i-1]
+  fed18_df$oppo.projected.ballmark.x[i]=fed18_df$projected.ballmark.x[i-1]
+  fed18_df$oppo.projected.ballmark.y[i]=fed18_df$projected.ballmark.y[i-1]
+  #oppo hit
+  
+  }
+}
+
+fed18_df <- fed18_df %>%
+  mutate(speed.ratio = speed.start/oppo.speed) %>% #speed ratio
+  mutate(side.dist = 4.115 - abs(oppo.projected.ballmark.y)) %>% #distance of oppo.projected.ballmark from sideline
+  mutate(base.dist = 11.89 - abs(oppo.projected.ballmark.x)) %>% #distance of oppo.projected.ballmark from baseline
+  mutate(short.dist = min(side.dist, base.dist)) #shortest distance from any line
+
+
+#Adding angles
+fed18_df <- fed18_df %>%
+  mutate(p.start.shot.x = NA) %>%
+  mutate(p.start.shot.y = NA)
+
+for (i in 3:nrow(fed18_df)) {
+  if(fed18_df$impact.player[i] == fed18_df$impact.player[i-2] & fed18_df$shot[i] == fed18_df$shot[i-2] + 2) {
+    fed18_df$p.start.shot.x[i]=fed18_df$start.x[i-2]
+    fed18_df$p.start.shot.y[i]=fed18_df$start.y[i-2]
+  }
+}
+
+#adding angle between fed.shot-opp.shot vector and opp.shot-opp.projected.ballmark vector
+#doing it in one line because df doesn't want to add vectors
+fed18_df <- fed18_df %>%
+  mutate(o.angle = NA)
+  
+for (i in 1:nrow(fed18_df)) {
+  x1 <- fed18_df$p.start.shot.x[i]
+  y1 <- fed18_df$p.start.shot.y[i]
+  x2 <- fed18_df$oppo.hit.x[i]
+  y2 <- fed18_df$oppo.hit.y[i]
+  x3 <- fed18_df$oppo.projected.ballmark.x[i]
+  y3 <- fed18_df$oppo.projected.ballmark.y[i]
+  
+  o.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  fed18_df$o.angle[i] = ifelse(o.angle > 90, 180-o.angle, o.angle)
+}
+
+#Now adding the angle the player hits
+fed18_df <- fed18_df %>%
+  mutate(p.angle = NA)
+  
+for (i in 1:nrow(fed18_df)) {
+  x1 <- fed18_df$oppo.hit.x[i]
+  y1 <- fed18_df$oppo.hit.y[i]
+  x2 <- fed18_df$start.x[i]
+  y2 <- fed18_df$start.y[i]
+  x3 <- fed18_df$projected.ballmark.x[i]
+  y3 <- fed18_df$projected.ballmark.y[i]
+  
+  p.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  fed18_df$p.angle[i] = ifelse(p.angle > 90, 180-p.angle, p.angle)
+}
+
+fed18_df <- fed18_df %>%
+  group_by(rally.number) %>%
+  mutate(lag.p.angle = dplyr::lag(p.angle, n = 1, default = NA)) %>%
+  mutate(lag.speed.ratio = dplyr::lag(speed.ratio, n = 1, default = NA)) %>%
+  mutate(lag.p.movement.angle.1 = dplyr::lag(p.movement.angle.1, n = 1, default = NA)) %>%
+  mutate(lag.p.movement.angle.2 = dplyr::lag(p.movement.angle.2, n = 1, default = NA)) %>%
+  mutate(lag.oppo.height.off.net = dplyr::lag(oppo.height.off.net, n = 1, default = NA)) %>%
+  mutate(lag.p.start.shot.speed = dplyr::lag(p.start.shot.speed, n = 1, default = NA)) %>%
+  mutate(lag.oppo.start.shot.speed = dplyr::lag(oppo.start.shot.speed, n = 1, default = NA)) %>%
+  ungroup
+
+
+```
+
+
+
+
+
+```{r}
+fed18_df <- fed18_df %>%
+  mutate(oppo.start.server.x = ifelse(server != "FEDERER", start.server.x, 0)) 
+```
+
+```{r}
+#fed18_df <- na.omit(fed18_df)
+```
+
+
+```{r  }
+
+#creating new rows so that every second row start and end player positions are switched
+#Also creating new rows so that every second row in start.x,/start.y is projected ballmark
+#this allows us to better plot player positions as well as track positions for animations
+
+joinfed18_df <- transform(fed18_df, p.start.position.x=p.end.position.x, p.start.position.y=p.end.position.y, oppo.start.position.x=oppo.end.position.x, oppo.start.position.y=oppo.end.position.y, start.x=projected.ballmark.x, start.y=projected.ballmark.y)
+
+fed18_pos <- bind_rows(fed18_df, setNames(joinfed18_df, names(fed18_df))) %>% 
+           arrange(rally.number, shot)
+
+fed18_pos <- fed18_pos %>%
+  group_by(rally.number, idx = cumsum(event == 1L)) %>%
+  mutate(location.id= row_number()) %>%
+  ungroup
+
+fed18_pos <- fed18_pos %>%
+  group_by(rally.number) %>%
+  mutate(pos.rally.count= 1:n()) %>%
+  ungroup
+``` 
+
+
+
+
+
+
+```{r }
+#remove opponents
+fed18_no.opp <- fed18_df %>% 
+  dplyr::filter(impact.player == "FEDERER")
+
+#federer only - remove serves
+fed18_only <- fed18_no.opp %>%
+  filter(hitpoint != "S") %>%
+  dplyr::select(-serveid)
+
+
+#First remove any errors for start, projected.ballmark, so that we are only looking at shots that we hit onto the other side
+#To check: ggplot(fed18_only, aes(projected.ballmark.x, projected.ballmark.y)) + geom_point()
+fed18_only <- fed18_only %>%
+  filter(oppo.hit.x >= 0) %>%
+  filter(oppo.projected.ballmark.x <= 0) %>%
+  filter(projected.ballmark.x >= 0)
+
+#Adding shot number cumulative count (functions as time)
+#check this for new data set .
+fed18_only <- fed18_only %>%
+  mutate(count = 1)
+
+  for (i in 2:nrow(fed18_only)) {
+    if(fed18_only$matchid[i]==fed18_only$matchid[i-1]) {
+      fed18_only$count[i] = fed18_only$count[i-1] + 1
+    }
+  }
+
+  
+
+#Adjusting to remove NAs and replace with 0s for modelling
+fed18_only$o.angle[is.na(fed18_only$o.angle)] <- 0
+fed18_only$lag.p.angle[is.na(fed18_only$lag.p.angle)] <- 0
+fed18_only$lag.speed.ratio[is.na(fed18_only$lag.speed.ratio)] <- 0
+fed18_only$p.start.shot.x[is.na(fed18_only$p.start.shot.x)] <- 0
+fed18_only$p.start.shot.y[is.na(fed18_only$p.start.shot.y)] <- 0
+fed18_only$lag.p.movement.angle.1[is.na(fed18_only$lag.p.movement.angle.1)] <- 0
+fed18_only$lag.p.movement.angle.2[is.na(fed18_only$lag.p.movement.angle.2)] <- 0
+fed18_only$lag.oppo.height.off.net[is.na(fed18_only$lag.oppo.height.off.net)] <- 0
+
+
+
+fed18_only <- fed18_only %>% mutate(player.total.shot.number = row_number())
+```
+
+```{r}
+#variables for difference of the current shot in m/s from the average speed of ball at the start of shot arcs
+
+fed18_only<- fed18_only %>%
+  mutate(avg.p.start.shot.speed = mean(p.start.shot.speed)) %>%
+  mutate(avg.lag.oppo.start.shot.speed = mean(lag.oppo.start.shot.speed)) %>%
+  mutate(diff.p.avg.and.current.shot.speed = p.start.shot.speed- avg.p.start.shot.speed) %>%
+  mutate(diff.lag.oppo.avg.and.current.shot.speed = lag.oppo.start.shot.speed- avg.lag.oppo.start.shot.speed) 
+
+
+  
+```
+
+
+```{r}
+#making y positions absolute for fed18_only as this is more relevant for the depmix model
+
+fed18_only <- fed18_only %>%
+  mutate(p.start.position.y = abs(p.start.position.y)) %>%
+  mutate(p.end.position.y = abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.y = abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.y = abs(oppo.end.position.y))%>%
+  mutate(p.start.shot.y =abs(p.start.shot.y))
+  
+  
+
+```
+```{r}
+#Save output & remove any NA's for modelling
+fed18_only[is.na(fed18_only)] <- 0
+write.csv(fed18_only, "data/fed18_only.csv")
+```
+##Strycova Vs Garcia 2016 Data
+
+
+
+
+```{r  }
+
+#Reorienting shots so that all STRYCOVA's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
+stry16_df <- stry16_df %>% rowwise %>%
+  mutate(projected.ballmark.y = ifelse(impact.player == "STRYCOVA" & start.x >= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(start.y = ifelse(impact.player == "STRYCOVA" & start.x >= 0, -start.y, start.y))%>%
+  mutate(projected.ballmark.x = ifelse(impact.player == "STRYCOVA" & start.x >= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
+  mutate(start.x = ifelse(impact.player == "STRYCOVA" & start.x >= 0, -start.x, start.x)) 
+
+#Reorienting opponent shots
+stry16_df <- stry16_df %>% rowwise %>%
+  mutate(start.y = ifelse(impact.player != "STRYCOVA" & start.x <= 0, -start.y, start.y)) %>%
+  mutate(projected.ballmark.y = ifelse(impact.player != "STRYCOVA" & start.x <= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(projected.ballmark.x = ifelse(impact.player != "STRYCOVA" & start.x <= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
+  mutate(start.x = ifelse(impact.player != "STRYCOVA" & start.x <= 0, -start.x, start.x))
+```
+
+
+```{r }
+
+#Reorienting player positions so that all STRYCOVA's & Opponents start/end positions match reoriented ballmarks
+#For STRYCOVA
+stry16_df <- stry16_df %>% rowwise %>%
+  mutate(start.server.y = ifelse(server == "STRYCOVA" & start.server.x >= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver == "STRYCOVA" & start.receiver.x >= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(end.server.y = ifelse(server == "STRYCOVA" & end.server.x >= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver == "STRYCOVA" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
+  mutate(start.server.x = ifelse(server == "STRYCOVA" & start.server.x >= 0, -start.server.x, start.server.x)) %>%
+  mutate(start.receiver.x = ifelse(receiver == "STRYCOVA" & start.receiver.x >= 0, -start.receiver.x, start.receiver.x)) 
+
+stry16_df <- stry16_df %>% rowwise %>%
+  mutate(end.server.x = ifelse(server == "STRYCOVA" & end.server.x >= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.receiver.x = ifelse(receiver == "STRYCOVA" & end.receiver.x >= 0, -end.receiver.x, end.receiver.x)) 
+```
+
+```{r }
+
+
+#For Opponent
+stry16_df <- stry16_df %>% rowwise %>%
+  mutate(start.server.y = ifelse(server != "STRYCOVA" & start.server.x <= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver != "STRYCOVA" & start.receiver.x <= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(end.server.y = ifelse(server != "STRYCOVA" & end.server.x <= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver != "STRYCOVA" & end.receiver.x <= 0, -end.receiver.y, end.receiver.y))%>%
+  mutate(start.server.x = ifelse(server != "STRYCOVA" & start.server.x <= 0, -start.server.x, start.server.x)) %>%
+  mutate(start.receiver.x = ifelse(receiver != "STRYCOVA" & start.receiver.x <= 0, -start.receiver.x, start.receiver.x)) 
+
+stry16_df <- stry16_df %>% rowwise %>%
+  mutate(end.server.x = ifelse(server != "STRYCOVA" & end.server.x <= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.receiver.x = ifelse(receiver != "STRYCOVA" & end.receiver.x <= 0, -end.receiver.x, end.receiver.x)) 
+```
+
+
+
+```{r}
+stry16_df <- stry16_df %>%
+  mutate(lastshot = ifelse(shot == final.shot,1,0)) %>%
+  mutate(isserver = ifelse(server == impact.player,1,0)) %>%
+  mutate(fhand = ifelse(hitpoint == "F",1,0)) %>%
+  mutate(opponent = ifelse(server == "STRYCOVA", receiver, server)) 
+ 
+
+  
+
+```
+
+
+
+
+
+```{r}
+
+stry16_df <- stry16_df %>%
+  mutate(winner = ifelse(is.good == TRUE & lastshot == 1,1,0)) %>%
+  mutate(ser1 = ifelse(serve == 1 & serve_classification == 1,1,0)) %>%
+  mutate(ser2 = ifelse(serve == 2 & serve_classification == 1,1,0)) 
+  
+for (i in 1:ncol(stry16_df)) {
+  if(is.character(stry16_df[,i]) == TRUE) {
+    stry16_df[,i] <- as.factor(stry16_df[,i])
+  }
+}
+```
+
+```{r}
+#Combining winner, return into play and error into 1 column for three states in hidden markov model
+#If ball is in play and the shot is a winner value of 1
+#If ball is in play and the shot is not a winner value of 0
+#If the ball is out of play and thus not a winner value of -1
+
+stry16_df <- stry16_df %>%
+  mutate(winner.return.error = ifelse(is.good =="TRUE" & winner == "1",1,
+                ifelse(is.good =="TRUE" & winner == "0",0,-1)))
+```
+
+```{r}
+col = c("set","game", "point")
+rally.numstry16 = as.data.frame(group_indices_(stry16_df,.dots = col))
+colnames(rally.numstry16)<- "rally.number"
+```
+
+```{r}
+
+
+stry16_df <- stry16_df %>%
+  cbind(rally.numstry16)
+ 
+```
+
+
+
+```{r}
+
+#start/end player positions x/y
+stry16_df <- stry16_df %>%
+  mutate(oppo.start.position.x = ifelse(server != "STRYCOVA", start.server.x,0)+ifelse(server == "STRYCOVA", start.receiver.x,0))%>%
+  mutate(oppo.start.position.y = ifelse(server != "STRYCOVA", start.server.y,0)+ifelse(server == "STRYCOVA", start.receiver.y,0)) %>%
+  mutate(oppo.end.position.x = ifelse(server != "STRYCOVA", end.server.x,0)+ifelse(server == "STRYCOVA", end.receiver.x,0)) %>%
+  mutate(oppo.end.position.y = ifelse(server != "STRYCOVA", end.server.y,0)+ifelse(server == "STRYCOVA", end.receiver.y,0)) %>%
+  mutate(p.start.position.x = ifelse(server == "STRYCOVA", start.server.x,0)+ifelse(server != "STRYCOVA", start.receiver.x,0)) %>%
+  mutate(p.start.position.y = ifelse(server == "STRYCOVA", start.server.y,0)+ifelse(server != "STRYCOVA", start.receiver.y,0)) %>%
+  mutate(p.end.position.x = ifelse(server == "STRYCOVA", end.server.x,0)+ifelse(server != "STRYCOVA", end.receiver.x,0)) %>%
+  mutate(p.end.position.y = ifelse(server == "STRYCOVA", end.server.y,0)+ifelse(server != "STRYCOVA", end.receiver.y,0)) 
+  
+#player and opponent distances travelled from start of shot to end of next shot
+stry16_df <- stry16_df %>%  
+  mutate(oppo.distance = ifelse(server != "STRYCOVA", server.distance,0)+ifelse(server == "STRYCOVA", receiver.distance,0)) %>%
+  mutate(p.distance = ifelse(server == "STRYCOVA", server.distance,0)+ifelse(server != "STRYCOVA", receiver.distance,0))
+
+#player and opponent speed 
+stry16_df <- stry16_df %>%
+  mutate(p.peak.speed = ifelse(server == "STRYCOVA", server.peak.speed,0)+ifelse(server != "STRYCOVA", receiver.peak.speed,0)) %>%
+  mutate(p.avg.speed = ifelse(server == "STRYCOVA", server.avg.speed,0)+ifelse(server != "STRYCOVA", receiver.avg.speed,0)) 
+  
+
+#player and opponent acceleration
+stry16_df <- stry16_df %>%  
+  mutate(p.avg.acceleration = ifelse(server == "STRYCOVA", server.avg.acceleration,0)+ifelse(server != "STRYCOVA", receiver.avg.acceleration,0)) %>%
+  mutate(p.peak.acceleration = ifelse(server == "STRYCOVA", server.peak.acceleration,0)+ifelse(server != "STRYCOVA", receiver.peak.acceleration,0)) %>%
+  mutate(oppo.peak.speed = ifelse(server != "STRYCOVA", server.peak.speed,0)+ifelse(server == "STRYCOVA", receiver.peak.speed,0)) %>%
+  mutate(oppo.avg.speed = ifelse(server != "STRYCOVA", server.avg.speed,0)+ifelse(server == "STRYCOVA", receiver.avg.speed,0)) %>%
+  mutate(oppo.avg.acceleration = ifelse(server != "STRYCOVA", server.avg.acceleration,0)+ifelse(server == "STRYCOVA", receiver.avg.acceleration,0)) %>%
+  mutate(oppo.peak.acceleration = ifelse(server != "STRYCOVA", server.peak.acceleration,0)+ifelse(server == "STRYCOVA", receiver.peak.acceleration,0))
+
+
+#player and opponent work
+stry16_df <- stry16_df %>%
+  mutate(oppo.work = ifelse(server != "STRYCOVA", server.work,0)+ifelse(server == "STRYCOVA", receiver.work,0)) %>%
+  mutate(p.work = ifelse(server == "STRYCOVA", server.work,0)+ifelse(server != "STRYCOVA", receiver.work,0)) 
+
+#player and opponent advantage
+stry16_df <- stry16_df %>%
+  mutate(oppo.advantage =ifelse(server != "STRYCOVA", server.advantage,0)+ifelse(server == "STRYCOVA", receiver.advantage,0))%>%
+   mutate(p.advantage =ifelse(server == "STRYCOVA", server.advantage,0)+ifelse(server != "STRYCOVA", receiver.advantage,0))
+
+
+#player and opponent total changes
+stry16_df <- stry16_df %>%
+  mutate(oppo.total.changes =ifelse(server != "STRYCOVA", server.total.changes,0)+ifelse(server == "STRYCOVA", receiver.total.changes,0))%>%
+   mutate(p.total.changes =ifelse(server == "STRYCOVA", server.total.changes,0)+ifelse(server != "STRYCOVA", receiver.total.changes,0))
+  
+  
+```
+
+
+```{r}
+
+#player speed and acceleration differences and ratios
+stry16_df <- stry16_df %>%
+  mutate(avg.player.speed.diff = p.avg.speed-oppo.avg.speed) %>%
+  mutate(peak.player.speed.diff = p.peak.speed-oppo.peak.speed) %>%
+  mutate(avg.player.speed.ratio = p.avg.speed/oppo.avg.speed) %>%
+  mutate(peak.player.speed.ratio = p.peak.speed/oppo.peak.speed) %>%
+  mutate(avg.player.acceleration.diff = (p.avg.acceleration)-(oppo.avg.acceleration)) %>%
+  mutate(peak.player.acceleration.diff = (p.peak.acceleration)-(oppo.peak.acceleration)) %>%
+  mutate(avg.player.acceleration.ratio = (p.avg.acceleration)/(oppo.avg.acceleration)) %>%
+  mutate(peak.player.acceleration.ratio = (p.peak.acceleration)/(oppo.peak.acceleration)) 
+
+stry16_df[is.na(stry16_df)] <- 0
+  
+stry16_df <- stry16_df %>%  
+  mutate(p.avg.speed.match = mean(p.avg.speed)) %>%
+  mutate(oppo.avg.speed.match = mean(oppo.avg.speed)) %>%
+  mutate(p.diff.avg.shot.and.match.movement.speed = p.avg.speed - p.avg.speed.match) %>%
+  mutate(oppo.diff.avg.shot.and.match.movement.speed = oppo.avg.speed - oppo.avg.speed.match)
+  
+
+#player/opponent side distance for start/end positions
+stry16_df <- stry16_df %>%
+  mutate(p.start.position.side.dist = 4.115 - abs(p.start.position.y)) %>%
+  mutate(p.end.position.side.dist = 4.115 - abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.side.dist = 4.115 - abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.side.dist = 4.115 - abs(oppo.end.position.y))
+  
+#player/opponent base distances for start/end positions  
+stry16_df <- stry16_df %>%
+  mutate(p.start.position.base.dist = 11.89 - abs(p.start.position.x)) %>%
+  mutate(p.end.position.base.dist = 11.89 - abs(p.end.position.x)) %>%
+  mutate(oppo.start.position.base.dist = 11.89 - abs(oppo.start.position.x)) %>%
+  mutate(oppo.end.position.base.dist = 11.89 - abs(oppo.end.position.x)) %>%
+  mutate(oppo.start.position.base.diff = p.start.position.base.dist - oppo.start.position.base.dist) %>%
+  mutate(p.start.position.base.diff = oppo.start.position.base.dist -p.start.position.base.dist) %>%
+  mutate(oppo.end.position.base.diff = p.end.position.base.dist - oppo.end.position.base.dist) %>%
+  mutate(p.end.position.base.diff = oppo.end.position.base.dist -p.end.position.base.dist) %>%
+  mutate(p.start.position.centre.diff = abs(oppo.start.position.y)-abs(p.start.position.y)) %>%
+  mutate(p.end.position.centre.diff = abs(oppo.end.position.y)-abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.centre.diff = abs(p.start.position.y)-abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.centre.diff = abs(p.end.position.y)-abs(oppo.end.position.y))
+  
+  
+```
+
+
+
+```{r}
+#player/ opponent shortest distances for start/end positions 
+stry16_df <- stry16_df %>%
+  mutate(oppo.start.position.short.dist = min(oppo.start.position.side.dist, oppo.start.position.base.dist)) %>%
+   mutate(oppo.end.position.short.dist = min(oppo.end.position.side.dist, oppo.end.position.base.dist)) %>%
+  mutate(p.start.position.short.dist = min(p.start.position.side.dist, p.start.position.base.dist)) %>%
+   mutate(p.end.position.short.dist = min(p.end.position.side.dist, p.end.position.base.dist)) 
+```
+
+
+
+```{r}
+
+#Tally of the number of times player and opponent change side during rally
+#Defining change of side as having travelled from a location 2.0575 or more metres away from the centre on one side of the court (half the distance between centre and singles lines) to a location 2.0575 or more metres away from the centre on the other side of the court
+stry16_df <- stry16_df %>%
+  mutate(p.side.change.count = ifelse(p.start.position.y <= -2.0575 & p.end.position.y >= 2.0575, 1, ifelse(p.start.position.y >= 2.0575 & p.end.position.y <= -2.0575, 1, 0))) %>%
+  mutate(p.side.change.cumsum = cumsum(p.side.change.count)) %>%
+  mutate(oppo.side.change.count = ifelse(oppo.start.position.y <= -2.0575 & oppo.end.position.y >= 2.0575, 1, ifelse(oppo.start.position.y >= 2.0575 & oppo.end.position.y <= -2.0575, 1, 0))) %>%
+  mutate(oppo.side.change.cumsum = cumsum(oppo.side.change.count)) 
+  
+
+
+  
+  
+```
+
+```{r}
+#Within rally tally of side change count and distance run
+stry16_df <- stry16_df %>%
+  group_by(rally.number ) %>%
+  dplyr::mutate(p.rally.side.change.count = cumsum(p.side.change.count)) %>%
+  dplyr::mutate(oppo.rally.side.change.count = cumsum(oppo.side.change.count)) %>%
+  dplyr::mutate(rally.side.change.count.diff = p.rally.side.change.count-oppo.rally.side.change.count) %>%
+  dplyr::mutate(oppo.rally.distance.run = cumsum(oppo.distance)) %>%
+  dplyr::mutate(p.rally.distance.run = cumsum(p.distance)) %>%
+  dplyr::mutate(rally.distance.run.ratio = p.rally.distance.run/oppo.rally.distance.run) %>%
+  ungroup
+ 
+```
+```{r}
+#Seperating height over net of shots for player and opponent.
+
+stry16_df <- stry16_df %>%
+  mutate(p.height.off.net = ifelse(impact.player == "STRYCOVA",height.off.net,0)) %>%
+  mutate(oppo.height.off.net = ifelse(impact.player != "STRYCOVA", height.off.net,0)) 
+  
+```
+
+
+```{r}
+#Adding angles for player & opposition movement from start position[i] to end position[i] as well as end position[i] to start position[i+1]. Measuring the angle of movement from the baseline. Directly towards the net is 0 deg. Directly away from the net is 180 deg.
+
+
+stry16_df <- stry16_df %>%
+  mutate(p.movement.angle.1 = NA) %>%
+  mutate(p.movement.angle.2 = NA) %>%
+  mutate(oppo.movement.angle.1 = NA) %>%
+  mutate(oppo.movement.angle.2 = NA) 
+  
+  
+#player start to end movement angle  
+for (i in 1:nrow(stry16_df)) {
+  a1 <- stry16_df$p.start.position.x[i]
+  b1 <- stry16_df$p.start.position.y[i]
+  a2 <- stry16_df$p.end.position.x[i]
+  b2 <- stry16_df$p.end.position.y[i]
+  
+  
+  p.movement.angle.1 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  stry16_df$p.movement.angle.1[i] = ifelse(p.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.1,
+                                          ifelse(p.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,abs(p.movement.angle.1),
+                                                 ifelse(p.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0, 90+p.movement.angle.1,p.movement.angle.1)))
+                                                                                                            
+}
+
+
+
+```
+```{r}
+#player end position(i) to start position (i+1) movement angle
+for (i in 2:nrow(stry16_df)) {
+  a1 <- stry16_df$p.end.position.x[i]
+  b1 <- stry16_df$p.end.position.y[i]
+  a2 <- stry16_df$p.start.position.x[i+1]
+  b2 <- stry16_df$p.start.position.y[i+1]
+  
+  p.movement.angle.2 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  stry16_df$p.movement.angle.2[i] = ifelse(p.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.2,
+                                          ifelse(p.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,abs(p.movement.angle.2),
+                                                 ifelse(p.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+p.movement.angle.2,p.movement.angle.2)))
+  
+}  
+  
+
+
+```
+
+```{r}
+# opposition start to end movement angle
+
+  
+for (i in 1:nrow(stry16_df)) {
+  a1 <- stry16_df$oppo.start.position.x[i]
+  b1 <- stry16_df$oppo.start.position.y[i]
+  a2 <- stry16_df$oppo.end.position.x[i]
+  b2 <- stry16_df$oppo.end.position.y[i]
+  
+  oppo.movement.angle.1 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  stry16_df$oppo.movement.angle.1[i] = ifelse(oppo.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0,180+oppo.movement.angle.1,
+                                          ifelse(oppo.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,abs(oppo.movement.angle.1),
+                                                 ifelse(oppo.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0,90+oppo.movement.angle.1,p.movement.angle.1)))
+  
+  
+}
+```
+```{r}
+#oppositions end[i] to start [i+1] movement angle
+for (i in 2:nrow(stry16_df)) {
+  a1 <- stry16_df$oppo.end.position.x[i]
+  b1 <- stry16_df$oppo.end.position.y[i]
+  a2 <- stry16_df$oppo.start.position.x[i+1]
+  b2 <- stry16_df$oppo.start.position.y[i+1]
+  
+  oppo.movement.angle.2 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  stry16_df$oppo.movement.angle.2[i] = ifelse(oppo.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+oppo.movement.angle.2,
+                                          ifelse(oppo.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,abs(oppo.movement.angle.2),
+                                                 ifelse(oppo.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+oppo.movement.angle.2,oppo.movement.angle.2)))
+}
+```
+
+```{r}
+#speed of player ad opponent shots in m/s at the start of the shot arc
+stry16_df<- stry16_df %>%
+  mutate(p.start.shot.speed = ifelse(impact.player == "STRYCOVA", speed.start, 0)) %>%
+  mutate(oppo.start.shot.speed = ifelse(impact.player != "STRYCOVA", speed.start, 0)) 
+```
+
+```{r}
+#code for this chunk relatively unchanged
+# replaced ballmark.x with projected.ballmark.x; speed1 replaced by speed.start
+
+stry16_df <- stry16_df %>%
+  mutate(speed.diff = NA) %>%
+  mutate(oppo.hit.x = NA) %>%
+  mutate(oppo.hit.y = NA) %>%
+  mutate(oppo.hit.z = NA) %>%
+  mutate(oppo.speed = NA) %>%
+  mutate(oppo.projected.ballmark.x = NA) %>%
+  mutate(oppo.projected.ballmark.y = NA) %>%
+  mutate(speed.ratio = NA) 
+
+
+for (i in 2:nrow(stry16_df)) {
+  if(stry16_df$shot[i] != 1) {#so that only non-serves are affected
+
+  stry16_df$speed.diff[i]=stry16_df$speed.start[i]-stry16_df$speed.start[i-1]
+  #speed difference
+  
+  stry16_df$oppo.hit.x[i]=stry16_df$start.x[i-1]
+  stry16_df$oppo.hit.y[i]=stry16_df$start.y[i-1]
+  stry16_df$oppo.hit.z[i]=stry16_df$start.z[i-1]
+  stry16_df$oppo.speed[i]=stry16_df$speed.start[i-1]
+  stry16_df$oppo.projected.ballmark.x[i]=stry16_df$projected.ballmark.x[i-1]
+  stry16_df$oppo.projected.ballmark.y[i]=stry16_df$projected.ballmark.y[i-1]
+  #oppo hit
+  
+  }
+}
+
+stry16_df <- stry16_df %>%
+  mutate(speed.ratio = speed.start/oppo.speed) %>% #speed ratio
+  mutate(side.dist = 4.115 - abs(oppo.projected.ballmark.y)) %>% #distance of oppo.projected.ballmark from sideline
+  mutate(base.dist = 11.89 - abs(oppo.projected.ballmark.x)) %>% #distance of oppo.projected.ballmark from baseline
+  mutate(short.dist = min(side.dist, base.dist)) #shortest distance from any line
+
+
+#Adding angles
+stry16_df <- stry16_df %>%
+  mutate(p.start.shot.x = NA) %>%
+  mutate(p.start.shot.y = NA)
+
+for (i in 3:nrow(stry16_df)) {
+  if(stry16_df$impact.player[i] == stry16_df$impact.player[i-2] & stry16_df$shot[i] == stry16_df$shot[i-2] + 2) {
+    stry16_df$p.start.shot.x[i]=stry16_df$start.x[i-2]
+    stry16_df$p.start.shot.y[i]=stry16_df$start.y[i-2]
+  }
+}
+
+#adding angle between stry.shot-opp.shot vector and opp.shot-opp.projected.ballmark vector
+#doing it in one line because df doesn't want to add vectors
+stry16_df <- stry16_df %>%
+  mutate(o.angle = NA)
+  
+for (i in 1:nrow(stry16_df)) {
+  x1 <- stry16_df$p.start.shot.x[i]
+  y1 <- stry16_df$p.start.shot.y[i]
+  x2 <- stry16_df$oppo.hit.x[i]
+  y2 <- stry16_df$oppo.hit.y[i]
+  x3 <- stry16_df$oppo.projected.ballmark.x[i]
+  y3 <- stry16_df$oppo.projected.ballmark.y[i]
+  
+  o.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  stry16_df$o.angle[i] = ifelse(o.angle > 90, 180-o.angle, o.angle)
+}
+
+#Now adding the angle the player hits
+stry16_df <- stry16_df %>%
+  mutate(p.angle = NA)
+  
+for (i in 1:nrow(stry16_df)) {
+  x1 <- stry16_df$oppo.hit.x[i]
+  y1 <- stry16_df$oppo.hit.y[i]
+  x2 <- stry16_df$start.x[i]
+  y2 <- stry16_df$start.y[i]
+  x3 <- stry16_df$projected.ballmark.x[i]
+  y3 <- stry16_df$projected.ballmark.y[i]
+  
+  p.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  stry16_df$p.angle[i] = ifelse(p.angle > 90, 180-p.angle, p.angle)
+}
+
+stry16_df <- stry16_df %>%
+  group_by(rally.number) %>%
+  mutate(lag.p.angle = dplyr::lag(p.angle, n = 1, default = NA)) %>%
+  mutate(lag.speed.ratio = dplyr::lag(speed.ratio, n = 1, default = NA)) %>%
+  mutate(lag.p.movement.angle.1 = dplyr::lag(p.movement.angle.1, n = 1, default = NA)) %>%
+  mutate(lag.p.movement.angle.2 = dplyr::lag(p.movement.angle.2, n = 1, default = NA)) %>%
+  mutate(lag.oppo.height.off.net = dplyr::lag(oppo.height.off.net, n = 1, default = NA)) %>%
+  mutate(lag.p.start.shot.speed = dplyr::lag(p.start.shot.speed, n = 1, default = NA)) %>%
+  mutate(lag.oppo.start.shot.speed = dplyr::lag(oppo.start.shot.speed, n = 1, default = NA)) %>%
+  ungroup
+
+
+```
+
+
+
+
+
+```{r}
+stry16_df <- stry16_df %>%
+  mutate(oppo.start.server.x = ifelse(server != "STRYCOVA", start.server.x, 0)) 
+```
+
+
+
+```{r  }
+
+#creating new rows so that every second row start and end player positions are switched
+#Also creating new rows so that every second row in start.x,/start.y is projected ballmark
+#this allows us to better plot player positions as well as track positions for animations
+
+joinstry16_df <- transform(stry16_df, p.start.position.x=p.end.position.x, p.start.position.y=p.end.position.y, oppo.start.position.x=oppo.end.position.x, oppo.start.position.y=oppo.end.position.y, start.x=projected.ballmark.x, start.y=projected.ballmark.y)
+
+stry16_pos <- bind_rows(stry16_df, setNames(joinstry16_df, names(stry16_df))) %>% 
+           arrange(rally.number, shot)
+
+stry16_pos <- stry16_pos %>%
+  group_by(rally.number, idx = cumsum(event == 1L)) %>%
+  mutate(location.id= row_number()) %>%
+  ungroup
+
+stry16_pos <- stry16_pos %>%
+  group_by(rally.number) %>%
+  mutate(pos.rally.count= 1:n()) %>%
+  ungroup
+``` 
+
+
+
+
+
+```{r }
+#remove opponents
+stry16_no.opp <- stry16_df %>% 
+  dplyr::filter(impact.player == "STRYCOVA")
+
+#STRYCOVA only - remove serves
+stry16_only <- stry16_no.opp %>%
+  filter(hitpoint != "S") %>%
+  dplyr::select(-serveid)
+
+
+#First remove any errors for start, projected.ballmark, so that we are only looking at shots that we hit onto the other side
+#To check: ggplot(stry16_only, aes(projected.ballmark.x, projected.ballmark.y)) + geom_point()
+stry16_only <- stry16_only %>%
+  filter(oppo.hit.x >= 0) %>%
+  filter(oppo.projected.ballmark.x <= 0) %>%
+  filter(projected.ballmark.x >= 0)
+
+#Adding shot number cumulative count (functions as time)
+#check this for new data set .
+stry16_only <- stry16_only %>%
+  mutate(count = 1)
+
+  for (i in 2:nrow(stry16_only)) {
+    if(stry16_only$matchid[i]==stry16_only$matchid[i-1]) {
+      stry16_only$count[i] = stry16_only$count[i-1] + 1
+    }
+  }
+
+  
+
+#Adjusting to remove NAs and replace with 0s for modelling
+stry16_only$o.angle[is.na(stry16_only$o.angle)] <- 0
+stry16_only$lag.p.angle[is.na(stry16_only$lag.p.angle)] <- 0
+stry16_only$lag.speed.ratio[is.na(stry16_only$lag.speed.ratio)] <- 0
+stry16_only$p.start.shot.x[is.na(stry16_only$p.start.shot.x)] <- 0
+stry16_only$p.start.shot.y[is.na(stry16_only$p.start.shot.y)] <- 0
+stry16_only$lag.p.movement.angle.1[is.na(stry16_only$lag.p.movement.angle.1)] <- 0
+stry16_only$lag.p.movement.angle.2[is.na(stry16_only$lag.p.movement.angle.2)] <- 0
+stry16_only$lag.oppo.height.off.net[is.na(stry16_only$lag.oppo.height.off.net)] <- 0
+
+
+
+stry16_only <- stry16_only %>% mutate(player.total.shot.number = row_number())
+```
+
+
+```{r}
+#variables for speed of ball at the start of shot arcs
+
+stry16_only <- stry16_only %>%
+  mutate(avg.p.start.shot.speed = mean(p.start.shot.speed)) %>%
+  mutate(avg.lag.oppo.start.shot.speed = mean(lag.oppo.start.shot.speed)) %>%
+  mutate(diff.p.avg.and.current.shot.speed = p.start.shot.speed- avg.p.start.shot.speed) %>%
+  mutate(diff.lag.oppo.avg.and.current.shot.speed = lag.oppo.start.shot.speed- avg.lag.oppo.start.shot.speed) 
+
+
+  
+```
+
+
+
+```{r}
+#making y positions absolute for stry16_only as this is more relevant for the depmix model
+
+stry16_only <- stry16_only %>%
+  mutate(p.start.position.y = abs(p.start.position.y)) %>%
+  mutate(p.end.position.y = abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.y = abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.y = abs(oppo.end.position.y))%>%
+  mutate(p.start.shot.y =abs(p.start.shot.y))
+  
+  
+
+```
+```{r}
+#Save output
+stry16_only[is.na(stry16_only)] <- 0
+write.csv(stry16_only, "data/stry16_only.csv")
+```
+
+
+##Strycova Vs Garcia 2017 Data
+
+
+
+```{r  }
+
+#Reorienting shots so that all STRYCOVA's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
+stry17_df <- stry17_df %>% rowwise %>%
+  mutate(projected.ballmark.y = ifelse(impact.player == "STRYCOVA" & start.x >= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(start.y = ifelse(impact.player == "STRYCOVA" & start.x >= 0, -start.y, start.y))%>%
+  mutate(projected.ballmark.x = ifelse(impact.player == "STRYCOVA" & start.x >= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
+  mutate(start.x = ifelse(impact.player == "STRYCOVA" & start.x >= 0, -start.x, start.x)) 
+
+#Reorienting opponent shots
+stry17_df <- stry17_df %>% rowwise %>%
+  mutate(start.y = ifelse(impact.player != "STRYCOVA" & start.x <= 0, -start.y, start.y)) %>%
+  mutate(projected.ballmark.y = ifelse(impact.player != "STRYCOVA" & start.x <= 0, -projected.ballmark.y, projected.ballmark.y)) %>%
+  mutate(projected.ballmark.x = ifelse(impact.player != "STRYCOVA" & start.x <= 0, -projected.ballmark.x, projected.ballmark.x)) %>%
+  mutate(start.x = ifelse(impact.player != "STRYCOVA" & start.x <= 0, -start.x, start.x))
+```
+
+
+```{r }
+
+#Reorienting player positions so that all STRYCOVA's & Opponents start/end positions match reoriented ballmarks
+#For STRYCOVA
+stry17_df <- stry17_df %>% rowwise %>%
+  mutate(start.server.y = ifelse(server == "STRYCOVA" & start.server.x >= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver == "STRYCOVA" & start.receiver.x >= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(end.server.y = ifelse(server == "STRYCOVA" & end.server.x >= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver == "STRYCOVA" & end.receiver.x >= 0, -end.receiver.y, end.receiver.y))%>%
+  mutate(start.server.x = ifelse(server == "STRYCOVA" & start.server.x >= 0, -start.server.x, start.server.x)) %>%
+  mutate(start.receiver.x = ifelse(receiver == "STRYCOVA" & start.receiver.x >= 0, -start.receiver.x, start.receiver.x)) 
+
+stry17_df <- stry17_df %>% rowwise %>%
+  mutate(end.server.x = ifelse(server == "STRYCOVA" & end.server.x >= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.receiver.x = ifelse(receiver == "STRYCOVA" & end.receiver.x >= 0, -end.receiver.x, end.receiver.x)) 
+```
+
+```{r }
+
+
+#For Opponent
+stry17_df <- stry17_df %>% rowwise %>%
+  mutate(start.server.y = ifelse(server != "STRYCOVA" & start.server.x <= 0, -start.server.y, start.server.y)) %>%
+  mutate(start.receiver.y = ifelse(receiver != "STRYCOVA" & start.receiver.x <= 0, -start.receiver.y, start.receiver.y))%>%
+  mutate(end.server.y = ifelse(server != "STRYCOVA" & end.server.x <= 0, -end.server.y, end.server.y)) %>%
+  mutate(end.receiver.y = ifelse(receiver != "STRYCOVA" & end.receiver.x <= 0, -end.receiver.y, end.receiver.y))%>%
+  mutate(start.server.x = ifelse(server != "STRYCOVA" & start.server.x <= 0, -start.server.x, start.server.x)) %>%
+  mutate(start.receiver.x = ifelse(receiver != "STRYCOVA" & start.receiver.x <= 0, -start.receiver.x, start.receiver.x)) 
+
+stry17_df <- stry17_df %>% rowwise %>%
+  mutate(end.server.x = ifelse(server != "STRYCOVA" & end.server.x <= 0, -end.server.x, end.server.x)) %>%
+  mutate(end.receiver.x = ifelse(receiver != "STRYCOVA" & end.receiver.x <= 0, -end.receiver.x, end.receiver.x)) 
+```
+
+
+
+```{r}
+stry17_df <- stry17_df %>%
+  mutate(lastshot = ifelse(shot == final.shot,1,0)) %>%
+  mutate(isserver = ifelse(server == impact.player,1,0)) %>%
+  mutate(fhand = ifelse(hitpoint == "F",1,0)) %>%
+  mutate(opponent = ifelse(server == "STRYCOVA", receiver, server)) 
+ 
+
+  
+
+```
+
+
+
+
+
+```{r}
+
+stry17_df <- stry17_df %>%
+  mutate(winner = ifelse(is.good == TRUE & lastshot == 1,1,0)) %>%
+  mutate(ser1 = ifelse(serve == 1 & serve_classification == 1,1,0)) %>%
+  mutate(ser2 = ifelse(serve == 2 & serve_classification == 1,1,0)) 
+  
+for (i in 1:ncol(stry17_df)) {
+  if(is.character(stry17_df[,i]) == TRUE) {
+    stry17_df[,i] <- as.factor(stry17_df[,i])
+  }
+}
+```
+
+```{r}
+#Combining winner, return into play and error into 1 column for three states in hidden markov model
+#If ball is in play and the shot is a winner value of 1
+#If ball is in play and the shot is not a winner value of 0
+#If the ball is out of play and thus not a winner value of -1
+
+stry17_df <- stry17_df %>%
+  mutate(winner.return.error = ifelse(is.good =="TRUE" & winner == "1",1,
+                ifelse(is.good =="TRUE" & winner == "0",0,-1)))
+```
+
+```{r}
+col = c("set","game", "point")
+rally.numstry17 = as.data.frame(group_indices_(stry17_df,.dots = col))
+colnames(rally.numstry17)<- "rally.number"
+```
+
+```{r}
+
+
+stry17_df <- stry17_df %>%
+  cbind(rally.numstry17)
+ 
+```
+
+
+
+```{r}
+
+#start/end player positions x/y
+stry17_df <- stry17_df %>%
+  mutate(oppo.start.position.x = ifelse(server != "STRYCOVA", start.server.x,0)+ifelse(server == "STRYCOVA", start.receiver.x,0))%>%
+  mutate(oppo.start.position.y = ifelse(server != "STRYCOVA", start.server.y,0)+ifelse(server == "STRYCOVA", start.receiver.y,0)) %>%
+  mutate(oppo.end.position.x = ifelse(server != "STRYCOVA", end.server.x,0)+ifelse(server == "STRYCOVA", end.receiver.x,0)) %>%
+  mutate(oppo.end.position.y = ifelse(server != "STRYCOVA", end.server.y,0)+ifelse(server == "STRYCOVA", end.receiver.y,0)) %>%
+  mutate(p.start.position.x = ifelse(server == "STRYCOVA", start.server.x,0)+ifelse(server != "STRYCOVA", start.receiver.x,0)) %>%
+  mutate(p.start.position.y = ifelse(server == "STRYCOVA", start.server.y,0)+ifelse(server != "STRYCOVA", start.receiver.y,0)) %>%
+  mutate(p.end.position.x = ifelse(server == "STRYCOVA", end.server.x,0)+ifelse(server != "STRYCOVA", end.receiver.x,0)) %>%
+  mutate(p.end.position.y = ifelse(server == "STRYCOVA", end.server.y,0)+ifelse(server != "STRYCOVA", end.receiver.y,0)) 
+  
+#player and opponent distances travelled from start of shot to end of next shot
+stry17_df <- stry17_df %>%  
+  mutate(oppo.distance = ifelse(server != "STRYCOVA", server.distance,0)+ifelse(server == "STRYCOVA", receiver.distance,0)) %>%
+  mutate(p.distance = ifelse(server == "STRYCOVA", server.distance,0)+ifelse(server != "STRYCOVA", receiver.distance,0))
+
+#player and opponent speed 
+stry17_df <- stry17_df %>%
+  mutate(p.peak.speed = ifelse(server == "STRYCOVA", server.peak.speed,0)+ifelse(server != "STRYCOVA", receiver.peak.speed,0)) %>%
+  mutate(p.avg.speed = ifelse(server == "STRYCOVA", server.avg.speed,0)+ifelse(server != "STRYCOVA", receiver.avg.speed,0)) 
+  
+
+#player and opponent acceleration
+stry17_df <- stry17_df %>%  
+  mutate(p.avg.acceleration = ifelse(server == "STRYCOVA", server.avg.acceleration,0)+ifelse(server != "STRYCOVA", receiver.avg.acceleration,0)) %>%
+  mutate(p.peak.acceleration = ifelse(server == "STRYCOVA", server.peak.acceleration,0)+ifelse(server != "STRYCOVA", receiver.peak.acceleration,0)) %>%
+  mutate(oppo.peak.speed = ifelse(server != "STRYCOVA", server.peak.speed,0)+ifelse(server == "STRYCOVA", receiver.peak.speed,0)) %>%
+  mutate(oppo.avg.speed = ifelse(server != "STRYCOVA", server.avg.speed,0)+ifelse(server == "STRYCOVA", receiver.avg.speed,0)) %>%
+  mutate(oppo.avg.acceleration = ifelse(server != "STRYCOVA", server.avg.acceleration,0)+ifelse(server == "STRYCOVA", receiver.avg.acceleration,0)) %>%
+  mutate(oppo.peak.acceleration = ifelse(server != "STRYCOVA", server.peak.acceleration,0)+ifelse(server == "STRYCOVA", receiver.peak.acceleration,0))
+
+
+#player and opponent work
+stry17_df <- stry17_df %>%
+  mutate(oppo.work = ifelse(server != "STRYCOVA", server.work,0)+ifelse(server == "STRYCOVA", receiver.work,0)) %>%
+  mutate(p.work = ifelse(server == "STRYCOVA", server.work,0)+ifelse(server != "STRYCOVA", receiver.work,0)) 
+
+#player and opponent advantage
+stry17_df <- stry17_df %>%
+  mutate(oppo.advantage =ifelse(server != "STRYCOVA", server.advantage,0)+ifelse(server == "STRYCOVA", receiver.advantage,0))%>%
+   mutate(p.advantage =ifelse(server == "STRYCOVA", server.advantage,0)+ifelse(server != "STRYCOVA", receiver.advantage,0))
+
+
+#player and opponent total changes
+stry17_df <- stry17_df %>%
+  mutate(oppo.total.changes =ifelse(server != "STRYCOVA", server.total.changes,0)+ifelse(server == "STRYCOVA", receiver.total.changes,0))%>%
+   mutate(p.total.changes =ifelse(server == "STRYCOVA", server.total.changes,0)+ifelse(server != "STRYCOVA", receiver.total.changes,0))
+  
+  
+```
+
+
+```{r}
+
+#player speed and acceleration differences and ratios
+stry17_df <- stry17_df %>%
+  mutate(avg.player.speed.diff = p.avg.speed-oppo.avg.speed) %>%
+  mutate(peak.player.speed.diff = p.peak.speed-oppo.peak.speed) %>%
+  mutate(avg.player.speed.ratio = p.avg.speed/oppo.avg.speed) %>%
+  mutate(peak.player.speed.ratio = p.peak.speed/oppo.peak.speed) %>%
+  mutate(avg.player.acceleration.diff = (p.avg.acceleration)-(oppo.avg.acceleration)) %>%
+  mutate(peak.player.acceleration.diff = (p.peak.acceleration)-(oppo.peak.acceleration)) %>%
+  mutate(avg.player.acceleration.ratio = (p.avg.acceleration)/(oppo.avg.acceleration)) %>%
+  mutate(peak.player.acceleration.ratio = (p.peak.acceleration)/(oppo.peak.acceleration)) 
+
+stry17_df[is.na(stry17_df)] <- 0
+  
+stry17_df <- stry17_df %>%  
+  mutate(p.avg.speed.match = mean(p.avg.speed)) %>%
+  mutate(oppo.avg.speed.match = mean(oppo.avg.speed)) %>%
+  mutate(p.diff.avg.shot.and.match.movement.speed = p.avg.speed - p.avg.speed.match) %>%
+  mutate(oppo.diff.avg.shot.and.match.movement.speed = oppo.avg.speed - oppo.avg.speed.match)
+  
+
+#player/opponent side distance for start/end positions
+stry17_df <- stry17_df %>%
+  mutate(p.start.position.side.dist = 4.115 - abs(p.start.position.y)) %>%
+  mutate(p.end.position.side.dist = 4.115 - abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.side.dist = 4.115 - abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.side.dist = 4.115 - abs(oppo.end.position.y))
+  
+#player/opponent base distances for start/end positions  
+stry17_df <- stry17_df %>%
+  mutate(p.start.position.base.dist = 11.89 - abs(p.start.position.x)) %>%
+  mutate(p.end.position.base.dist = 11.89 - abs(p.end.position.x)) %>%
+  mutate(oppo.start.position.base.dist = 11.89 - abs(oppo.start.position.x)) %>%
+  mutate(oppo.end.position.base.dist = 11.89 - abs(oppo.end.position.x)) %>%
+  mutate(oppo.start.position.base.diff = p.start.position.base.dist - oppo.start.position.base.dist) %>%
+  mutate(p.start.position.base.diff = oppo.start.position.base.dist -p.start.position.base.dist) %>%
+  mutate(oppo.end.position.base.diff = p.end.position.base.dist - oppo.end.position.base.dist) %>%
+  mutate(p.end.position.base.diff = oppo.end.position.base.dist -p.end.position.base.dist) %>%
+  mutate(p.start.position.centre.diff = abs(oppo.start.position.y)-abs(p.start.position.y)) %>%
+  mutate(p.end.position.centre.diff = abs(oppo.end.position.y)-abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.centre.diff = abs(p.start.position.y)-abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.centre.diff = abs(p.end.position.y)-abs(oppo.end.position.y))
+  
+  
+```
+
+
+
+```{r}
+#player/ opponent shortest distances for start/end positions 
+stry17_df <- stry17_df %>%
+  mutate(oppo.start.position.short.dist = min(oppo.start.position.side.dist, oppo.start.position.base.dist)) %>%
+   mutate(oppo.end.position.short.dist = min(oppo.end.position.side.dist, oppo.end.position.base.dist)) %>%
+  mutate(p.start.position.short.dist = min(p.start.position.side.dist, p.start.position.base.dist)) %>%
+   mutate(p.end.position.short.dist = min(p.end.position.side.dist, p.end.position.base.dist)) 
+```
+
+
+
+```{r}
+
+#Tally of the number of times player and opponent change side during rally
+#Defining change of side as having travelled from a location 2.0575 or more metres away from the centre on one side of the court (half the distance between centre and singles lines) to a location 2.0575 or more metres away from the centre on the other side of the court
+stry17_df <- stry17_df %>%
+  mutate(p.side.change.count = ifelse(p.start.position.y <= -2.0575 & p.end.position.y >= 2.0575, 1, ifelse(p.start.position.y >= 2.0575 & p.end.position.y <= -2.0575, 1, 0))) %>%
+  mutate(p.side.change.cumsum = cumsum(p.side.change.count)) %>%
+  mutate(oppo.side.change.count = ifelse(oppo.start.position.y <= -2.0575 & oppo.end.position.y >= 2.0575, 1, ifelse(oppo.start.position.y >= 2.0575 & oppo.end.position.y <= -2.0575, 1, 0))) %>%
+  mutate(oppo.side.change.cumsum = cumsum(oppo.side.change.count)) 
+  
+
+
+  
+  
+```
+
+```{r}
+#Within rally tally of side change count and distance run
+stry17_df <- stry17_df %>%
+  group_by(rally.number ) %>%
+  dplyr::mutate(p.rally.side.change.count = cumsum(p.side.change.count)) %>%
+  dplyr::mutate(oppo.rally.side.change.count = cumsum(oppo.side.change.count)) %>%
+  dplyr::mutate(rally.side.change.count.diff = p.rally.side.change.count-oppo.rally.side.change.count) %>%
+  dplyr::mutate(oppo.rally.distance.run = cumsum(oppo.distance)) %>%
+  dplyr::mutate(p.rally.distance.run = cumsum(p.distance)) %>%
+  dplyr::mutate(rally.distance.run.ratio = p.rally.distance.run/oppo.rally.distance.run) %>%
+  ungroup
+ 
+```
+```{r}
+#Seperating height over net of shots for player and opponent.
+
+stry17_df <- stry17_df %>%
+  mutate(p.height.off.net = ifelse(impact.player == "STRYCOVA",height.off.net,0)) %>%
+  mutate(oppo.height.off.net = ifelse(impact.player != "STRYCOVA", height.off.net,0)) 
+  
+```
+
+
+```{r}
+#Adding angles for player & opposition movement from start position[i] to end position[i] as well as end position[i] to start position[i+1]. Measuring the angle of movement from the baseline. Directly towards the net is 0 deg. Directly away from the net is 180 deg.
+
+
+stry17_df <- stry17_df %>%
+  mutate(p.movement.angle.1 = NA) %>%
+  mutate(p.movement.angle.2 = NA) %>%
+  mutate(oppo.movement.angle.1 = NA) %>%
+  mutate(oppo.movement.angle.2 = NA) 
+  
+  
+#player start to end movement angle  
+for (i in 1:nrow(stry17_df)) {
+  a1 <- stry17_df$p.start.position.x[i]
+  b1 <- stry17_df$p.start.position.y[i]
+  a2 <- stry17_df$p.end.position.x[i]
+  b2 <- stry17_df$p.end.position.y[i]
+  
+  
+  p.movement.angle.1 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  stry17_df$p.movement.angle.1[i] = ifelse(p.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.1,
+                                          ifelse(p.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,abs(p.movement.angle.1),
+                                                 ifelse(p.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0, 90+p.movement.angle.1,p.movement.angle.1)))
+                                                                                                            
+}
+
+
+
+```
+```{r}
+#player end position(i) to start position (i+1) movement angle
+for (i in 2:nrow(stry17_df)) {
+  a1 <- stry17_df$p.end.position.x[i]
+  b1 <- stry17_df$p.end.position.y[i]
+  a2 <- stry17_df$p.start.position.x[i+1]
+  b2 <- stry17_df$p.start.position.y[i+1]
+  
+  p.movement.angle.2 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  stry17_df$p.movement.angle.2[i] = ifelse(p.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+p.movement.angle.2,
+                                          ifelse(p.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,abs(p.movement.angle.2),
+                                                 ifelse(p.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+p.movement.angle.2,p.movement.angle.2)))
+  
+}  
+  
+
+
+```
+
+```{r}
+# opposition start to end movement angle
+
+  
+for (i in 1:nrow(stry17_df)) {
+  a1 <- stry17_df$oppo.start.position.x[i]
+  b1 <- stry17_df$oppo.start.position.y[i]
+  a2 <- stry17_df$oppo.end.position.x[i]
+  b2 <- stry17_df$oppo.end.position.y[i]
+  
+  oppo.movement.angle.1 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  stry17_df$oppo.movement.angle.1[i] = ifelse(oppo.movement.angle.1 < 0 & (abs(a1)-abs(a2))<0,180+oppo.movement.angle.1,
+                                          ifelse(oppo.movement.angle.1 < 0 & (abs(b1)-abs(b2))<0,abs(oppo.movement.angle.1),
+                                                 ifelse(oppo.movement.angle.1 > 0 & (abs(a1)-abs(a2))<0,90+oppo.movement.angle.1,p.movement.angle.1)))
+  
+  
+}
+```
+```{r}
+#oppositions end[i] to start [i+1] movement angle
+for (i in 2:nrow(stry17_df)) {
+  a1 <- stry17_df$oppo.end.position.x[i]
+  b1 <- stry17_df$oppo.end.position.y[i]
+  a2 <- stry17_df$oppo.start.position.x[i+1]
+  b2 <- stry17_df$oppo.start.position.y[i+1]
+  
+  oppo.movement.angle.2 <- atan(
+  ((abs(b1)-abs(b2))/(abs(a1)-abs(a2)))* 180/pi) 
+  
+  stry17_df$oppo.movement.angle.2[i] = ifelse(oppo.movement.angle.2 < 0 & (abs(a1)-abs(a2))<0, 180+oppo.movement.angle.2,
+                                          ifelse(oppo.movement.angle.2 < 0 & (abs(b1)-abs(b2))<0,abs(oppo.movement.angle.2),
+                                                 ifelse(oppo.movement.angle.2 > 0 & (abs(a1)-abs(a2))<0, 90+oppo.movement.angle.2,oppo.movement.angle.2)))
+}
+```
+
+```{r}
+#speed of player ad opponent shots in m/s at the start of the shot arc
+stry17_df<- stry17_df %>%
+  mutate(p.start.shot.speed = ifelse(impact.player == "STRYCOVA", speed.start, 0)) %>%
+  mutate(oppo.start.shot.speed = ifelse(impact.player != "STRYCOVA", speed.start, 0)) 
+```
+
+```{r}
+#code for this chunk relatively unchanged
+# replaced ballmark.x with projected.ballmark.x; speed1 replaced by speed.start
+
+stry17_df <- stry17_df %>%
+  mutate(speed.diff = NA) %>%
+  mutate(oppo.hit.x = NA) %>%
+  mutate(oppo.hit.y = NA) %>%
+  mutate(oppo.hit.z = NA) %>%
+  mutate(oppo.speed = NA) %>%
+  mutate(oppo.projected.ballmark.x = NA) %>%
+  mutate(oppo.projected.ballmark.y = NA) %>%
+  mutate(speed.ratio = NA) 
+
+
+for (i in 2:nrow(stry17_df)) {
+  if(stry17_df$shot[i] != 1) {#so that only non-serves are affected
+
+  stry17_df$speed.diff[i]=stry17_df$speed.start[i]-stry17_df$speed.start[i-1]
+  #speed difference
+  
+  stry17_df$oppo.hit.x[i]=stry17_df$start.x[i-1]
+  stry17_df$oppo.hit.y[i]=stry17_df$start.y[i-1]
+  stry17_df$oppo.hit.z[i]=stry17_df$start.z[i-1]
+  stry17_df$oppo.speed[i]=stry17_df$speed.start[i-1]
+  stry17_df$oppo.projected.ballmark.x[i]=stry17_df$projected.ballmark.x[i-1]
+  stry17_df$oppo.projected.ballmark.y[i]=stry17_df$projected.ballmark.y[i-1]
+  #oppo hit
+  
+  }
+}
+
+stry17_df <- stry17_df %>%
+  mutate(speed.ratio = speed.start/oppo.speed) %>% #speed ratio
+  mutate(side.dist = 4.115 - abs(oppo.projected.ballmark.y)) %>% #distance of oppo.projected.ballmark from sideline
+  mutate(base.dist = 11.89 - abs(oppo.projected.ballmark.x)) %>% #distance of oppo.projected.ballmark from baseline
+  mutate(short.dist = min(side.dist, base.dist)) #shortest distance from any line
+
+
+#Adding angles
+stry17_df <- stry17_df %>%
+  mutate(p.start.shot.x = NA) %>%
+  mutate(p.start.shot.y = NA)
+
+for (i in 3:nrow(stry17_df)) {
+  if(stry17_df$impact.player[i] == stry17_df$impact.player[i-2] & stry17_df$shot[i] == stry17_df$shot[i-2] + 2) {
+    stry17_df$p.start.shot.x[i]=stry17_df$start.x[i-2]
+    stry17_df$p.start.shot.y[i]=stry17_df$start.y[i-2]
+  }
+}
+
+#adding angle between stry.shot-opp.shot vector and opp.shot-opp.projected.ballmark vector
+#doing it in one line because df doesn't want to add vectors
+stry17_df <- stry17_df %>%
+  mutate(o.angle = NA)
+  
+for (i in 1:nrow(stry17_df)) {
+  x1 <- stry17_df$p.start.shot.x[i]
+  y1 <- stry17_df$p.start.shot.y[i]
+  x2 <- stry17_df$oppo.hit.x[i]
+  y2 <- stry17_df$oppo.hit.y[i]
+  x3 <- stry17_df$oppo.projected.ballmark.x[i]
+  y3 <- stry17_df$oppo.projected.ballmark.y[i]
+  
+  o.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  stry17_df$o.angle[i] = ifelse(o.angle > 90, 180-o.angle, o.angle)
+}
+
+#Now adding the angle the player hits
+stry17_df <- stry17_df %>%
+  mutate(p.angle = NA)
+  
+for (i in 1:nrow(stry17_df)) {
+  x1 <- stry17_df$oppo.hit.x[i]
+  y1 <- stry17_df$oppo.hit.y[i]
+  x2 <- stry17_df$start.x[i]
+  y2 <- stry17_df$start.y[i]
+  x3 <- stry17_df$projected.ballmark.x[i]
+  y3 <- stry17_df$projected.ballmark.y[i]
+  
+  p.angle <- acos(
+  ((c(x1,y1)-c(x2,y2))/sqrt((x1-x2)^2+(y1-y2)^2)) %*%
+    ((c(x2,y2)-c(x3,y3))/sqrt((x2-x3)^2+(y2-y3)^2))) * 180/pi
+  
+  stry17_df$p.angle[i] = ifelse(p.angle > 90, 180-p.angle, p.angle)
+}
+
+stry17_df <- stry17_df %>%
+  group_by(rally.number) %>%
+  mutate(lag.p.angle = dplyr::lag(p.angle, n = 1, default = NA)) %>%
+  mutate(lag.speed.ratio = dplyr::lag(speed.ratio, n = 1, default = NA)) %>%
+  mutate(lag.p.movement.angle.1 = dplyr::lag(p.movement.angle.1, n = 1, default = NA)) %>%
+  mutate(lag.p.movement.angle.2 = dplyr::lag(p.movement.angle.2, n = 1, default = NA)) %>%
+  mutate(lag.oppo.height.off.net = dplyr::lag(oppo.height.off.net, n = 1, default = NA)) %>%
+  mutate(lag.p.start.shot.speed = dplyr::lag(p.start.shot.speed, n = 1, default = NA)) %>%
+  mutate(lag.oppo.start.shot.speed = dplyr::lag(oppo.start.shot.speed, n = 1, default = NA)) %>%
+  ungroup
+
+
+```
+
+
+
+
+
+```{r}
+stry17_df <- stry17_df %>%
+  mutate(oppo.start.server.x = ifelse(server != "STRYCOVA", start.server.x, 0)) 
+```
+
+
+
+```{r  }
+
+#creating new rows so that every second row start and end player positions are switched
+#Also creating new rows so that every second row in start.x,/start.y is projected ballmark
+#this allows us to better plot player positions as well as track positions for animations
+
+joinstry17_df <- transform(stry17_df, p.start.position.x=p.end.position.x, p.start.position.y=p.end.position.y, oppo.start.position.x=oppo.end.position.x, oppo.start.position.y=oppo.end.position.y, start.x=projected.ballmark.x, start.y=projected.ballmark.y)
+
+stry17_pos <- bind_rows(stry17_df, setNames(joinstry17_df, names(stry17_df))) %>% 
+           arrange(rally.number, shot)
+
+stry17_pos <- stry17_pos %>%
+  group_by(rally.number, idx = cumsum(event == 1L)) %>%
+  mutate(location.id= row_number()) %>%
+  ungroup
+
+stry17_pos <- stry17_pos %>%
+  group_by(rally.number) %>%
+  mutate(pos.rally.count= 1:n()) %>%
+  ungroup
+``` 
+
+
+
+
+
+```{r }
+#remove opponents
+stry17_no.opp <- stry17_df %>% 
+  dplyr::filter(impact.player == "STRYCOVA")
+
+#STRYCOVA only - remove serves
+stry17_only <- stry17_no.opp %>%
+  filter(hitpoint != "S") %>%
+  dplyr::select(-serveid)
+
+
+#First remove any errors for start, projected.ballmark, so that we are only looking at shots that we hit onto the other side
+#To check: ggplot(stry17_only, aes(projected.ballmark.x, projected.ballmark.y)) + geom_point()
+stry17_only <- stry17_only %>%
+  filter(oppo.hit.x >= 0) %>%
+  filter(oppo.projected.ballmark.x <= 0) %>%
+  filter(projected.ballmark.x >= 0)
+
+#Adding shot number cumulative count (functions as time)
+#check this for new data set .
+stry17_only <- stry17_only %>%
+  mutate(count = 1)
+
+  for (i in 2:nrow(stry17_only)) {
+    if(stry17_only$matchid[i]==stry17_only$matchid[i-1]) {
+      stry17_only$count[i] = stry17_only$count[i-1] + 1
+    }
+  }
+
+  
+
+#Adjusting to remove NAs and replace with 0s for modelling
+stry17_only$o.angle[is.na(stry17_only$o.angle)] <- 0
+stry17_only$lag.p.angle[is.na(stry17_only$lag.p.angle)] <- 0
+stry17_only$lag.speed.ratio[is.na(stry17_only$lag.speed.ratio)] <- 0
+stry17_only$p.start.shot.x[is.na(stry17_only$p.start.shot.x)] <- 0
+stry17_only$p.start.shot.y[is.na(stry17_only$p.start.shot.y)] <- 0
+stry17_only$lag.p.movement.angle.1[is.na(stry17_only$lag.p.movement.angle.1)] <- 0
+stry17_only$lag.p.movement.angle.2[is.na(stry17_only$lag.p.movement.angle.2)] <- 0
+stry17_only$lag.oppo.height.off.net[is.na(stry17_only$lag.oppo.height.off.net)] <- 0
+
+
+
+stry17_only <- stry17_only %>% mutate(player.total.shot.number = row_number())
+```
+
+
+```{r}
+#variables for speed of ball at the start of shot arcs
+
+stry17_only <- stry17_only %>%
+  mutate(avg.p.start.shot.speed = mean(p.start.shot.speed)) %>%
+  mutate(avg.lag.oppo.start.shot.speed = mean(lag.oppo.start.shot.speed)) %>%
+  mutate(diff.p.avg.and.current.shot.speed = p.start.shot.speed- avg.p.start.shot.speed) %>%
+  mutate(diff.lag.oppo.avg.and.current.shot.speed = lag.oppo.start.shot.speed- avg.lag.oppo.start.shot.speed) 
+
+
+  
+```
+
+
+
+```{r}
+#making y positions absolute for stry17_only as this is more relevant for the depmix model
+
+stry17_only <- stry17_only %>%
+  mutate(p.start.position.y = abs(p.start.position.y)) %>%
+  mutate(p.end.position.y = abs(p.end.position.y)) %>%
+  mutate(oppo.start.position.y = abs(oppo.start.position.y)) %>%
+  mutate(oppo.end.position.y = abs(oppo.end.position.y))%>%
+  mutate(p.start.shot.y =abs(p.start.shot.y))
+  
+  
+
+```
+```{r}
+#Save output
+stry17_only[is.na(stry17_only)] <- 0
+write.csv(stry17_only, "data/stry17_only.csv")
+```
+
+
+
+
 #Top down court view
+
+```{r}
+library(gganimate)
+library(tweenr)
+library(transformr)
+```
 ```{r }
 #
 library(plotly)
@@ -781,138 +3090,6 @@ court_topdown <- ggplot() +
 
   
 ```
-
-
-```{r}
-#Using Data visualisation to explore new variables
-```
-```{r}
-#Angle of movement
-ggplot(fed16_only, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
-
-ggplot(fed16_only, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
-
-ggplot(fed16_only, aes(x=p.movement.angle.1,y=p.peak.speed)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Federers Peak Speed") + ggtitle("Winners By Federer's movement angle 1")
-
-
-```
-
-
-```{r}
-# #Movement and shot position seperated by forehand and backhand
-# ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer winners by start position seperated by shot type for long rallies")
-# 
-# ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer winners by end position seperated by shot type for long rallies")
-# 
-# ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer errors by start position seperated by shot type for long rallies")
-# 
-# ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer errors by end position seperated by shot type for long rallies")
-# 
-# ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer shot time to net by start position seperated by shot type for long rallies")
-# 
-# ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer shot time to net by end position seperated by shot type for long rallies")
-
-```
-```{r}
-# Federer backhands are played on the baseline the majority of the time. All errors and winners for Federer backhands in long rallies are starting on negative y side of court. Examine this further to see what type of backhands are being played to identify any risks. 
-#For running backhand in long rallies, with a slower speed to net more errors appear to occur
-
-
-```
-
-
-
-
-
-```{r}
-library(grid)
-
-# ggplot(longest_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y, z=winner))   + stat_summary_hex(fun = function(winner) sum(winner)) + geom_segment(arrow = arrow(angle = 15,))  + xlab("Federer Position X ") + ylab("Federer Position Y") + ggtitle("Federer positions in longest rally") 
-
- # ggplot(longest_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y, z=winner))   + 
- #   stat_summary_hex(fun = function(winner) sum(winner)) + 
- #   geom_text(aes(label=shot)) +
- #   geom_path(arrow = arrow(angle = 15))  + 
- #   xlab("Federer Position X ") + 
- #   ylab("Federer Position Y") + 
- #   ggtitle("Federer positions in longest rally") 
-```
-
-```{r }
-
-#static player positions
-trial_df <- filter(fed16_pos, final.shot >= 14)
-
- p.rally.paths <- ggplot(trial_df, aes(x=p.start.position.x,  y=p.start.position.y))    + 
-   scale_x_continuous(breaks = axis_labels$x.break) +
-    scale_y_continuous(breaks = axis_labels$y.break) +
-    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
-    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
-    coord_fixed() +
-   geom_point(aes(alpha = shot))  + 
-   geom_path(  arrow = arrow(angle = 15)) + 
-   facet_wrap(~rally.number) + 
-   xlab("Federer Position X ") + 
-   ylab("Federer Position Y") + 
-   ggtitle("Federer start and end positions for rallies 14 shots or longer") 
- p.rally.paths <- ggplotly(p.rally.paths)
-   
- p.rally.paths
-
-
-```
-
-```{r}
- 
-oppo.rally.paths <- ggplot(trial_df, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
-  scale_x_continuous(breaks = axis_labels$x.break) +
-  scale_y_continuous(breaks = axis_labels$y.break) +
-  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
-  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
-  coord_fixed() +
-  geom_point(aes(alpha = shot))  + 
-  geom_path(  arrow = arrow(angle = 15)) +   
-  facet_wrap(~rally.number) + xlab("Opponent Position X ") + ylab("Opponent Position Y") +
-  ggtitle("Opponent start and end positions for for rallies 14 shots or longer")  
-oppo.rally.paths <- ggplotly(oppo.rally.paths)
-oppo.rally.paths
-```
-
-```{r}
-library(gganimate)
-library(tweenr)
-library(transformr)
-```
-#player rally animation
-
-
-
-```{r}
-check_df <- filter(fed16_pos, rally.number == "9")
-```
-
-```{r}
-longest_pos <- filter(fed16_pos, final.shot == 17)
-longral_pos <- filter(fed16_pos, final.shot >= 10)
-```
-
-
-```{r}
-seventythree_df <- filter(longral_pos, rally.number=="73")
-
-```
-
-
-
-
-```{r}
-fed16_only[is.na(fed16_only)] <- 0
-
-write.csv(longral_pos,"longral.csv")
-write.csv(seventythree_df,"longest.csv")
-write.csv(fed16_only, "data/fed16_only.csv")
-```
-
 ##Glossary of added variables
 Winter Research Project
 lastshot - last shot in the point
@@ -1286,6 +3463,12 @@ ggplot(fed16_only, aes(x=factor(winner),y=diff.p.avg.and.current.shot.speed, fil
 
 
 
+
+
+
+#Appendix
+##Visualisations of Shot Patterns
+###Federer vs Berdych 2016
 ```{r}
 ggplot(longral_pos, aes(x=shot,y=p.start.position.base.diff)) +
   geom_point() +
@@ -1354,4 +3537,149 @@ ggplot(dlw_fedonly, aes(x=start.x,y=start.y)) +
   xlab("X Coordinate") + 
   ylab("Y Coordinate") + 
   ggtitle("Federer Down the Line Winners By Shot Co-Ordinates")
+```
+```{r}
+#Angle of movement
+ggplot(fed16_only, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
+
+ggplot(fed16_only, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
+
+ggplot(fed16_only, aes(x=p.movement.angle.1,y=p.peak.speed)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Federers Peak Speed") + ggtitle("Winners By Federer's movement angle 1")
+
+
+```
+
+
+```{r}
+# #Movement and shot position seperated by forehand and backhand
+# ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer winners by start position seperated by shot type for long rallies")
+# 
+# ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer winners by end position seperated by shot type for long rallies")
+# 
+# ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer errors by start position seperated by shot type for long rallies")
+# 
+# ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer errors by end position seperated by shot type for long rallies")
+# 
+# ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer shot time to net by start position seperated by shot type for long rallies")
+# 
+# ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer shot time to net by end position seperated by shot type for long rallies")
+
+```
+```{r}
+#Visulaising speed ratio
+
+ggplot(fed16_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For match")
+
+ggplot(fed16_only, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Fed Only Speed ratio by distance from the baseline For match")
+
+ggplot(longral_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For Long Rallies")
+
+ggplot(longest_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For Longest Rally")
+
+
+
+
+#Visualising player shot angles
+
+ggplot(fed16_df, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Federer Shot Angle by distance from the baseline")
+
+ggplot(fed16_only, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Fed only Shot Angle by distance from the baseline")
+
+ggplot(fed16_df, aes(x=base.dist,y=o.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Berdych previous Shot") + ggtitle("Berdych Shot Angle by Federer distance from the baseline")
+
+
+```
+
+
+```{r}
+##Plots of shot and ballmark co-ordinates, angles made by shots and speed 
+library(ggplot2)
+#X Co-ordinate of shot
+ggplot(fed16_only, aes(x=start.x,winner)) + geom_smooth() + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
+
+#Opponents shot before
+library(hexbin)
+ggplot(fed16_only, aes(x=oppo.hit.x,y=oppo.hit.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate of Oppo Shot") + ylab("Y Coordinate of Oppo Shot") + ggtitle("Count of Winners By Opponent's Shot Co-Ordinates")
+### Get help transforming this to proportion in each bin instead of raw count
+
+#Fed Shots on x-y plane
+ggplot(fed16_only, aes(x=start.x,y=start.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates")
+
+#Fed Ballmark by winner in x-y plane
+ggplot(fed16_only, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Ballmark Co-Ordinates")
+
+
+#Angle of shots
+ggplot(fed16_only, aes(x=o.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents Shot With Fed's Previous Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent Shot Angle")
+
+ggplot(fed16_only, aes(x=p.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's Shot Angle")
+
+ggplot(fed16_only) + geom_density(aes(p.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Fed Shot Angles")
+
+ggplot(fed16_only) + geom_density(aes(o.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Opponent Shot Angles")
+
+#Winners by oppo speed
+ggplot(fed16_only) + geom_density(aes(oppo.speed, group = factor(winner), color=factor(winner)))
+
+ggplot(fed16_only, aes(x=factor(winner),y=oppo.speed,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent Speed")
+
+#Winners by speed ratio
+ggplot(fed16_only) + geom_density(aes(speed.ratio, group = factor(winner), color=factor(winner)))
+
+ggplot(fed16_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
+```
+##Animations
+###Exploring visualisations of player movement
+```{r}
+library(grid)
+
+# ggplot(longest_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y, z=winner))   + stat_summary_hex(fun = function(winner) sum(winner)) + geom_segment(arrow = arrow(angle = 15,))  + xlab("Federer Position X ") + ylab("Federer Position Y") + ggtitle("Federer positions in longest rally") 
+
+ # ggplot(longest_df, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y, z=winner))   + 
+ #   stat_summary_hex(fun = function(winner) sum(winner)) + 
+ #   geom_text(aes(label=shot)) +
+ #   geom_path(arrow = arrow(angle = 15))  + 
+ #   xlab("Federer Position X ") + 
+ #   ylab("Federer Position Y") + 
+ #   ggtitle("Federer positions in longest rally") 
+```
+
+```{r }
+
+#static player positions
+trial_df <- filter(fed16_pos, final.shot >= 14)
+
+ p.rally.paths <- ggplot(trial_df, aes(x=p.start.position.x,  y=p.start.position.y))    + 
+   scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+   geom_point(aes(alpha = shot))  + 
+   geom_path(  arrow = arrow(angle = 15)) + 
+   facet_wrap(~rally.number) + 
+   xlab("Federer Position X ") + 
+   ylab("Federer Position Y") + 
+   ggtitle("Federer start and end positions for rallies 14 shots or longer") 
+ p.rally.paths <- ggplotly(p.rally.paths)
+   
+ p.rally.paths
+
+
+```
+
+```{r}
+ 
+oppo.rally.paths <- ggplot(trial_df, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+  scale_y_continuous(breaks = axis_labels$y.break) +
+  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+  coord_fixed() +
+  geom_point(aes(alpha = shot))  + 
+  geom_path(  arrow = arrow(angle = 15)) +   
+  facet_wrap(~rally.number) + xlab("Opponent Position X ") + ylab("Opponent Position Y") +
+  ggtitle("Opponent start and end positions for for rallies 14 shots or longer")  
+oppo.rally.paths <- ggplotly(oppo.rally.paths)
+oppo.rally.paths
 ```
