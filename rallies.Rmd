@@ -701,7 +701,39 @@ write.csv(longral_pos,"longral.csv")
 write.csv(seventythree_df,"longest.csv")
 write.csv(fed16_only, "data/fed16_only.csv")
 ```
+```{r}
+library(dplyr)
 
+#choosing variables of interest
+fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
+
+
+```
+
+
+```{r}
+#scaling variables from 0 min to 1 max for comparison to hidden states plot
+fed16_scale <- fed16_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
+
+fed16_scale <- as.data.frame(lapply(fed16_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")], function(x) (x-min(x))/(max(x)-min(x))))
+#adding winner and total shot number to the df for analysis
+fed16_scale <- cbind(fed16_scale, winner = fed16_only$winner)
+
+
+fed16_scale <- fed16_scale %>% mutate(player.total.shot.number = row_number())
+```
+```{r}
+write.csv(fed16_scale, "data/fed16_scale.csv")
+```
+
+
+```{r}
+#Creating correlation matrix for variables of interest. Variables under 50% correlation will show as NA
+corMat <- cor(fed16_dep)
+corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
+#Removed some variables with significant correlation with other variables above 50%:
+#p.end.position.x, p.end.position.y, oppo.end.position.x, oppo.end.position.y, p.rally.side.change.count, p.advantage, p.distance, oppo.distance, fhand, p.advantage, rally.distance.run.ratio, shot
+```
 ##Fed vs Berdych 2017 Data
 ```{r  }
 
@@ -1866,6 +1898,49 @@ fed18_only <- fed18_only %>%
 fed18_only[is.na(fed18_only)] <- 0
 write.csv(fed18_only, "data/fed18_only.csv")
 ```
+```{r}
+library(dplyr)
+#Joining all Federer matches
+fed_only <- rbind(fed16_only, fed17_only, fed18_only)
+#choosing variables of interest
+fed_dep <- fed_only[, c("p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
+
+
+
+
+```
+
+
+```{r}
+
+
+#scaling variables from 0 min to 1 max for comparison to hidden states plot
+fed_scale <- fed_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
+
+#error in scaling as two variables not created correcctly in rallies2
+fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(y) (y-min(y))/(max(y)-min(y))))
+
+#adding winner and total shot number to the df for analysis
+fed_scale <- cbind(fed_scale, winner = fed_only$winner) 
+fed_scale <- fed_scale %>% mutate(player.total.shot.number = row_number())
+
+
+fed_scale <- fed_scale %>%
+  mutate(winner.return.error = ifelse(winner.return.error == 1,1,
+                                      ifelse(winner.return.error == 0.5,0,-1)))
+
+```
+
+
+```{r}
+#Checking correlation with more observations added
+ corMat2 <- cor(fed_dep)
+ corMat2_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
+
+# no correlation found with chosen variables in expanded data set
+```
+
+
 ##Strycova Vs Garcia 2016 Data
 
 
@@ -3041,7 +3116,45 @@ write.csv(stry17_only, "data/stry17_only.csv")
 ```
 
 
+```{r}
+#Joining all Strycova matches
+stry_only <- rbind(stry16_only, stry17_only)
 
+#choosing variables of interest
+stry_dep <- stry_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
+
+
+```
+
+
+```{r}
+#scaling variables from 0 min to 1 max for comparison to hidden states plot
+stry_scale <- stry_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
+
+stry_scale <- as.data.frame(lapply(stry_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(x) (x-min(x))/(max(x)-min(x))))
+#adding winner and total shot number to the df for analysis
+stry_scale <- cbind(stry_scale, winner = stry_only$winner)
+stry_scale <- cbind(stry_scale, p.advantage = stry_only$p.advantage)
+
+
+stry_scale <- stry_scale %>%
+  mutate(winner.return.error = ifelse(winner.return.error == 1,1,
+                                      ifelse(winner.return.error == 0.5,0,-1)))
+
+stry_scale <- stry_scale %>% mutate(player.total.shot.number = row_number())
+```
+
+```{r}
+write.csv(stry_scale, "data/stry_scale.csv")
+```
+
+```{r}
+#Creating correlation matrix for variables of interest. Variables under 50% correlation will show as NA
+stry.corMat <- cor(stry_dep)
+stry.corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
+#Removed some variables with significant correlation with other variables above 50%:
+#p.end.position.x, p.end.position.y, oppo.end.position.x, oppo.end.position.y, p.rally.side.change.count, p.distance, oppo.distance, fhand, p.advantage, rally.distance.run.ratio, shot, p.start.shot.y
+```
 
 #Top down court view
 
@@ -3659,39 +3772,7 @@ Data Set Three: Strycova vs Garcia 2016/17
 ###Federer 2016 Data Set 1
 Training Model 1 for Data Set 1 (Federer vs Berdych 2016)
 Training Model 1 is the best combination of variables found from running step-wise on Data Set 1
-```{r}
-library(dplyr)
 
-#choosing variables of interest
-fed16_dep <- fed16_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
-
-
-```
-
-
-```{r}
-#scaling variables from 0 min to 1 max for comparison to hidden states plot
-fed16_scale <- fed16_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
-
-fed16_scale <- as.data.frame(lapply(fed16_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")], function(x) (x-min(x))/(max(x)-min(x))))
-#adding winner and total shot number to the df for analysis
-fed16_scale <- cbind(fed16_scale, winner = fed16_only$winner)
-
-
-fed16_scale <- fed16_scale %>% mutate(player.total.shot.number = row_number())
-```
-```{r}
-write.csv(fed16_scale, "data/fed16_scale.csv")
-```
-
-
-```{r}
-#Creating correlation matrix for variables of interest. Variables under 50% correlation will show as NA
-corMat <- cor(fed16_dep)
-corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
-#Removed some variables with significant correlation with other variables above 50%:
-#p.end.position.x, p.end.position.y, oppo.end.position.x, oppo.end.position.y, p.rally.side.change.count, p.advantage, p.distance, oppo.distance, fhand, p.advantage, rally.distance.run.ratio, shot
-```
 ####Running Data Set 1 Training Model 1, (2 states)
 
 ```{r}
@@ -3801,47 +3882,6 @@ Data Set 2
 Training Model two is the best combination of variables from running Step-wise on Data Set 2
 
 #Running Training Model 1 on Data Set 2 (multiple Fed vs Berdych matches 2016, 2017 & 2018)
-```{r}
-library(dplyr)
-#Joining all Federer matches
-fed_only <- rbind(fed16_only, fed17_only, fed18_only)
-#choosing variables of interest
-fed_dep <- fed_only[, c("p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
-
-
-
-
-```
-
-
-```{r}
-
-
-#scaling variables from 0 min to 1 max for comparison to hidden states plot
-fed_scale <- fed_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
-
-#error in scaling as two variables not created correcctly in rallies2
-fed_scale <- as.data.frame(lapply(fed_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(y) (y-min(y))/(max(y)-min(y))))
-
-#adding winner and total shot number to the df for analysis
-fed_scale <- cbind(fed_scale, winner = fed_only$winner) 
-fed_scale <- fed_scale %>% mutate(player.total.shot.number = row_number())
-
-
-fed_scale <- fed_scale %>%
-  mutate(winner.return.error = ifelse(winner.return.error == 1,1,
-                                      ifelse(winner.return.error == 0.5,0,-1)))
-
-```
-
-
-```{r}
-#Checking correlation with more observations added
- corMat2 <- cor(fed_dep)
- corMat2_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
-
-# no correlation found with chosen variables in expanded data set
-```
 
 
 ##Data Set 2 Training Model 1 (2 states)
@@ -3989,45 +4029,7 @@ ggplot() +
 ```
 
 ###Strycova
-```{r}
-#Joining all Strycova matches
-stry_only <- rbind(stry16_only, stry17_only)
 
-#choosing variables of interest
-stry_dep <- stry_only[, c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error", "p.advantage")]
-
-
-```
-
-
-```{r}
-#scaling variables from 0 min to 1 max for comparison to hidden states plot
-stry_scale <- stry_only[, c(  "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x",  "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")]
-
-stry_scale <- as.data.frame(lapply(stry_dep[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.start.shot.x", "p.start.shot.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net", "winner.return.error")], function(x) (x-min(x))/(max(x)-min(x))))
-#adding winner and total shot number to the df for analysis
-stry_scale <- cbind(stry_scale, winner = stry_only$winner)
-stry_scale <- cbind(stry_scale, p.advantage = stry_only$p.advantage)
-
-
-stry_scale <- stry_scale %>%
-  mutate(winner.return.error = ifelse(winner.return.error == 1,1,
-                                      ifelse(winner.return.error == 0.5,0,-1)))
-
-stry_scale <- stry_scale %>% mutate(player.total.shot.number = row_number())
-```
-
-```{r}
-write.csv(stry_scale, "data/stry_scale.csv")
-```
-
-```{r}
-#Creating correlation matrix for variables of interest. Variables under 50% correlation will show as NA
-stry.corMat <- cor(stry_dep)
-stry.corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.5,x,"NA")))
-#Removed some variables with significant correlation with other variables above 50%:
-#p.end.position.x, p.end.position.y, oppo.end.position.x, oppo.end.position.y, p.rally.side.change.count, p.distance, oppo.distance, fhand, p.advantage, rally.distance.run.ratio, shot, p.start.shot.y
-```
 
 ####Comparing Different response variables to find the best model for observing three hidden states
 ```{r}
@@ -4088,8 +4090,7 @@ ds3.mod3.3s <- depmix(list(winner.return.error ~ 1, p.advantage ~ 1), transition
 ```
 
 ##Stepwise Analysis
-All Chunks for Step-wise have been Commented to running time/size of the file for Knit.
-Including the code to show the process. (Comment/Uncomment is Ctrl+Shift+C)
+
 ####Stepwise to find best variables for Depmix for Federer vs Berdych 2016 (Data Set 1, Training Model 1)
 
 
@@ -4648,3 +4649,32 @@ oppo.rally.paths <- ggplot(trial_df, aes(x=oppo.start.position.x,  y=oppo.start.
 oppo.rally.paths <- ggplotly(oppo.rally.paths)
 oppo.rally.paths
 ```
+
+
+```{r}
+ggplot(stry16_only, aes(x=winner.return.error, y=p.advantage)) + geom_bar(stat="identity") + xlab("winner Return Error") + ylab("Player Advantage") + ggtitle("Winners By Number of Times Federer Changes Side in Rally")
+
+```
+
+```{r}
+stry_plot1<- stry_scale %>%
+  gather(key = vars, value = measurement, p.start.position.x, oppo.start.position.x, p.diff.avg.shot.and.match.movement.speed)
+
+stry_plot2<- stry_scale %>%
+  gather(key = vars, value = measurement, p.start.position.y, lag.oppo.height.off.net)
+
+stry_plot3<- stry_scale %>%
+  gather(key = vars, value = measurement, oppo.start.position.y, oppo.diff.avg.shot.and.match.movement.speed, diff.p.avg.and.current.shot.speed )
+
+stry_plot4<- stry_scale %>%
+  gather(key = vars, value = measurement, winner.return.error, p.advantage)
+
+ggplot(stry_plot1, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+
+ggplot(stry_plot2, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+
+ggplot(stry_plot3, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+
+ggplot(stry_plot4, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+```
+
