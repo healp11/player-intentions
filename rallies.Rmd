@@ -3294,7 +3294,6 @@ This analysis is done using the dependent mixture model contained in the depmixS
 #Modelling
 Visual analysis has been used to select a number of new variables from the new data set. For the two hdden state model 'winner' is the response variable. For the three hidden state model 'winner.return.error' is the response variable. 
 
-Covariates are...
 The covariates chosen are...(just try out shot index first)
 
 To identify the best covariates for predicting hidden states of many different players; training models have been created using a step-wise approach to identify the best combination of covariates in a chosen match data set. These training models have then been tested on a different data sets for a comparison of results. The limitation of this step wise approach is that some potentially important covariates have been ommited from the model because of correlation with other covariates. 
@@ -3315,7 +3314,10 @@ The best combination of covariates is:
 oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, oppo.start.position.y, diff.p.avg.and.current.shot.speed, p.start.position.y, p.diff.avg.shot.and.match.movement.speed, lag.oppo.height.off.net
 
 #Intepreting the output
+
 ##2 state Model
+
+
 ##3 State Models
 
 #Building the Animation
@@ -4027,9 +4029,9 @@ stry.corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.
 #p.end.position.x, p.end.position.y, oppo.end.position.x, oppo.end.position.y, p.rally.side.change.count, p.distance, oppo.distance, fhand, p.advantage, rally.distance.run.ratio, shot, p.start.shot.y
 ```
 
-
+####Comparing Different response variables to find the best model for observing three hidden states
 ```{r}
-#Comparing Different response variables to find the best model for three states
+
 #Response variable(s):winner.return.error & p.advantage.states
 #Combination of the two response variables produces the best three state model
 ds3.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage ~ 1), transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),gaussian()))
@@ -4060,10 +4062,10 @@ ds3.mod2c.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.
 ```
 
 
-
+###plotting Data Set 3 Training Model 2 with 3 states
 
 ```{r}
-#plotting Data Set 2 Training Model 2 with 3 states
+
 probs = posterior(ds3.fm2a.3s)
 
 
@@ -4074,9 +4076,9 @@ probs = posterior(ds3.fm2a.3s)
 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
 		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n')
 ```
-
+###Training Model 3 Data Set 3
 ```{r}
-#Training Model 3
+
 #oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, oppo.start.position.y, diff.p.avg.and.current.shot.speed, p.start.position.y, p.diff.avg.shot.and.match.movement.speed, lag.oppo.height.off.net
 
 ds3.mod3.3s <- depmix(list(winner.return.error ~ 1, p.advantage ~ 1), transition = ~ oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + oppo.start.position.y + diff.p.avg.and.current.shot.speed + p.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),gaussian()))
