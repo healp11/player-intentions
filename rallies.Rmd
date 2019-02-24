@@ -3300,8 +3300,19 @@ The covariates chosen are...(just try out shot index first)
 To identify the best covariates for predicting hidden states of many different players; training models have been created using a step-wise approach to identify the best combination of covariates in a chosen match data set. These training models have then been tested on a different data sets for a comparison of results. The limitation of this step wise approach is that some potentially important covariates have been ommited from the model because of correlation with other covariates. 
 
 #Training Models
-The first training model has been made using step-wise for the match data Federer vs Berdych 2016. The best combination of covariates in order of importance are...
+For Stepwise, begin the model running all the covariates to find the covariate which lowers the log Likelihood of the model the most. Then add this covariate to the model and run all the remaining covariates to find the next best covariate which improves the model the most. Repeat this until the model is no longer being improved through the addition of new covariates or until there are no more covariates.  
 
+The first training model(Training Model 1) has been made using step-wise for the match data Federer vs Berdych 2016.
+The best combination of covariates is:
+p.start.position.x, lag.oppo.height.off.net, oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, diff.p.avg.and.current.shot.speed, p.movement.angle.1
+
+The second training model (Training Model 2) has been made using step-wise for the match data Federer vs Berdych 2016/17/18.
+The best combination of covariates is:
+p.movement.angle.1, oppo.diff.avg.shot.and.match.movement.speed, p.start.position.y, oppo.start.position.x, oppo.start.position.y, p.diff.avg.shot.and.match.movement.speed,  lag.oppo.height.off.net
+
+The third training model (Training Model 3) has been made using step-wise for the match data Strycova vs Garcia 2016/17.
+The best combination of covariates is:
+oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, oppo.start.position.y, diff.p.avg.and.current.shot.speed, p.start.position.y, p.diff.avg.shot.and.match.movement.speed, lag.oppo.height.off.net
 
 #Intepreting the output
 ##2 state Model
@@ -3816,8 +3827,8 @@ fed_scale <- fed_scale %>% mutate(player.total.shot.number = row_number())
 
 
 fed_scale <- fed_scale %>%
-  mutate(winner.return.error = ifelse(winner.return.error == 1,3,
-                                      ifelse(winner.return.error == 0.5,2,1)))
+  mutate(winner.return.error = ifelse(winner.return.error == 1,1,
+                                      ifelse(winner.return.error == 0.5,0,-1)))
 
 ```
 
@@ -3996,10 +4007,8 @@ stry_scale <- as.data.frame(lapply(stry_dep[c( "p.start.position.x", "p.start.po
 stry_scale <- cbind(stry_scale, winner = stry_only$winner)
 stry_scale <- cbind(stry_scale, p.advantage = stry_only$p.advantage)
 
-#Mutating player advantage to make it suitable as a response variable.Less than -2000 is a large disadvantage between -2000 and 2000 is a small advantage/disadvantage above 2000 is a large advantage
+
 stry_scale <- stry_scale %>%
-  mutate(p.advantage.states = ifelse(p.advantage <= (-2000), -1,
-                                     ifelse(p.advantage >= 2000,-1,0))) %>%
   mutate(winner.return.error = ifelse(winner.return.error == 1,1,
                                       ifelse(winner.return.error == 0.5,0,-1)))
 
@@ -4067,9 +4076,10 @@ probs = posterior(ds3.fm2a.3s)
 ```
 
 ```{r}
+#Training Model 3
+#oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, oppo.start.position.y, diff.p.avg.and.current.shot.speed, p.start.position.y, p.diff.avg.shot.and.match.movement.speed, lag.oppo.height.off.net
 
-
-ds3.mod3.3s <- depmix(list(winner.return.error ~ 1, p.advantage ~ 1), transition = ~ oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + oppo.start.position.y + diff.p.avg.and.current.shot.speed + p.start.position.y + p.diff.avg.shot.and.match.movement.speed +lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),gaussian()))
+ds3.mod3.3s <- depmix(list(winner.return.error ~ 1, p.advantage ~ 1), transition = ~ oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + oppo.start.position.y + diff.p.avg.and.current.shot.speed + p.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),gaussian()))
  ds3.fm3.3s <- fit(ds3.mod3.3s)
  
  summary(ds3.fm3.3s)
