@@ -24,7 +24,7 @@ Shaping data to recreate the variables used in ("Federer AO 2017.Rmd")'Federer v
 
 'Siegemund v Jankovic 2017' goes from set 3 to set 6?? 
 
-#### Sorting the matches
+#Seperating and shaping matches
 
 ```{r }
 djo16_df <- filter(rallies, year == 2016, h2h == "DJOKOVIC CHUNG" )
@@ -66,12 +66,12 @@ thi16_df <- arrange(thi16_df, matchid, set, game, point, shot)
 thi17_df <- filter(rallies, year == 2017, h2h == "THIEM GOFFIN" )
 thi17_df <- arrange(thi17_df, matchid, set, game, point, shot)
 ```
-#Creating new variables for fed16 as well as recreating variables from Winter research project. 
+##Federer Vs Berdych
 (some columns in rallies data have a different classification than in federer2017 data. Such as 'is.good' replaces 'ended.in.error')(With Aces dropped we also now cannot recreate retser, retser1 or retser2 )
 Starting with Federer vs Berdych 2016
 
 
- 
+###Federer 2016 
 ```{r  }
 
 #Reorienting shots so that all Federer's shot are from negative x side of court, and all opponents shots are from positive x side. y coordinates have been flipped as required.
@@ -541,27 +541,24 @@ fed16_df <- fed16_df %>%
 ```
 
 
-```{r}
-#fed16_df <- na.omit(fed16_df)
-```
-#Player/Ball Position rows
-```{r  }
 
+```{r  }
+#Creating Columns of player, opponent and ball positions for Animations
 #creating new rows so that every second row start and end player positions are switched
 #Also creating new rows so that every second row in start.x,/start.y is projected ballmark
 #this allows us to better plot player positions as well as track positions for animations
 
 join_df <- transform(fed16_df, p.start.position.x=p.end.position.x, p.start.position.y=p.end.position.y, oppo.start.position.x=oppo.end.position.x, oppo.start.position.y=oppo.end.position.y, start.x=projected.ballmark.x, start.y=projected.ballmark.y)
 
-fed_pos <- bind_rows(fed16_df, setNames(join_df, names(fed16_df))) %>% 
+fed16_pos <- bind_rows(fed16_df, setNames(join_df, names(fed16_df))) %>% 
            arrange(rally.number, shot)
 
-fed_pos <- fed_pos %>%
+fed16_pos <- fed16_pos %>%
   group_by(rally.number, idx = cumsum(event == 1L)) %>%
   mutate(location.id= row_number()) %>%
   ungroup
 
-fed_pos <- fed_pos %>%
+fed16_pos <- fed16_pos %>%
   group_by(rally.number) %>%
   mutate(pos.rally.count= 1:n()) %>%
   ungroup
@@ -570,8 +567,10 @@ fed_pos <- fed_pos %>%
 
 
 
-##fed16_only
+
 ```{r }
+
+#Removing opponent shots from data as we want to look at Federer for the Hidden Markov Model
 #remove opponents
 fed_no.opp <- fed16_df %>% 
   dplyr::filter(impact.player == "FEDERER")
@@ -636,8 +635,8 @@ fed16_only <- fed16_only %>%
 
 
 ```{r }
-#Creating seperate data frames for shot types useful for visualisation
-dlb_pos <- filter(fed_pos, down.line.backhand == "TRUE")
+#Creating seperate data frames for shot types useful for visualisation of shot patterns
+dlb_pos <- filter(fed16_pos, down.line.backhand == "TRUE")
 
 dlb_df <- filter(fed16_df, down.line.backhand == "TRUE")
 
@@ -671,7 +670,7 @@ fed16_only <- fed16_only %>%
 
 
 ```{r}
-##Plots of shot and ballmark co-ordinates, angles made by shots and speed measures
+##Plots of shot and ballmark co-ordinates, angles made by shots and speed 
 library(ggplot2)
 #X Co-ordinate of shot
 ggplot(fed16_only, aes(x=start.x,winner)) + geom_smooth() + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
@@ -709,16 +708,16 @@ ggplot(fed16_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + ge
 ```
  
 ```{r }
-#rally variables
+#Seperating out the longest rallies from this match to visualise them through animation
 #examining rallies to look at side to side movement within rallies. Starting with the longest rally.
-longral_df <- filter(fed_pos, final.shot >= 10)
+longral_df <- filter(fed16_pos, final.shot >= 10)
 ```
 ```{r}
-longest_df <- filter(fed_pos, final.shot == 17)
+longest_df <- filter(fed16_pos, final.shot == 17)
 ```
 
 ```{r}
-#speed ratio
+#Visulaising speed ratio
 
 ggplot(fed16_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For match")
 
@@ -731,7 +730,7 @@ ggplot(longest_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Dista
 
 
 
-#player shot angles
+#Visualising player shot angles
 
 ggplot(fed16_df, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Federer Shot Angle by distance from the baseline")
 
@@ -781,29 +780,6 @@ court_topdown <- ggplot() +
 
 
   
-```
-
-
-```{r}
-#creating new variables to get more information about player movement
-#First step is to create intermediate variables for seperating rallies when including new data which includes aces and serve returns these are included with initial mutations
-#Second step is to put a count on rallies so that we can create new variables that look at individual rallies 
-
-#create some sum of variables for change of court side shot player/opposition, rally total energy expenditure, this will be more difficult as serve and serve expenditure will be counted, change of shot f/b within rally
-
-  
-```
-
-
-
-
-```{r}
-# The new variables that we have in this data set (Rallies)are
-#passed.baseline, speed.at.baseline, reaction.time, distance.from.sideline, depth, is.ground.stroke, is.going.for.line, inside.out.forehand, down.line.winner, serve1.stretch, all.valid, scorer, 
-
-#receiver.distance, server.distance, receiver.avg.speed, receiver.peak.speed, receiver.avg.acceleration, receiver.peak.acceleration, receiver.advantage, receiver.work, receiver.total.changes, start.receiver.x, end.receiver.x
-
-#server.avg.speed, server.peak.speed, server.avg.acceleration, server.peak.acceleration, server.advantage, server.work, server.total.changes, start.server.x, end.server.x
 ```
 
 
@@ -865,7 +841,7 @@ library(grid)
 ```{r }
 
 #static player positions
-trial_df <- filter(fed_pos, final.shot >= 14)
+trial_df <- filter(fed16_pos, final.shot >= 14)
 
  p.rally.paths <- ggplot(trial_df, aes(x=p.start.position.x,  y=p.start.position.y))    + 
    scale_x_continuous(breaks = axis_labels$x.break) +
@@ -912,12 +888,12 @@ library(transformr)
 
 
 ```{r}
-check_df <- filter(fed_pos, rally.number == "9")
+check_df <- filter(fed16_pos, rally.number == "9")
 ```
 
 ```{r}
-longest_pos <- filter(fed_pos, final.shot == 17)
-longral_pos <- filter(fed_pos, final.shot >= 10)
+longest_pos <- filter(fed16_pos, final.shot == 17)
+longral_pos <- filter(fed16_pos, final.shot >= 10)
 ```
 
 
@@ -1124,49 +1100,6 @@ t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed +
 t2.fm1<- fit(t2.mod1)
  
 summary(t2.fm1)
-```
-
-```{r}
-# recursive.factorial <- function(x) {
-# if (x == 0)    return (1)
-# else           return (x * recursive.factorial(x-1))
-# }
-
-# loop_data <- fed16_only[, c("winner","rally.number", "fhand", "p.start.position.x", "p.end.position.x", "p.start.position.y", "p.end.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.distance", "oppo.distance","p.work", "oppo.work", "p.advantage", "avg.player.speed.ratio", "avg.player.acceleration.ratio", "p.rally.side.change.count", "oppo.rally.side.change.count", "p.movement.angle.1", "p.movement.angle.2", "oppo.movement.angle.2", "p.start.shot.x", "p.start.shot.y", "lag.p.angle", "lag.speed.ratio")]
-# 
-# next_best_var <- function(data, column = NULL){
-#   # if we know what variable to remove, remove it
-#   if (!is.null(column)){
-#     data <- data[, names(data) != column]
-#   }
-#   #if 1 variable remaining, add to model
-#   if (ncol(data) == 1){
-#     return(colnames(data))
-#   }
-#   #map over all available columns
-#   
-#   
-#   
-#   
-#   
-# }
-# 
-# inside_func <- function(data, x){
-#   fm <- fit(depmix(winner ~ 1, data = data, transition = ~ x, nstates = 2, family=multinomial("identity")))
-#   
-#   
-#   
-#   }
-# 
-# # for every possible variable in data set
-# Loop_trial <- ha %>% map(function(data,x) 
-#   t6.mod41 <- depmix(winner ~ 1, data = fed16_only, transition = ~ x, nstates = 2, family=multinomial("identity")))
-#  t6.fm41<- fit(t6.mod41)
-#  
-# 
-#  t6.fm41
-#  
-#  
 ```
 
 
