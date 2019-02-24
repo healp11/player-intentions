@@ -20,7 +20,7 @@ library(tidyverse)
 load("data/rallies.RData")
 library(readr)
 ```
-Shaping data to recreate the variables used in ("Federer AO 2017.Rmd")'Federer vs Berych 2017' for the AO matches 'Djokovic v Chung 2016', 'Djokovic v Chung 2018', 'Federer v Berdych 2016', 'Federer v Berdych 2018', 'Makarova v Konta 2016','Makarova v Konta 2017','Strycova v Garcia 2016' 'Strycova v Garcia 2017', 'Siegemund v Jankovic 2016','Siegemund v Jankovic 2017', 'Goffin v Thiem 2016''Goffin v Thiem 2017'""
+Shaping data to recreate the variables used in ("Federer AO 2017.Rmd")'Federer vs Berdych 2017' for the AO matches 'Djokovic v Chung 2016', 'Djokovic v Chung 2018', 'Federer v Berdych 2016', 'Federer v Berdych 2018', 'Makarova v Konta 2016','Makarova v Konta 2017','Strycova v Garcia 2016' 'Strycova v Garcia 2017', 'Siegemund v Jankovic 2016','Siegemund v Jankovic 2017', 'Goffin v Thiem 2016''Goffin v Thiem 2017'""
 
 'Siegemund v Jankovic 2017' goes from set 3 to set 6?? 
 
@@ -3130,9 +3130,9 @@ p.avg.speed.match - players average speed of movement for the match in m/s
 
 oppo.avg.speed.match - opponents average speed of movement for the match in m/s
 
-p.diff.avg.shot.and.match.movement.speed - difference between players avereage movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
+p.diff.avg.shot.and.match.movement.speed - difference between players average movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
 
-oppo.diff.avg.shot.and.match.movement.speed - difference between opponents avereage movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
+oppo.diff.avg.shot.and.match.movement.speed - difference between opponents average movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
 
 p.rally.side.change.count - the number of times the player has run from the forehand(backhand) side to the backhand(forehand) side within the rally
 
@@ -3280,17 +3280,27 @@ summary(t2.fm1)
 ```
 
 
+#Rallies From Matches at The Australian Open
+This project uses Hidden Markov Models to identify player shot intentions from matches at the Australian Open. 
+
+The match data analysed contains information for all rallies 3 shots or longer. Serves and returns of serves have been excluded from the data. The analysis looks at two and three hidden state models to attempt to identify player intentions. 
+
+The two hidden state model extends Jeremy Forbes' research project. The player shot intentions are: attacking or 'winner', where the players aim is to win the point on that shot. And 'return' where the player's aim is just to get the ball back into play. 
+
+The three hidden states model extends this model to include 'errors' where the player unsuccessfully tries to win the point or return the ball into play with that shot.
+
+This analysis is done using the dependent mixture model contained in the depmixS4 package. 
 
 #Modelling
-Visual analysis has been used to select a number of new variables from the new data set. To extend upon the research conducted by Jeremy Forbes, winner has been chosen as the initial response variable.
+Visual analysis has been used to select a number of new variables from the new data set. For the two hdden state model 'winner' is the response variable. For the 
 
 Covariates are...
 The covariates chosen are...(just try out shot index first)
 
-Model training has been used to identify covariates which are useful for predicting the states of many different players.A training model has been created by using a stepwise approach to identify the best combination of covariates in a chosen match data set. This training model has then been tested on a different data set for a comparison of results. The limitation of this stepwise approach is that some potentially important covariates have been ommited from the model because of correlation with other covariates. 
+Model training has been used to identify covariates which are useful for predicting the states of many different players.A training model has been created by using a step-wise approach to identify the best combination of covariates in a chosen match data set. This training model has then been tested on a different data set for a comparison of results. The limitation of this step wise approach is that some potentially important covariates have been ommited from the model because of correlation with other covariates. 
 
 #Training Models
-The first training model has been made using stepwise for the match data Feder vs Berdych 2016. The best combination of covariates in order of importance are...
+The first training model has been made using step-wise for the match data Federer vs Berdych 2016. The best combination of covariates in order of importance are...
 
 
 #Intepreting the output
@@ -3299,11 +3309,11 @@ The first training model has been made using stepwise for the match data Feder v
 
 #Building the Animation
 
-Using the package GGAnimate and a topdown court outline taken from "https://github.com/mvparrot/vis-serve/blob/master/report file helper basic plots".
-The variables p.start.positionition.x, p.end.position.x, oppo.start.position.x, oppo.end.position.x, p.start.positionition.y, p.end.position.y, oppo.start.position.y, oppo.end.position.y, start.x, start.y, projected.ballmark.x and projected.ballmark.y
+Using the package GGAnimate and a top-down court outline taken from "https://github.com/mvparrot/vis-serve/blob/master/report file helper basic plots".
+The variables p.start.position.x, p.end.position.x, oppo.start.position.x, oppo.end.position.x, p.start.position.y, p.end.position.y, oppo.start.position.y, oppo.end.position.y, start.x, start.y, projected.ballmark.x and projected.ballmark.y
 
 transition_reveal has been used for filling in gaps in the player and ball position data. 
-To run transition_reveal, a single column was created for the player's start & end postition x coordinates, they are grouped by rally number and shot number and alternate between start and end position. The same thing is done for the player's position y coordinates. As well as for the opponent's start and end position x and y coordinates. For animating the ball position, similar columns are created alternating between the start position of the ball and the projected ballmark for both x and y coordinates.
+To run transition_reveal, a single column was created for the player's start & end position x coordinates, they are grouped by rally number and shot number and alternate between start and end position. The same thing is done for the player's position y coordinates. As well as for the opponent's start and end position x and y coordinates. For animating the ball position, similar columns are created alternating between the start position of the ball and the projected ballmark for both x and y coordinates.
 
 ##Visualising player state change in the animation
 
@@ -3339,7 +3349,7 @@ ggplot(fed16_only, aes(x=p.start.position.y,winner)) + geom_smooth() + xlab("Dis
 
 
 p.start.shot.x-
-Similar to Federer's start position x coordinates, the x coordinates of his shot hitpoint appears more likely to result in a winner compared to similarly distanced shots as he moves closer to the net.
+Similar to Federer's start position x coordinates, the x coordinates of his shot hit point appears more likely to result in a winner compared to similarly distanced shots as he moves closer to the net.
 
 p.start.shot.y-
 Including in HMM to make shot x coordinates more meaningful. Using absolute to measures distance from centre. 
@@ -3356,7 +3366,7 @@ ggplot(fed16_only_plots, aes(x=p.start.shot.x,  y=p.start.shot.y ))    +
 
 
 oppo.start.position.x-
-Federer appears more likely to hit a winner as Berdych start position x coordinates are closer to the net. (As we are analysing the rallies with all of Berdychs having positive coordinates in the HMM we would expect a decrease in Berdychs start position x coordinates to increase The probability of Federer being in an attacking state. 
+Federer appears more likely to hit a winner as Berdych start position x coordinates are closer to the net. (As we are analysing the rallies with all of Berdych's having positive coordinates in the HMM we would expect a decrease in Berdych's start position x coordinates to increase The probability of Federer being in an attacking state. 
 oppo.start.position.y
 ```{r}
 ggplot(fed16_only_plots, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
@@ -3377,7 +3387,7 @@ ggplot(fed16_only, aes(x=oppo.start.position.y,winner)) + geom_smooth() + xlab("
 
 p.diff.avg.shot.and.match.movement.speed - 
 When Federer runs approximately more than 1m/s above or below his average movement speed for match he tends to hit more winners. This variable therefore appears suitable for the HMM. (Using an absolute value of the difference we would expect an increase in difference to increase the probability of Federer being in a attacking state. (add in more info)
-When Considering winners, errors and returns we move back to relative difference as Federer tends to hit more errors than winners when moving approximately 1m/s slower than his avereage match movement speed 
+When Considering winners, errors and returns we move back to relative difference as Federer tends to hit more errors than winners when moving approximately 1m/s slower than his average match movement speed 
 ```{r}
 ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by difference in Federer's current and match avg movement speed")
 
@@ -3389,7 +3399,7 @@ ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=(p.diff.avg.shot.an
 
 
 oppo.diff.avg.shot.and.match.movement.speed - 
-Federer tends to hit more winners as Berdych runs more than 1m/s faster than his average match movement speed. This is a suitable variable for the HMM we would expect an increase in the difference to increae Federers probability of being in an attacking state. 
+Federer tends to hit more winners as Berdych runs more than 1m/s faster than his average match movement speed. This is a suitable variable for the HMM we would expect an increase in the difference to increase Federer's probability of being in an attacking state. 
 ```{r}
 ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by difference in Opponent current/match avg movement speed")
 
@@ -3415,7 +3425,7 @@ ggplot(fed16_only_plots, aes(x=oppo.rally.side.change.count, y=winner)) + geom_b
 
 
 p.movement.angle.1 - 
- more than 75% of Federers Winners come when he is running less than 100 degrees in relation to the baseline. This varaiable appears suitable for HMM we would expect as Federers movement angle increases beyond 100 degrees the probability the he is an attacking state decreases.
+ more than 75% of Federer's Winners come when he is running less than 100 degrees in relation to the baseline. This variable appears suitable for HMM we would expect as Federer's movement angle increases beyond 100 degrees the probability the he is an attacking state decreases.
 ```{r}
 ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's start to end movement angle")
 
@@ -3440,7 +3450,7 @@ ggplot(fed16_only, aes(x=factor(winner),y=oppo.movement.angle.1, fill=factor(win
 
 
 lag.oppo.height.off.net - 
-Federer tends to hit more winners when incoming shot approaches 50cm off the height of the net. This decreases as the height of the incoming shot increases or decreases. Including this variable in the HMM. Expect the coeficcient to be small. 
+Federer tends to hit more winners when incoming shot approaches 50cm off the height of the net. This decreases as the height of the incoming shot increases or decreases. Including this variable in the HMM. Expect the coefficient to be small. 
 
 ```{r}
 ggplot(fed16_only_plots, aes(x=lag.oppo.height.off.net,y=winner)) + geom_smooth() + xlab("Height of opponents shot") + ylab("Proportion of Winners") + ggtitle("Winners by Height over Net of Most recent Opponent shot")
@@ -3635,7 +3645,7 @@ Data Set Two: Federer vs Berdych 2016/17/17
 Data Set Three: Strycova vs Garcia 2016/17
 ###Federer 2016 Data Set 1
 Training Model 1 for Data Set 1 (Federer vs Berdych 2016)
-Training Model 1 is the best combination of variables found from running stepwise on Data Set 1
+Training Model 1 is the best combination of variables found from running step-wise on Data Set 1
 ```{r}
 library(dplyr)
 
@@ -3775,7 +3785,7 @@ ggplot() +
 ```
 ###Federer Vs Berdych 2016/17/18
 Data Set 2
-Training Model two is the best combination of variables from running Stepwise on Data Set 2
+Training Model two is the best combination of variables from running Step-wise on Data Set 2
 
 #Running Training Model 1 on Data Set 2 (multiple Fed vs Berdych matches 2016, 2017 & 2018)
 ```{r}
@@ -4009,52 +4019,52 @@ stry.corMat_df <- as.data.frame(apply(corMat, 2, function(x) ifelse (abs(x) >=0.
 ```
 
 
-<!-- ```{r} -->
-<!-- #Comparing Different response variables to find the best model for three states -->
-<!-- #Response variable(s):winner.return.error & p.advantage.states -->
-<!-- #Combination of the two response variables produces the best three state model -->
-<!-- ds3.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),multinomial("identity"))) -->
-<!--  ds3.fm2a.3s <- fit(ds3.mod2a.3s) -->
+```{r}
+#Comparing Different response variables to find the best model for three states
+#Response variable(s):winner.return.error & p.advantage.states
+#Combination of the two response variables produces the best three state model
+ds3.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),multinomial("identity")))
+ ds3.fm2a.3s <- fit(ds3.mod2a.3s)
 
-<!--  summary(ds3.fm2a.3s) -->
-<!-- ``` -->
+ summary(ds3.fm2a.3s)
+```
 
-<!-- ```{r} -->
-<!-- #Comparing Different response variables to find the best model for three states -->
-<!-- #Response variable(s):p.advantage.states -->
-<!-- ds3.mod2b.3s <- depmix(p.advantage.states ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity")) -->
-<!--  ds3.fm2b.3s <- fit(ds3.mod2b.3s) -->
+```{r}
+#Comparing Different response variables to find the best model for three states
+#Response variable(s):p.advantage.states
+ds3.mod2b.3s <- depmix(p.advantage.states ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity"))
+ ds3.fm2b.3s <- fit(ds3.mod2b.3s)
 
-<!--  summary(ds3.fm2b.3s) -->
-<!-- ``` -->
-
-
-<!-- ```{r} -->
-<!-- #Commented out because of issue with crashing -->
-<!-- #Comparing Different response variables to find the best model for three states -->
-<!-- #Response variable(s):winner.return.error & p.advantage.states -->
-<!-- #Produces three states but the model sometimes crashes -->
-<!-- ds3.mod2c.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity")) -->
-<!--  ds3.fm2c.3s <- fit(ds3.mod2c.3s) -->
-
-<!--  summary(ds3.fm2c.3s) -->
-<!-- ``` -->
+ summary(ds3.fm2b.3s)
+```
 
 
+```{r}
+#Commented out because of issue with crashing
+#Comparing Different response variables to find the best model for three states
+#Response variable(s):winner.return.error & p.advantage.states
+#Produces three states but the model sometimes crashes
+ds3.mod2c.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity"))
+ ds3.fm2c.3s <- fit(ds3.mod2c.3s)
 
-
-<!-- ```{r} -->
-<!-- #plotting Data Set 2 Training Model 2 with 3 states -->
-<!-- probs = posterior(ds3.fm2a.3s) -->
+ summary(ds3.fm2c.3s)
+```
 
 
 
-<!--  	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State') -->
+
+```{r}
+#plotting Data Set 2 Training Model 2 with 3 states
+probs = posterior(ds3.fm2a.3s)
 
 
-<!-- 	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability') -->
-<!-- 		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n') -->
-<!-- ``` -->
+
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+
+
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n')
+```
 
 ```{r}
 
@@ -4066,7 +4076,7 @@ ds3.mod3.3s <- depmix(list(winner.return.error ~ 1, p.advantage.states ~ 1), tra
 ```
 
 ##Stepwise Analysis
-All Chunks for Stepwise have been Commented to running time/size of the file for Knit.
+All Chunks for Step-wise have been Commented to running time/size of the file for Knit.
 Including the code to show the process. (Comment/Uncomment is Ctrl+Shift+C)
 ###Stepwise to find best variables for Depmix for Federer vs Berdych 2016 (Data Set 1, Training Model 1)
 
