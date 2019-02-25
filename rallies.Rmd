@@ -3414,15 +3414,15 @@ To identify the best covariates for predicting hidden states of many different p
 #Training Models
 For Stepwise, begin the model running all the covariates to find the covariate which lowers the log Likelihood of the model the most. Then add this covariate to the model and run all the remaining covariates to find the next best covariate which improves the model the most. Repeat this until the model is no longer being improved through the addition of new covariates or until there are no more covariates.  
 
-The first training model(Training Model 1) has been made using step-wise for the match data Federer vs Berdych 2016.
+The first training model(Training Model 1) has been made using step-wise for two hidden states for the match data Federer vs Berdych 2016.
 The best combination of covariates is:
 p.start.position.x, lag.oppo.height.off.net, oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, diff.p.avg.and.current.shot.speed, p.movement.angle.1
 
-The second training model (Training Model 2) has been made using step-wise for the match data Federer vs Berdych 2016/17/18.
+The second training model (Training Model 2) has been made using step-wise for two hidden states forthe match data Federer vs Berdych 2016/17/18.
 The best combination of covariates is:
 p.movement.angle.1, oppo.diff.avg.shot.and.match.movement.speed, p.start.position.y, oppo.start.position.x, oppo.start.position.y, p.diff.avg.shot.and.match.movement.speed,  lag.oppo.height.off.net
 
-The third training model (Training Model 3) has been made using step-wise for the match data Strycova vs Garcia 2016/17.
+The third training model (Training Model 3) has been made using step-wise for three hidden states for the match data Strycova vs Garcia 2016/17.
 The best combination of covariates is:
 oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, oppo.start.position.y, diff.p.avg.and.current.shot.speed, p.start.position.y, p.diff.avg.shot.and.match.movement.speed, lag.oppo.height.off.net
 
