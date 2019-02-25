@@ -3471,15 +3471,15 @@ ds2.mod2.2s <- depmix(winner ~ 1, transition = ~p.movement.angle.1 + oppo.diff.a
 
 
 ##3 State Models
+In attempting to create a three state model:
+Firstly I ran Training Model 1 and Training Model 2 as three state models with 'winner.return.error' as the response variable. This was unsuccessful in identifying three states, at the zero values of the covariates only two states can be clearly identified.
 
+I then ran the three state models with the player's advantage variable as the second response variable. At the zero values of the covariates, three clear states can be seen. However with repeated running of these model the results are not repeatable.
+
+The three state model would be useful for identifying the probability of the player hitting a winner or an error from and attacking, returning or a defenisve state. A large probability of hitting a winner from a defensive state may be an indicator of player risk taking. 
 
 ```{r}
-#oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, oppo.start.position.y, diff.p.avg.and.current.shot.speed, p.start.position.y, p.diff.avg.shot.and.match.movement.speed, lag.oppo.height.off.net
 
-ds3.mod3.3s <- depmix(list(winner.return.error ~ 1, p.advantage ~ 1), transition = ~ oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + oppo.start.position.y + diff.p.avg.and.current.shot.speed + p.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),gaussian()))
- ds3.fm3.3s <- fit(ds3.mod3.3s)
- 
- summary(ds3.fm3.3s)
 ```
 
 
