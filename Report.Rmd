@@ -378,7 +378,6 @@ ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.mov
 
 ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Opponent current/match avg movement speed")
 
-# ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Opponent current/match avg movement speed")
 
 ```
 ###Number of times the player changes side during the rally
