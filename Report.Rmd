@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #reading .csv files needed to run the report without code to shape variables
 Before running run rallies.Rmd
+Specifically to line 3176
 ```{r}
 stry_scale <- read.csv(file = "data/stry_scale.csv")
 longral_pos <- read.csv(file = "data/longral_pos.csv")
