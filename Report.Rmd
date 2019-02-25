@@ -1,0 +1,1604 @@
+---
+title: "Report"
+author: "Pat Healy"
+date: "25 February 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#reading .csv files needed to run the report without code to shape variables
+Before running run rallies.Rmd
+```{r}
+stry_scale <- read.csv(file = "data/stry_scale.csv")
+longral_pos <- read.csv(file = "data/longral_pos.csv")
+fed16_longest <- read.csv(file = "data/fed16_longest.csv")
+fed16_only <- read.csv(file =  "data/fed16_only.csv")
+fed16_scale <- read.csv(file =  "data/fed16_scale.csv")
+fed16_df <- read.csv(file =  "data/fed16_df.csv")
+fed17_only <- read.csv(file = "data/fed17_only.csv")
+fed18_only <- read.csv(file = "data/fed18_only.csv")
+fed_scale <- read.csv(file =  "data/fed_scale.csv")
+stry16_only <- read.csv(file = "data/stry16_only.csv")
+stry17_only<- read.csv(file = "data/stry17_only.csv")
+stry_scale <- read.csv(file = "data/stry_scale.csv")
+fed16_only_plots <- read.csv(file = "data/fed16_only_plots.csv")
+dlb_fedonly <- read.csv(file = "data/dlb_fedonly.csv")
+iof_fedonly <- read.csv(file = "data/iof_fedonly.csv")
+dlw_fedonly <- read.csv(file = "data/dlw_fedonly.csv")
+longral_df <- read.csv(file = "data/longral_df.csv")
+fed16_pos <- read.csv(file = "data/fed16_pos.csv")
+
+```
+
+
+#Analysing Rallies From Matches at The Australian Open using the Hidden Markov Model
+This project uses Hidden Markov Models to identify player shot intentions from matches at the Australian Open. 
+
+The match data analysed contains information for all rallies 3 shots or longer. Serves and returns of serves have been excluded from the data. The analysis looks at two and three hidden state models to attempt to identify player intentions. 
+
+The two hidden state model extends Jeremy Forbes' research project. The player shot intentions are: attacking or 'winner', where the players aim is to win the point on that shot. And 'return' where the player's aim is just to get the ball back into play. 
+
+The three hidden states model extends this model to include 'errors' where the player unsuccessfully tries to win the point or return the ball into play with that shot.
+
+This analysis is done using the dependent mixture model contained in the depmixS4 package. 
+
+##Glossary of added variables
+Winter Research Project
+lastshot - last shot in the point
+fedhit - federer hits the shot
+isserver - if server hits the shot
+winner - if shot is winner (i.e. point doesn’t end in error, as opponent doesn’t reach the ball)
+speed.diff - difference in current shot speed vs opponents last shot speed (at impact)
+speed.ratio - shot speed/opponent’s previous shot speed
+speed1 - speed of shot from impact with racquet
+o.angle - angle made by opponents previous shot
+p.angle - angle made by player’s current shot
+lag.p.angle - angle made by player’s previous shot in rally
+lag.speed.ratio - speed ratio of player’s previous shot in rally
+oppo.hit - coordinates of opponents previous impact
+
+Summer Research Project
+winner.return.error - Classifies whether the current shot ended in winner, was returned into play or ended in error
+
+rally.number - Numerical count of rally number within match
+
+avg.player.speed.diff - difference in player and opponent average speed of movement from start of current shot to end of next in m/s
+
+peak.player.speed.diff - difference in player and opponent peak speed of movement from start of current shot to end of next in m/s
+
+avg.player.speed.ratio - ratio in player and opponent average speed of movement from start of current shot to end of next in m/s
+
+peak.player.speed.ratio - ratio in player and opponent peak speed of movement from start of current shot to end of next in m/s
+
+avg.player.acceleration.diff - difference in player and opponent average speed of movement from start of current shot to end of next in m/s
+
+peak.player.acceleration.diff - difference of player and opponent avg acceleration during shot in m/s2.
+
+avg.player.acceleration.ratio - ratio of player and opponent avg acceleration during shot in m/s2.
+
+peak.player.acceleration.ratio - ratio of player and opponent peak acceleration during shot in m/s2.
+
+p.avg.speed.match - players average speed of movement for the match in m/s
+
+oppo.avg.speed.match - opponents average speed of movement for the match in m/s
+
+p.diff.avg.shot.and.match.movement.speed - difference between players average movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
+
+oppo.diff.avg.shot.and.match.movement.speed - difference between opponents average movement speed for the current shot (from the start of the current shot to the end of the next) compared to their match average in m/s
+
+p.rally.side.change.count - the number of times the player has run from the forehand(backhand) side to the backhand(forehand) side within the rally
+
+oppo.rally.side.change.count - the number of times the opponent has run from the forehand(backhand) side to the backhand(forehand) side within the rally
+
+rally.side.change.count.diff - the difference in the number of times the player and opponent have changed sides within the rally
+
+rally.distance.run.ratio - the ratio player/opponent total distance run within the rally
+
+p.movement.angle.1 - The angle the player runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
+
+p.movement.angle.2 The angle the player runs from the end of their current shot to the start of their next shot (o.deg directly towards the net 180.deg directly away from the net)
+
+oppo.movement.angle.1 - The angle the opponent runs from the start to the end of their current shot (o.deg directly towards the net 180.deg directly away from the net)
+
+oppo.movement.angle.2 - The angle the opponent runs from the end of their current shot to the start of their next shot (o.deg directly towards the net 180.deg directly away from the net)
+
+lag.oppo.height.off.net - Meters above net of opponents previous shot 
+
+lag.p.start.shot.speed - Speed at the start of the arc in m/s of the players previous shot
+
+lag.oppo.start.shot.speed - Speed at the start of the arc in m/s of the opponents previous shot
+
+
+
+
+
+
+#Modelling
+Visual analysis has been used to select a number of new variables from the new data set. For the two hdden state model 'winner' is the response variable. For the three hidden state model 'winner.return.error' is the response variable. 
+
+The covariates chosen after visual analysis are "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net"
+
+To identify the best covariates for predicting hidden states of many different players; training models have been created using a step-wise approach to identify the best combination of covariates in a chosen match data set. These training models have then been tested on a different data sets for a comparison of results. The limitation of this step wise approach is that some potentially important covariates have been ommited from the model because of correlation with other covariates. 
+
+##Training Models
+For Stepwise, begin the model running all the covariates to find the covariate which lowers the log Likelihood of the model the most. Then add this covariate to the model and run all the remaining covariates to find the next best covariate which improves the model the most. Repeat this until the model is no longer being improved through the addition of new covariates or until there are no more covariates.  
+
+The first training model(Training Model 1) has been made using step-wise for two hidden states for the match data Federer vs Berdych 2016.
+The best combination of covariates is:
+p.start.position.x, lag.oppo.height.off.net, oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, diff.p.avg.and.current.shot.speed, p.movement.angle.1
+
+The second training model (Training Model 2) has been made using step-wise for two hidden states for the match data Federer vs Berdych 2016/17/18.
+The best combination of covariates is:
+p.movement.angle.1, oppo.diff.avg.shot.and.match.movement.speed, p.start.position.y, oppo.start.position.x, oppo.start.position.y, p.diff.avg.shot.and.match.movement.speed,  lag.oppo.height.off.net
+
+The third training model (Training Model 3) has been made using step-wise for three hidden states for the match data Strycova vs Garcia 2016/17.
+The best combination of covariates is:
+oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, oppo.start.position.y, diff.p.avg.and.current.shot.speed, p.start.position.y, p.diff.avg.shot.and.match.movement.speed, lag.oppo.height.off.net
+
+#Intepreting the output
+
+##2 state Model
+The best two state model by comparing total change in -logLik is running Training Model 2 the match data Federer vs Berdych 2016/17/18.
+
+
+In the attacking state for this model the probability of hitting a winner is 0.255.
+
+In the returning state the probability of hitting a winner is 0.022.
+
+Intepreting the coeficcients of the model suggests that. 
+
+An increase in p.movement.angle.1 decreases the probability of hitting a winner. If Federer is running directly away from the net he is less likely to hit a winner. 
+
+An increase in oppo.diff.avg.shot.and.match.movement.speed increases the probability of hitting a winner. If the Berdych is running faster during the shot, Federer is more likely to hit a winner.
+
+An increases in p.start.position.y decreases the probability of hitting a winner. As Federer moves further away from the centre of the court he is less likely to hit a winner.
+
+An increases oppo.start.position.x decreases the probablity of hitting a winner. As Berdych starts further away from the net Federer is more likely to hit a winner. 
+
+An increase in oppo.start.position.y decreases the probability of hitting a winner. As Berdych starts further away from the centre of the court Federer is less likely to hit a winner. This is the opposite of what we were expecting.  
+
+An Increase in p.diff.avg.shot.and.match.movement.speed decreases the probability of hitting a winner. If Federer is runningfaster to hit the shot he is lesss likely to hit a winner. 
+
+An increase in lag.oppo.height.off.net increases the probability of hitting a winner. If Berdych's shot is coming higher over the net then Federer is more likely to hit a winner.  
+
+The covariate with the greatest impact on Federer being in an attacking state is oppo.start.position.y
+THis indicates that Federer has a high probability of hitting a winner if Berdych starts close to the net. 
+
+
+Unforrtunately there were some issues with my models. 
+Repeated running of the depmix models  in this report can see the attacking state alternate between being defined as state 1 or state 2. The results remain the same for the probability of hitting a winner, but the corresponding states are flipped. 
+We have to be careful in intepreting the results. The attacking state is the one which has a higher value for Re1.1. 
+
+
+```{r}
+library(depmixS4)
+library(ggplot2)
+#Data set 2, Training Model 2, 2 states.
+ds2.mod2.2s <- depmix(winner ~ 1, transition = ~p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = fed_scale, nstates = 2, family=multinomial("identity"))
+ ds2.fm2.2s <- fit(ds2.mod2.2s)
+ 
+ summary(ds2.fm2.2s)
+```
+
+
+##3 State Models
+In attempting to create a three state model:
+Firstly I ran Training Model 1 and Training Model 2 as three state models with 'winner.return.error' as the response variable. This was unsuccessful in identifying three states, at the zero values of the covariates only two states can be clearly identified.
+
+I then ran the three state models with the player's advantage variable as the second response variable. At the zero values of the covariates, three clear states can be seen. However with repeated running of these models, the results are not repeatable.
+
+The three state model would be useful for identifying the probability of the player hitting a winner or an error from an attacking, returning or a defenisve state. A larger probability of hitting a winner from a defensive state compared to other players, may be an indicator of player risk taking. 
+
+
+```{r}
+ggplot(fed16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2016 Winners by by Player Advantage")
+
+ggplot(fed17_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2017 Winners by by Player Advantage")
+
+ggplot(fed18_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2018 Winners by by Player Advantage")
+
+ggplot(stry16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Strycova 2016 Winners by Player Advantage")
+```
+
+
+#Building an Animation of Rallies
+
+Using the package GGAnimate and a top-down court outline taken from "https://github.com/mvparrot/vis-serve/blob/master/report file helper basic plots".
+The variables p.start.position.x, p.end.position.x, oppo.start.position.x, oppo.end.position.x, p.start.position.y, p.end.position.y, oppo.start.position.y, oppo.end.position.y, start.x, start.y, projected.ballmark.x and projected.ballmark.y
+
+transition_reveal has been used for filling in gaps in the player and ball position data. 
+To run transition_reveal, a single column was created for the player's start & end position x coordinates. They are grouped by rally number and shot number and alternate between start and end position. The same thing is done for the player's position y coordinates. As well as for the opponent's start and end position x and y coordinates. For animating the ball position, similar columns are created alternating between the start position of the ball and the projected ballmark for both x and y coordinates.
+
+##Visualising player state change in the animation
+We can take the implied states from the Depmix Model probs and overlay them into the animation to visualise when the player is in an attacking state. In this casewe are looking at the longest rally between Federer and Berdych in 2016. Federer will get larger to indicate when he is an attacking state.
+#Top down court view
+
+```{r}
+library(gganimate)
+library(tweenr)
+library(transformr)
+```
+```{r }
+#
+library(plotly)
+#--- Packages Required
+# require(ggplot2)
+# require(plotly)
+
+#--- Outline of the court
+court_trace <- data.frame(x = c(-11.89, -11.89, 0, 0, 0, 11.89, 11.89, -11.89, -11.89, 11.89, 11.89, -11.89, -6.4, -6.4, 6.4, 6.4, 6.4, -6.4),
+                          y = c(5.49, -5.49, -5.49, 5.49, -5.49, -5.49, 5.49, 5.49, 4.115, 4.115, -4.115, -4.115, -4.115, 4.115, 4.115, -4.115, 0, 0),
+                          z = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+net_trace <- data.frame(x = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                        y = c(-5.49,-5.49, -6.4, -6.4, -5.49, 0, 5.49, 6.4, 6.4, 5.49, 5.49),
+                        z = c(1.07, 0, 0, 1.07, 1.07, 0.914, 1.07, 1.07, 0, 0, 1.07))
+service_trace <- data.frame(x = c(-8, 0, 0, 0, -6.4, -6.4, 0, -6.4, -6.4, -6.4, -6.4, -6.4,  0, 0, -8),
+                            y = c(-5.49, -5.49, -4.115, 4.115, 4.115, 0, 0, 0, -4.115, -5.49, 5.49, -4.115, -4.115, 5.49, 5.49),
+                            z = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,0 ,0))
+    
+axis_labels <- data.frame(x.break = c(-21.89:-11.89, -6.4, 0, 6.4, 11.89),
+                          x.label = c("-10m","","","","","-5m","","","","",
+                                      "Baseline","Service Line","Net","Service Line","Baseline"),
+                          y.break = c(-5.49,-4.115,0,4.115,5.49),
+                          y.label = c("Doubles", "Singles","Centre","Singles","Doubles"),
+                          z.break = c(0,0.992,2,3,4),
+                          z.label = c("Ground", "Net", "2m", "3m", "4m"))
+#--- Top down court view
+court_topdown <- ggplot() + 
+    labs(x = "x direction", y = "y direction") + 
+    scale_x_continuous(breaks = axis_labels$x.break,
+                       labels = axis_labels$x.label) +
+    scale_y_continuous(breaks = axis_labels$y.break,
+                       labels = axis_labels$y.label) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed()
+
+
+
+  
+```
+
+```{r}
+
+p.state <- c(1,1,1,1,1,1,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,1,1,2,2)
+p.state <- as.data.frame(p.state)
+
+fed16_longest <- cbind(p.state, fed16_longest)
+
+p.rally.anim10 <- ggplot() + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point(data= fed16_longest, 
+             aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red", size = p.state)) +
+  geom_path(data= fed16_longest, 
+            aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) +
+  geom_point(data= fed16_longest, aes(x=oppo.start.position.x, y=oppo.start.position.y,  
+                                        group = rally.number, colour="blue")) +
+  geom_path(data= fed16_longest,aes(x=oppo.start.position.x, y=oppo.start.position.y,  
+                                      group = rally.number, alpha = shot))+
+  geom_point(data= fed16_longest, 
+             aes(x=start.x, y=start.y, group = rally.number, colour="green")) +
+  transition_reveal(pos.rally.count) +
+  xlab("Player Position X ") + 
+  ylab("Player Position Y") + 
+  ggtitle("Federer 2016 Longest Rally Animation")+
+  scale_colour_manual(name = "", values=c("red","green","blue"), labels= c("Berdych","Ball","Federer"))
+
+#had to reverse geom_point colour labels for some reason
+
+animate(p.rally.anim10, duration = 30, fps = 10)
+```
+#Variable creation
+
+#Choosing variables for the model
+Confirming choices through visualisation of all variabls described in glossary
+
+###Player Start Position Coordinates
+p.start.position.x-
+When compared to similar start position x coordinates, Federer appears more likely to hit a winner as he starts the shot closer to the net. Choosing this variable for HMM as we might expect that the probability of Federer being in an attacking state increases as he moves closer to the net( x value increases). 
+
+p.start.position.y-
+Choosing this variable for the HMM as it makes the players start position x coordinates more meaningful when included in the model. We might expect that the probability of Federer being in an attacking state increases as he moves closer to the centre(y value decreases) and to the net. Using absolute value to measure distance from centre.
+
+```{r}
+
+ggplot(fed16_only_plots, aes(x=p.start.position.x,  y=p.start.position.y ))    + 
+  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+  coord_fixed() +
+  geom_point(aes(alpha = winner))  +   
+  xlab("Federer Start Position X ") + ylab("Federer Start Position Y") +
+  ggtitle("Federer winners by start position")
+
+ggplot(fed16_only, aes(x=p.start.position.x,winner)) + geom_smooth() + xlab("X Coordinate of Player") + ylab("Proportion of Winners") + ggtitle("Federer Winners By X Co-Ordinate")
+
+ggplot(fed16_only, aes(x=p.start.position.y,winner)) + geom_smooth() + xlab("Distance from Centre of Player") + ylab("Proportion of Winners") + ggtitle("Federer Winners By Distance from Centre")
+```
+
+
+###Player Shot Position Coordinates
+p.start.shot.x-
+Similar to Federer's start position x coordinates, the x coordinates of his shot hit point appears more likely to result in a winner compared to similarly distanced shots as he moves closer to the net.
+
+p.start.shot.y-
+Including in HMM to make shot x coordinates more meaningful. Using absolute to measures distance from centre. 
+```{r}
+ggplot(fed16_only_plots, aes(x=p.start.shot.x,  y=p.start.shot.y ))    + 
+  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+  coord_fixed() +
+  geom_point(aes(alpha = winner))  +   
+  xlab("Shot Position X ") + ylab("Shot Position Y") +
+  ggtitle("Federer winners by shot location")
+```
+
+
+###opponent Start Position Coordinates
+oppo.start.position.x-
+Federer appears more likely to hit a winner as Berdych start position x coordinates are closer to the net. (As we are analysing the rallies with all of Berdych's having positive coordinates in the HMM we would expect a decrease in Berdych's start position x coordinates to increase The probability of Federer being in an attacking state. 
+oppo.start.position.y
+```{r}
+ggplot(fed16_only_plots, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+  scale_y_continuous(breaks = axis_labels$y.break) +
+  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+  coord_fixed() +
+  geom_point(aes(alpha = winner))  +   
+  xlab("Opponent Start Position X ") + ylab("Opponent Start Position Y") +
+  ggtitle("Federer winners by Opponent Start Position")
+
+ggplot(fed16_only, aes(x=oppo.start.position.x,winner)) + geom_smooth() + xlab("X Coordinate of Opponent") + ylab("Proportion of Federer Winners") + ggtitle("Federer Winners By Opponent X Co-Ordinate")
+
+ggplot(fed16_only, aes(x=oppo.start.position.y,winner)) + geom_smooth() + xlab("Distance from Centre of Opponent") + ylab("Proportion of Winners") + ggtitle("Federer Winners by Opponent Distance from Centre")
+
+
+
+```
+
+###Difference in player movement speed from the match average
+p.diff.avg.shot.and.match.movement.speed - 
+When Federer runs approximately more than 1m/s above or below his average movement speed for match he tends to hit more winners. This variable therefore appears suitable for the HMM. (Using an absolute value of the difference we would expect an increase in difference to increase the probability of Federer being in a attacking state. (add in more info)
+When Considering winners, errors and returns we move back to relative difference as Federer tends to hit more errors than winners when moving approximately 1m/s slower than his average match movement speed 
+```{r}
+ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by difference in Federer's current and match avg movement speed")
+
+ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Federer's current and match avg movement speed")
+
+
+ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=(p.diff.avg.shot.and.match.movement.speed), fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by absolute difference in Federer's current/match avg movement speed")
+```
+
+###Difference in opponent movement speed from the match average
+oppo.diff.avg.shot.and.match.movement.speed - 
+Federer tends to hit more winners as Berdych runs more than 1m/s faster than his average match movement speed. This is a suitable variable for the HMM we would expect an increase in the difference to increase Federer's probability of being in an attacking state. 
+```{r}
+ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by difference in Opponent current/match avg movement speed")
+
+ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Opponent current/match avg movement speed")
+
+# ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Opponent current/match avg movement speed")
+
+```
+###Number of times the player changes side during the rally
+p.rally.side.change.count - 
+Not suitable
+```{r}
+ggplot(fed16_only_plots, aes(x=p.rally.side.change.count, y=winner)) + geom_bar(stat="identity") + xlab("Rally Side Change Count") + ylab("Proportion of Winners") + ggtitle("Winners By Number of Times Federer Changes Side in Rally")
+```
+
+###Number of times the opponent changes sides during the rally
+oppo.rally.side.change.count - 
+Might be suitable when looking at a greater number of rallies. 
+```{r}
+ggplot(fed16_only_plots, aes(x=oppo.rally.side.change.count, y=winner)) + geom_bar(stat="identity") + xlab("Rally Side Change Count") + ylab("Proportion of Winners") + ggtitle("Winners By Number of Times Berdych Changes Side in Rally")
+
+```
+
+###The angle the player runs from the starrt to the end of the shot
+p.movement.angle.1 - 
+ more than 75% of Federer's Winners come when he is running less than 100 degrees in relation to the baseline. This variable appears suitable for HMM we would expect as Federer's movement angle increases beyond 100 degrees the probability the he is an attacking state decreases.
+```{r}
+ggplot(fed16_only_plots, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's start to end movement angle")
+
+ggplot(fed16_only, aes(x=factor(winner),y=p.movement.angle.1, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Federer's start to end movement angle")
+
+ggplot(fed16_only, aes(x=factor(winner),y=p.movement.angle.1, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by Federer's start to end movement angle")
+
+# ggplot(fed16_only, aes(x=factor(winner.return.error),y=p.movement.angle.1, fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by Federer's start to end movement angle")
+```
+
+###The angle the opponent runs from the start to the end of the shot
+oppo.movement.angle.1 - 
+Need more evidence to include in model
+```{r}
+ggplot(fed16_only_plots, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Berdych's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Berdych's start to end movement angle during Federer's shot")
+
+ggplot(fed16_only, aes(x=factor(winner),y=oppo.movement.angle.1, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Berdych's start to end movement angle during Federer's shot")
+
+ggplot(fed16_only, aes(x=factor(winner),y=oppo.movement.angle.1, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by Berdych's start to end movement angle during Federer's shot")
+
+```
+
+###The height the opponent hit the ball over the net with their previous shot
+lag.oppo.height.off.net - 
+Federer tends to hit more winners when incoming shot approaches 50cm off the height of the net. This decreases as the height of the incoming shot increases or decreases. Including this variable in the HMM. Expect the coefficient to be small. 
+
+```{r}
+ggplot(fed16_only_plots, aes(x=lag.oppo.height.off.net,y=winner)) + geom_smooth() + xlab("Height of opponents shot") + ylab("Proportion of Winners") + ggtitle("Winners by Height over Net of Most recent Opponent shot")
+
+
+```
+###The difference in players current shot speed from the match average
+diff.p.avg.and.current.shot.speed
+```{r}
+
+
+ggplot(fed16_only, aes(x=factor(winner),y=diff.p.avg.and.current.shot.speed, fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by player current/average shot speed difference")
+
+
+
+```
+
+
+
+
+
+
+
+
+
+#Appendix
+##Visualisations of Shot Patterns
+###Federer vs Berdych 2016
+
+
+```{r }
+#Shot Type by coordinates
+ggplot(dlb_fedonly, aes(x=start.x,y=start.y)) + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point() + 
+  xlab("X Coordinate") + 
+  ylab("Y Coordinate") + 
+  ggtitle("Federer Down the Line Backhands By Shot Co-Ordinates") 
+
+ggplot(iof_fedonly, aes(x=start.x,y=start.y)) + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point() + 
+  xlab("X Coordinate") + 
+  ylab("Y Coordinate") + 
+  ggtitle("Federer Inside out Forehands By Shot Co-Ordinates") 
+
+ggplot(dlw_fedonly, aes(x=start.x,y=start.y)) + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+  geom_point() + 
+  xlab("X Coordinate") + 
+  ylab("Y Coordinate") + 
+  ggtitle("Federer Down the Line Winners By Shot Co-Ordinates")
+```
+```{r}
+#Angle of movement
+ggplot(fed16_only, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
+
+ggplot(fed16_only, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
+
+ggplot(fed16_only, aes(x=p.movement.angle.1,y=p.peak.speed)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Federers Peak Speed") + ggtitle("Winners By Federer's movement angle 1")
+
+
+```
+
+
+```{r}
+# #Movement and shot position seperated by forehand and backhand
+# ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer winners by start position seperated by shot type for long rallies")
+# 
+# ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=winner))  + stat_summary_hex(fun = function(winner) sum(winner)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer winners by end position seperated by shot type for long rallies")
+# 
+# ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer errors by start position seperated by shot type for long rallies")
+# 
+# ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=is.good))  + stat_summary_hex(fun = function(is.good) sum(is.good)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer errors by end position seperated by shot type for long rallies")
+# 
+# ggplot(longral_df, aes(x=p.start.position.x,y=p.start.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint)) + xlab("Player start Position X ") + ylab("Player start Position Y") + ggtitle("Federer shot time to net by start position seperated by shot type for long rallies")
+# 
+# ggplot(longral_df, aes(x=p.end.position.x,y=p.end.position.y,z=time.to.net))  + stat_summary_hex(fun = function(time.to.net) sum(time.to.net)) + facet_wrap(~factor(hitpoint)) + xlab("Player end Position X ") + ylab("Player end Position Y") + ggtitle("Federer shot time to net by end position seperated by shot type for long rallies")
+
+```
+```{r}
+#Visulaising speed ratio
+
+ggplot(fed16_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For match")
+
+ggplot(fed16_only, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Fed Only Speed ratio by distance from the baseline For match")
+
+ggplot(longral_df, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For Long Rallies")
+
+ggplot(fed16_longest, aes(x=base.dist,y=speed.ratio)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Speed Ratio") + ggtitle("Speed ratio by distance from the baseline For Longest Rally")
+
+
+
+
+#Visualising player shot angles
+
+ggplot(fed16_df, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Federer Shot Angle by distance from the baseline")
+
+ggplot(fed16_only, aes(x=base.dist,y=p.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Federers Shot") + ggtitle("Fed only Shot Angle by distance from the baseline")
+
+ggplot(fed16_df, aes(x=base.dist,y=o.angle)) + geom_smooth() + xlab("Distance from the baseline") + ylab("Angle Made By Berdych previous Shot") + ggtitle("Berdych Shot Angle by Federer distance from the baseline")
+
+
+```
+
+
+```{r}
+##Plots of shot and ballmark co-ordinates, angles made by shots and speed 
+library(ggplot2)
+#X Co-ordinate of shot
+ggplot(fed16_only, aes(x=start.x,winner)) + geom_smooth() + xlab("X Coordinate of Shot") + ylab("Proportion of Winners") + ggtitle("Winners By X Co-Ordinate")
+
+#Opponents shot before
+library(hexbin)
+ggplot(fed16_only, aes(x=oppo.hit.x,y=oppo.hit.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate of Oppo Shot") + ylab("Y Coordinate of Oppo Shot") + ggtitle("Count of Winners By Opponent's Shot Co-Ordinates")
+### Get help transforming this to proportion in each bin instead of raw count
+
+#Fed Shots on x-y plane
+ggplot(fed16_only, aes(x=start.x,y=start.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Co-Ordinates")
+
+#Fed Ballmark by winner in x-y plane
+ggplot(fed16_only, aes(x=projected.ballmark.x,y=projected.ballmark.y,z=winner)) + stat_summary_hex(fun = function(winner) sum(winner)) + xlab("X Coordinate") + ylab("Y Coordinate") + ggtitle("Winners By Shot Ballmark Co-Ordinates")
+
+
+#Angle of shots
+ggplot(fed16_only, aes(x=o.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents Shot With Fed's Previous Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent Shot Angle")
+
+ggplot(fed16_only, aes(x=p.angle,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's Shot") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's Shot Angle")
+
+ggplot(fed16_only) + geom_density(aes(p.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Fed Shot Angles")
+
+ggplot(fed16_only) + geom_density(aes(o.angle,group=factor(winner),color=factor(winner))) + ggtitle("Density of Winners by Opponent Shot Angles")
+
+#Winners by oppo speed
+ggplot(fed16_only) + geom_density(aes(oppo.speed, group = factor(winner), color=factor(winner)))
+
+ggplot(fed16_only, aes(x=factor(winner),y=oppo.speed,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Opponent Speed")
+
+#Winners by speed ratio
+ggplot(fed16_only) + geom_density(aes(speed.ratio, group = factor(winner), color=factor(winner)))
+
+ggplot(fed16_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
+```
+##Depmix Models
+Examined three data sets:
+Data Set One: Federer vs Berdych 2016
+Data Set Two: Federer vs Berdych 2016/17/17
+Data Set Three: Strycova vs Garcia 2016/17
+###Federer 2016 Data Set 1
+Training Model 1 for Data Set 1 (Federer vs Berdych 2016)
+Training Model 1 is the best combination of variables found from running step-wise on Data Set 1
+
+####Running Data Set 1 Training Model 1, (2 states)
+
+```{r}
+# Variables fitted:
+#p.start.position.x, lag.oppo.height.off.net, oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, diff.p.avg.and.current.shot.speed, p.movement.angle.1
+ ds1.mod1.2s <- depmix(winner ~ 1, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + diff.p.avg.and.current.shot.speed + p.movement.angle.1, data = fed16_scale, nstates = 2, family=multinomial("identity"))
+ ds1.fm1.2s <- fit(ds1.mod1.2s)
+ 
+ summary(ds1.fm1.2s)
+```
+
+```{r}
+#Pulling state probabilities from fitted model to add to a dataframe to look for correlation with fitted variables
+ds1.fm1.2s_df <- posterior(ds1.fm1.2s)
+
+ds1.fm1.2s_df <- cbind(fed16_scale, ds1.fm1.2s_df)
+	
+#dropping columns not in the fitted depmix model
+
+ ds1.fm1.2s_df <- ds1.fm1.2s_df[ -c(2, 4, 6:8, 12:14) ]
+ 
+ 
+```
+
+
+
+
+####Plotting Data Set 1 Training Model 1(2 States)
+
+
+
+```{r}
+library(dplyr)
+#Plotting states for training model fed16
+#p.start.position.x, oppo.start.position.x, oppo.diff.avg.shot.and.match.movement.speed, p.diff.avg.shot.and.match.movement.speed, lag.p.angle, oppo.rally.side.change.count, diff.lag.oppo.avg.and.current.shot.speed, diff.p.avg.and.current.shot.speed, p.movement.angle.1, lag.oppo.height.off.net, oppo.start.position.y
+
+probs = posterior(ds1.fm1.2s)
+
+  
+ 
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+	
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
+		
+ggplot() + 
+  geom_path(data=fed16_scale, aes(x = player.total.shot.number, y = winner)) +
+  xlab("Federer shot Number")  + 
+  ylab("Actual State") + 
+  ggtitle("Actual state") 	
+```
+
+```{r}
+#plotting a matrix to identify any correlation between depmix probabilities and chosen variables
+
+library(GGally)
+ggduo(ds1.fm1.2s_df, 1:3, 8, showStrips = FALSE)
+ggduo(ds1.fm1.2s_df, 4:5, 8, showStrips = FALSE)
+
+
+
+
+```
+
+
+```{r}
+#showing correlation between variables and probaility of being in state 1
+
+cor.ds1.fm1.2s <- cor(ds1.fm1.2s_df)
+cor.ds1.fm1.2s_df <- cor.ds1.fm1.2s[ -c(1:5, 7) ]
+
+```
+####Running Data Set 1, Training Model 1 (3 states)
+```{r}
+# Variables fitted:
+#p.start.position.x, lag.oppo.height.off.net, oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, diff.p.avg.and.current.shot.speed, p.movement.angle.1
+ ds1.mod1.3s <- depmix(winner.return.error ~ 1, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + diff.p.avg.and.current.shot.speed + p.movement.angle.1, data = fed16_scale, nstates = 3, family=multinomial("identity"))
+ ds1.fm1.3s <- fit(ds1.mod1.3s)
+ 
+ summary(ds1.fm1.3s)
+
+```
+####Plotting Data Set 1 Training Model 1 (3 states)
+```{r}
+#plotting Data Set 1 Training Model 1 with 3 states
+probs = posterior(ds1.fm1.3s)
+
+	
+	
+ 	plot((probs$state), type='s', main='Implied States', xlab='', ylab='State')
+ 	
+ 
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2', "State2"),  fill=1:3, bty='n')
+		
+		
+ggplot() + 
+  geom_path(data=fed16_scale, aes(x = player.total.shot.number, y = winner.return.error)) +
+  xlab("Federer shot Number")  + 
+  ylab("Actual State") + 
+  ggtitle("Actual state") 
+
+
+```
+###Federer Vs Berdych 2016/17/18
+Data Set 2
+Training Model two is the best combination of variables from running Step-wise on Data Set 2
+
+#Running Training Model 1 on Data Set 2 (multiple Fed vs Berdych matches 2016, 2017 & 2018)
+
+
+##Data Set 2 Training Model 1 (2 states)
+
+
+```{r}
+# Variables fitted:
+#p.start.position.x, lag.oppo.height.off.net, oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, diff.p.avg.and.current.shot.speed, p.movement.angle.1
+ ds2.mod1.2s <- depmix(winner ~ 1, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + diff.p.avg.and.current.shot.speed + p.movement.angle.1, data = fed_scale, nstates = 2, family=multinomial("identity"))
+ ds2.fm1.2s <- fit(ds2.mod1.2s)
+ 
+ summary(ds2.fm1.2s)
+```
+
+###Plotting Data Set 2 Training Model 1 (2 states)
+```{r}
+probs = posterior(ds2.fm1.2s)
+
+	
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+	
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
+```
+
+
+```{r}
+#Plotting probability states for test model fed16/17/18
+#p.start.position.x, oppo.start.position.x, oppo.diff.avg.shot.and.match.movement.speed, p.diff.avg.shot.and.match.movement.speed, lag.p.angle, oppo.rally.side.change.count, diff.lag.oppo.avg.and.current.shot.speed, diff.p.avg.and.current.shot.speed, p.movement.angle.1, lag.oppo.height.off.net, oppo.start.position.y
+
+#Pulling state probabilities from fitted model to add to a dataframe to look for correlation with fitted variables
+ds2.fm1.2s_df <- posterior(ds2.fm1.2s)
+
+ds2.fm1.2s_df <- cbind(fed_scale, ds2.fm1.2s_df)
+	
+#dropping columns not in the fitted depmix model
+
+# ds2.fm1.2s_df <- ds2.fm1.2s_df[ -c(2, 6) ]
+
+
+```
+```{r}
+#plotting a matrix to identify any correlation between depmix probabilities and chosen variables
+library(GGally)
+# ggduo(ds2.fm1.2s_df, 1:3, 14, showStrips = FALSE)
+# ggduo(ds2.fm1.2s_df, 4:6, 14, showStrips = FALSE)
+# ggduo(ds2.fm1.2s_df, 7:9, 14, showStrips = FALSE)
+# ggduo(ds2.fm1.2s, 10:11, 14, showStrips = FALSE)
+```
+```{r}
+#showing correlation between variables and probaility of being in state 1
+
+# cor.ds2.fm1.2s <- cor(ds2.fm1.2s_df)
+# cor.ds2.fm1.2s_df <- as.data.frame(apply(cor.ds2.fm1.2s, 2, function(x) ifelse (abs(x) >=0-1,x,"NA")))
+# cor.ds2.fm1.2s_df <- cor.ds2.fm1.2s_df[ -c(1:13, 15) ]
+
+
+```
+
+##Running Training Model 2 on Data set 2
+##Data Set 2 Training Model 2 (2 states)
+```{r}
+#Training Model 2 has the best variables from stepwise run on Data Set 2
+#p.movement.angle.1, oppo.diff.avg.shot.and.match.movement.speed, p.start.position.y, oppo.start.position.x, oppo.start.position.y, p.diff.avg.shot.and.match.movement.speed,  lag.oppo.height.off.net
+
+#running this model on the scaled fed_only data set
+ds2.mod2.2s <- depmix(winner ~ 1, transition = ~p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = fed_scale, nstates = 2, family=multinomial("identity"))
+ ds2.fm2.2s <- fit(ds2.mod2.2s)
+ 
+ summary(ds2.fm2.2s)
+```
+###Plotting Probabilities Data Set 2 Training Model 2 (2 states)
+
+
+```{r}
+probs = posterior(ds2.fm2.2s)
+
+	
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+	
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
+```
+
+```{r}
+#Plotting probability states for test model 2 for fed16/17/18
+
+
+#Pulling state probabilities from fitted model to add to a dataframe to look for correlation with fitted variables
+#ds2.fm2.2s_df <- posterior(ds2.fm2.2s)
+ 
+#ds2.fm2.2s_df <- cbind(fed_scale, ds2.fm2.2s_df)
+	
+#dropping columns not in the fitted depmix model
+
+#ds2.fm2.2s_df <- ds2.fm2.2s_df[ -c() ]
+
+
+```
+```{r}
+#plotting a matrix to identify any correlation between depmix probabilities and chosen variables
+# library(GGally)
+# ggduo(ds2.fm2.2s_df, 1:3, 13, showStrips = FALSE)
+# ggduo(ds2.fm2.2s_df, 4:6, 13, showStrips = FALSE)
+
+```
+
+```{r}
+#showing correlation between variables and probaility of being in state 1 for test model 2
+
+# cor.ds2.fm2.2s <- cor(ds2.fm2.2s_df)
+# cor.ds2.fm2.2s_df <- as.data.frame(apply(cor.ds2.fm2.2s, 2, function(x) ifelse (abs(x) >=-1,x,"NA")))
+# cor.ds2.fm2.2s_df <- cor.ds2.fm2.2s[ -c() ]
+```
+``
+###Data Set 2 Training Model 2 (3 States)
+
+```{r}
+#running this model on the scaled fed_only data set
+ds2.mod2.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = fed_scale, nstates = 3, family=multinomial("identity"))
+ ds2.fm2.3s <- fit(ds2.mod2.3s)
+ 
+ summary(ds2.fm2.3s)
+```
+###Plotting Probabilities for Data Set 2 Training Model 2 (3 States)
+```{r}
+#plotting Data Set 2 Training Model 2 with 3 states
+probs = posterior(ds2.fm2.3s)
+
+	
+	
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+ 	
+ 
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n')
+		
+		
+ggplot() + 
+  geom_path(data=fed_scale, aes(x = player.total.shot.number, y = winner.return.error)) +
+  xlab("Federer shot Number")  + 
+  ylab("Actual State") + 
+  ggtitle("Actual state") 
+
+```
+
+###Strycova
+
+
+####Comparing Different response variables to find the best model for observing three hidden states
+```{r}
+
+#Response variable(s):winner.return.error & p.advantage.states
+#Combination of the two response variables produces the best three state model
+ds3.mod2a.3s <- depmix(list(winner.return.error ~ 1, p.advantage ~ 1), transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),gaussian()))
+ ds3.fm2a.3s <- fit(ds3.mod2a.3s)
+
+ summary(ds3.fm2a.3s)
+```
+
+```{r}
+#Comparing Different response variables to find the best model for three states
+#Response variable(s):p.advantage.states
+ds3.mod2b.3s <- depmix(p.advantage ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=gaussian())
+ ds3.fm2b.3s <- fit(ds3.mod2b.3s)
+
+ summary(ds3.fm2b.3s)
+```
+
+
+```{r}
+
+#Comparing Different response variables to find the best model for three states
+#Response variable(s):winner.return.error & p.advantage.states
+
+ds3.mod2c.3s <- depmix(winner.return.error ~ 1, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=multinomial("identity"))
+ ds3.fm2c.3s <- fit(ds3.mod2c.3s)
+
+ summary(ds3.fm2c.3s)
+```
+
+
+###plotting Data Set 3 Training Model 2 with 3 states
+
+```{r}
+
+probs = posterior(ds3.fm2a.3s)
+
+
+
+ 	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+
+
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2', "State3"),  fill=1:3, bty='n')
+```
+###Training Model 3 Data Set 3
+Commented out
+
+<!-- ```{r} -->
+
+<!-- #oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, oppo.start.position.y, diff.p.avg.and.current.shot.speed, p.start.position.y, p.diff.avg.shot.and.match.movement.speed, lag.oppo.height.off.net -->
+
+<!-- ds3.mod3.3s <- depmix(list(winner.return.error ~ 1, p.advantage ~ 1), transition = ~ oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + oppo.start.position.y + diff.p.avg.and.current.shot.speed + p.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),gaussian())) -->
+<!--  ds3.fm3.3s <- fit(ds3.mod3.3s) -->
+
+<!--  summary(ds3.fm3.3s) -->
+<!-- ``` -->
+
+##Replicating some models from winter project
+
+```{r }
+#t1m1
+library(depmixS4)
+library(dplyr)
+
+t1.mod1 <- depmix(winner ~ 1, transition = ~ oppo.speed + ser1 + ser2 + start.x, data = fed16_only, nstates = 2, family=multinomial("identity"))
+t1.fm1 <- fit(t1.mod1)
+
+summary(t1.fm1)
+```
+
+```{r}
+library(depmixS4)
+t2.mod1 <- depmix(list(winner ~ 1, speed.ratio ~ 1), transition = ~ oppo.speed + ser1 + ser2 + start.x + o.angle + oppo.hit.x + lag.p.angle + lag.speed.ratio, data = fed16_only, nstates = 2, family=list(multinomial("identity"), gaussian()))
+t2.fm1<- fit(t2.mod1)
+ 
+summary(t2.fm1)
+```
+##Stepwise Analysis
+
+####Stepwise to find best variables for Depmix for Federer vs Berdych 2016 (Data Set 1, Training Model 1)
+
+
+```{r}
+##Stepwise for first best variable
+#run through all variables to find highest log lik
+fcov1 <- lapply(fed16_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+fcov1_df <-  as.data.frame(
+  c(logLik(fcov1$p.start.position.x), logLik(fcov1$p.start.position.y),
+    logLik(fcov1$oppo.start.position.x), logLik(fcov1$oppo.start.position.y),
+    logLik(fcov1$p.movement.angle.1),
+    logLik(fcov1$p.diff.avg.shot.and.match.movement.speed),
+    logLik(fcov1$oppo.diff.avg.shot.and.match.movement.speed),
+    logLik(fcov1$diff.p.avg.and.current.shot.speed),
+    logLik(fcov1$lag.oppo.height.off.net)
+    )
+  )
+
+fcov1_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(fcov1_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+fcov1_df %>%
+   slice(which.max(convergence.loglik))
+
+```
+
+
+
+
+
+```{r}
+###First best variable is p.start.position.x
+#Running single variable model of p.start.position.x to look at coefficients
+
+mod1 <- depmix(winner ~ 1, transition = ~ p.start.position.x, data = fed16_scale, nstates = 2, family=multinomial("identity"))
+fm1 <- fit(mod1)
+
+summary(fm1)
+
+
+```
+
+
+
+```{r}
+#Graphing fitted model states for first best variable
+
+probs = posterior(fm1)
+
+
+	plot(probs$state, type='s', main='Implied States', xlab='', ylab='State')
+
+	matplot(probs[,-1], type='l', main='Probabilities', ylab='Probability')
+		legend(x='topright', c('State1','State2'),  fill=1:2, bty='n')
+```
+
+
+
+
+```{r}
+##Stepwise to find second best variable
+#run through all variables to find highest log lik
+fcov2 <- lapply(fed16_scale[c( "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~ p.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+fcov2_df <-  as.data.frame(
+  c(logLik(fcov2$p.start.position.y),
+    logLik(fcov2$oppo.start.position.x), logLik(fcov2$oppo.start.position.y),
+    logLik(fcov2$p.movement.angle.1),
+    logLik(fcov2$oppo.diff.avg.shot.and.match.movement.speed),
+    logLik(fcov2$diff.p.avg.and.current.shot.speed),
+    logLik(fcov2$lag.oppo.height.off.net)
+    )
+  )
+
+fcov2_df$newcolumn<-c( "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(fcov2_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+fcov2_df %>%
+   slice(which.max(convergence.loglik))
+
+```
+
+
+```{r}
+##Stepwise to find the third best variable
+#second best variable is lag.oppo.height.off.net
+#run through all variables to find highest log lik
+fcov3 <- lapply(fed16_scale[c("p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~ p.start.position.x + lag.oppo.height.off.net + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+fcov3_df <-  as.data.frame(
+  c(logLik(fcov3$p.start.position.y),
+    logLik(fcov3$oppo.start.position.x), logLik(fcov3$oppo.start.position.y),
+    logLik(fcov3$p.movement.angle.1),
+    logLik(fcov3$oppo.diff.avg.shot.and.match.movement.speed),
+    logLik(fcov3$diff.p.avg.and.current.shot.speed)  )
+  )
+
+fcov3_df$newcolumn<-c("p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed")
+
+names(fcov3_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+fcov3_df %>%
+   slice(which.max(convergence.loglik))
+```
+
+
+```{r}
+##Stepwise to find the fourth best variable
+library(depmixS4)
+#third best variable is oppo.diff.avg.shot.and.match.movement.speed
+
+
+#run through all variables to find highest log lik
+fcov4 <- lapply(fed16_scale[c("p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "diff.p.avg.and.current.shot.speed")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+fcov4_df <-  as.data.frame(
+  c(logLik(fcov4$p.start.position.y),
+    logLik(fcov4$oppo.start.position.x), logLik(fcov4$oppo.start.position.y),
+    logLik(fcov4$p.movement.angle.1),
+    logLik(fcov4$diff.p.avg.and.current.shot.speed)  )
+  )
+
+fcov4_df$newcolumn<-c("p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "diff.p.avg.and.current.shot.speed")
+
+names(fcov4_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+fcov4_df %>%
+   slice(which.max(convergence.loglik))
+```
+
+
+
+
+
+```{r}
+##Stepwise to find fifth best variable
+#Fourth best variable is oppo.start.position.x
+
+
+#run through all variables to find highest log lik
+fcov5 <- lapply(fed16_scale[c( "p.start.position.y", "oppo.start.position.y",  "p.movement.angle.1", "diff.p.avg.and.current.shot.speed")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+fcov5_df <-  as.data.frame(
+  c(logLik(fcov5$p.start.position.y), logLik(fcov5$oppo.start.position.y),
+    logLik(fcov5$p.movement.angle.1),
+    logLik(fcov5$diff.p.avg.and.current.shot.speed)  )
+  )
+
+fcov5_df$newcolumn<-c("p.start.position.y", "oppo.start.position.y", "p.movement.angle.1", "diff.p.avg.and.current.shot.speed")
+
+names(fcov5_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+fcov5_df %>%
+   slice(which.max(convergence.loglik))
+```
+
+```{r}
+##Stepwise to find sixth best variable
+#fifth best variable is diff.p.avg.and.current.shot.speed
+#run through all variables to find highest log lik
+fcov6 <- lapply(fed16_scale[c( "p.start.position.y", "oppo.start.position.y",  "p.movement.angle.1")], function(w) fit((depmix(winner ~ 1, data = fed16_scale, transition = ~ p.start.position.x + lag.oppo.height.off.net + oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + diff.p.avg.and.current.shot.speed + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+fcov6_df <-  as.data.frame(
+  c(logLik(fcov6$p.start.position.y), logLik(fcov6$oppo.start.position.y),
+    logLik(fcov6$p.movement.angle.1)  )
+  )
+
+fcov6_df$newcolumn<-c("p.start.position.y", "oppo.start.position.y", "p.movement.angle.1")
+
+names(fcov6_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+fcov6_df %>%
+   slice(which.max(convergence.loglik))
+
+#Model stops improving last variable added to the model is p.movement.angle.1
+```
+
+####Running stepwise for Federer vs Berdych 2016/17/18 (Data Set 2 Training Model 2)
+
+```{r}
+#run through all variables to find highest log lik
+#tm2.fcov1 is training model 2 fitted covariates 1
+tm2.fcov1 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm2.fcov1_df <-  as.data.frame(
+  c(logLik(tm2.fcov1$p.start.position.x), logLik(tm2.fcov1$p.start.position.y),
+    logLik(tm2.fcov1$oppo.start.position.x), logLik(tm2.fcov1$oppo.start.position.y),
+    logLik(tm2.fcov1$p.movement.angle.1),
+    logLik(tm2.fcov1$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov1$oppo.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov1$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov1$lag.oppo.height.off.net)  )
+  )
+
+tm2.fcov1_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.movement.angle.1", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm2.fcov1_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm2.fcov1_df %>%
+   slice(which.max(convergence.loglik))
+```
+```{r}
+#first best variable p.movement.angle.1
+
+#run through all variables to find highest log lik
+tm2.fcov2 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm2.fcov2_df <-  as.data.frame(
+  c(logLik(tm2.fcov2$p.start.position.x), logLik(tm2.fcov2$p.start.position.y),
+    logLik(tm2.fcov2$oppo.start.position.x), logLik(tm2.fcov2$oppo.start.position.y),
+    logLik(tm2.fcov2$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov2$oppo.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov2$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov2$lag.oppo.height.off.net)  )
+  )
+
+tm2.fcov2_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm2.fcov2_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm2.fcov2_df %>%
+   slice(which.max(convergence.loglik))
+```
+```{r}
+#second best variable is oppo.diff.avg.shot.and.match.movement.speed
+
+#run through all variables to find highest log lik
+tm2.fcov3 <- lapply(fed_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm2.fcov3_df <-  as.data.frame(
+  c(logLik(tm2.fcov3$p.start.position.x), logLik(tm2.fcov3$p.start.position.y),
+    logLik(tm2.fcov3$oppo.start.position.x), logLik(tm2.fcov3$oppo.start.position.y),
+    logLik(tm2.fcov3$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov3$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov3$lag.oppo.height.off.net)  )
+  )
+
+tm2.fcov3_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm2.fcov3_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm2.fcov3_df %>%
+   slice(which.max(convergence.loglik))
+```
+```{r}
+#third best variable is p.start.position.y
+#run through all variables to find highest log lik
+tm2.fcov4 <- lapply(fed_scale[c( "p.start.position.x", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm2.fcov4_df <-  as.data.frame(
+  c(logLik(tm2.fcov4$p.start.position.x),
+    logLik(tm2.fcov4$oppo.start.position.x), logLik(tm2.fcov4$oppo.start.position.y),
+    logLik(tm2.fcov4$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov4$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov4$lag.oppo.height.off.net)  )
+  )
+
+tm2.fcov4_df$newcolumn<-c( "p.start.position.x", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm2.fcov4_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm2.fcov4_df %>%
+   slice(which.max(convergence.loglik))
+```
+```{r}
+#fourth best variable is oppo.start.position.x
+#run through all variables to find highest log lik
+tm2.fcov5 <- lapply(fed_scale[c( "p.start.position.x", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm2.fcov5_df <-  as.data.frame(
+  c(logLik(tm2.fcov5$p.start.position.x), logLik(tm2.fcov5$oppo.start.position.y),
+    logLik(tm2.fcov5$p.diff.avg.shot.and.match.movement.speed),
+    logLik(tm2.fcov5$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov5$lag.oppo.height.off.net)  )
+  )
+
+tm2.fcov5_df$newcolumn<-c( "p.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm2.fcov5_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm2.fcov5_df %>%
+   slice(which.max(convergence.loglik))
+
+#model stops improving at this point
+```
+```{r}
+#5th best variable alternates between oppo.start.position.y and p.diff.avg.shot.and.match.movement.speed. Adding both.
+#run through all variables to find highest log lik
+tm2.fcov6 <- lapply(fed_scale[c( "p.start.position.x", "oppo.start.position.x", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(winner ~ 1, data = fed_scale, transition = ~ p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + w, nstates = 2, family=multinomial("identity"))), verbose = FALSE, emc=em.control(rand=TRUE)))
+
+
+#Pulling covergence log likelihoods into a dataframe
+tm2.fcov6_df <-  as.data.frame(
+  c(logLik(tm2.fcov6$p.start.position.x),
+    logLik(tm2.fcov6$diff.p.avg.and.current.shot.speed),
+    logLik(tm2.fcov6$lag.oppo.height.off.net)  )
+  )
+
+tm2.fcov6_df$newcolumn<-c( "p.start.position.x", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")
+
+names(tm2.fcov6_df) <- c("convergence.loglik", "Variables")
+
+#print variable with the highest convergence log likelihood
+tm2.fcov6_df %>%
+   slice(which.max(convergence.loglik))
+#The model stops improving after this point. Last variable added to the model is lag.oppo.height.off.net
+
+```
+
+
+####Running Stepwise for Data Set 3 (Strycova vs Garcia 2016/2017)
+commented out to reduce knit time
+
+<!-- ```{r} -->
+<!-- #Looking for first best variable -->
+<!-- tm3.fcov1 <- lapply(stry_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage ~ 1), data = stry_scale, transition = ~ w, nstates = 2, family=list(multinomial("identity"),gaussian()))), verbose = FALSE, emc=em.control(rand=TRUE))) -->
+
+
+<!-- #Pulling covergence log likelihoods into a dataframe -->
+<!-- tm3.fcov1_df <-  as.data.frame( -->
+<!--   c(logLik(tm3.fcov1$p.start.position.x), logLik(tm3.fcov1$p.start.position.y), -->
+<!--     logLik(tm3.fcov1$oppo.start.position.x), logLik(tm3.fcov1$oppo.start.position.y), -->
+<!--     logLik(tm3.fcov1$p.diff.avg.shot.and.match.movement.speed), -->
+<!--     logLik(tm3.fcov1$oppo.diff.avg.shot.and.match.movement.speed), -->
+<!--     logLik(tm3.fcov1$diff.p.avg.and.current.shot.speed), -->
+<!--     logLik(tm3.fcov1$lag.oppo.height.off.net)  ) -->
+<!--   ) -->
+
+<!-- tm3.fcov1_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y",  "p.diff.avg.shot.and.match.movement.speed",  "oppo.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net") -->
+
+<!-- names(tm3.fcov1_df) <- c("convergence.loglik", "Variables") -->
+
+<!-- #print variable with the highest convergence log likelihood -->
+<!-- tm3.fcov1_df %>% -->
+<!--    slice(which.max(convergence.loglik)) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- #First best variable is oppo.diff.avg.shot.and.match.movement.speed -->
+<!-- tm3.fcov2 <- lapply(stry_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + w, nstates = 2, family=list(multinomial("identity"),gaussian()))), verbose = FALSE, emc=em.control(rand=TRUE))) -->
+
+
+<!-- #Pulling covergence log likelihoods into a dataframe -->
+<!-- tm3.fcov2_df <-  as.data.frame( -->
+<!--   c(logLik(tm3.fcov2$p.start.position.x), logLik(tm3.fcov2$p.start.position.y), -->
+<!--     logLik(tm3.fcov2$oppo.start.position.x), logLik(tm3.fcov2$oppo.start.position.y), -->
+<!--     logLik(tm3.fcov2$p.diff.avg.shot.and.match.movement.speed), -->
+<!--     logLik(tm3.fcov2$diff.p.avg.and.current.shot.speed), -->
+<!--     logLik(tm3.fcov2$lag.oppo.height.off.net)  ) -->
+<!--   ) -->
+
+<!-- tm3.fcov2_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.x", "oppo.start.position.y",  "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net") -->
+
+<!-- names(tm3.fcov2_df) <- c("convergence.loglik", "Variables") -->
+
+<!-- #print variable with the highest convergence log likelihood -->
+<!-- tm3.fcov2_df %>% -->
+<!--    slice(which.max(convergence.loglik)) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- #Second Best variable is oppo.start.position.x -->
+<!-- tm3.fcov3 <- lapply(stry_scale[c( "p.start.position.x", "p.start.position.y", "oppo.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + w, nstates = 2, family=list(multinomial("identity"),gaussian()))), verbose = FALSE, emc=em.control(rand=TRUE))) -->
+
+
+<!-- #Pulling covergence log likelihoods into a dataframe -->
+<!-- tm3.fcov3_df <-  as.data.frame( -->
+<!--   c(logLik(tm3.fcov3$p.start.position.x), logLik(tm3.fcov3$p.start.position.y), logLik(tm3.fcov3$oppo.start.position.y), -->
+<!--     logLik(tm3.fcov3$p.diff.avg.shot.and.match.movement.speed), -->
+<!--     logLik(tm3.fcov3$diff.p.avg.and.current.shot.speed), -->
+<!--     logLik(tm3.fcov3$lag.oppo.height.off.net)  ) -->
+<!--   ) -->
+
+<!-- tm3.fcov3_df$newcolumn<-c( "p.start.position.x", "p.start.position.y", "oppo.start.position.y",  "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net") -->
+
+<!-- names(tm3.fcov3_df) <- c("convergence.loglik", "Variables") -->
+
+<!-- #print variable with the highest convergence log likelihood -->
+<!-- tm3.fcov3_df %>% -->
+<!--    slice(which.max(convergence.loglik)) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- #third best variable is oppo.start.position.y -->
+<!-- tm3.fcov4 <- lapply(stry_scale[c( "p.start.position.x", "p.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + oppo.start.position.y + w, nstates = 2, family=list(multinomial("identity"),gaussian()))), verbose = FALSE, emc=em.control(rand=TRUE))) -->
+
+
+<!-- #Pulling covergence log likelihoods into a dataframe -->
+<!-- tm3.fcov4_df <-  as.data.frame( -->
+<!--   c(logLik(tm3.fcov4$p.start.position.x), logLik(tm3.fcov4$p.start.position.y), -->
+<!--     logLik(tm3.fcov4$p.diff.avg.shot.and.match.movement.speed), -->
+<!--     logLik(tm3.fcov4$diff.p.avg.and.current.shot.speed), -->
+<!--     logLik(tm3.fcov4$lag.oppo.height.off.net)  ) -->
+<!--   ) -->
+
+<!-- tm3.fcov4_df$newcolumn<-c( "p.start.position.x", "p.start.position.y",  "p.diff.avg.shot.and.match.movement.speed", "diff.p.avg.and.current.shot.speed",  "lag.oppo.height.off.net") -->
+
+<!-- names(tm3.fcov4_df) <- c("convergence.loglik", "Variables") -->
+
+<!-- #print variable with the highest convergence log likelihood -->
+<!-- tm3.fcov4_df %>% -->
+<!--    slice(which.max(convergence.loglik)) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- #fourth best variable is diff.p.avg.and.current.shot.speed -->
+<!-- tm3.fcov5 <- lapply(stry_scale[c( "p.start.position.x", "p.start.position.y", "p.diff.avg.shot.and.match.movement.speed", "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + oppo.start.position.y + diff.p.avg.and.current.shot.speed + w, nstates = 2, family=list(multinomial("identity"),gaussian()))), verbose = FALSE, emc=em.control(rand=TRUE))) -->
+
+
+<!-- #Pulling covergence log likelihoods into a dataframe -->
+<!-- tm3.fcov5_df <-  as.data.frame( -->
+<!--   c(logLik(tm3.fcov5$p.start.position.x), logLik(tm3.fcov5$p.start.position.y), -->
+<!--     logLik(tm3.fcov5$p.diff.avg.shot.and.match.movement.speed), -->
+<!--     logLik(tm3.fcov5$lag.oppo.height.off.net)  ) -->
+<!--   ) -->
+
+<!-- tm3.fcov5_df$newcolumn<-c( "p.start.position.x", "p.start.position.y",  "p.diff.avg.shot.and.match.movement.speed", "lag.oppo.height.off.net") -->
+
+<!-- names(tm3.fcov5_df) <- c("convergence.loglik", "Variables") -->
+
+<!-- #print variable with the highest convergence log likelihood -->
+<!-- tm3.fcov5_df %>% -->
+<!--    slice(which.max(convergence.loglik)) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- #fifth best varaible is p.start.position.y -->
+
+<!-- tm3.fcov6 <- lapply(stry_scale[c( "p.start.position.x", "p.diff.avg.shot.and.match.movement.speed", "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + oppo.start.position.y + diff.p.avg.and.current.shot.speed + p.start.position.y + w, nstates = 2, family=list(multinomial("identity"),gaussian()))), verbose = FALSE, emc=em.control(rand=TRUE))) -->
+
+
+<!-- #Pulling covergence log likelihoods into a dataframe -->
+<!-- tm3.fcov6_df <-  as.data.frame( -->
+<!--   c(logLik(tm3.fcov6$p.start.position.x),  -->
+<!--     logLik(tm3.fcov6$p.diff.avg.shot.and.match.movement.speed), -->
+<!--     logLik(tm3.fcov6$lag.oppo.height.off.net)  ) -->
+<!--   ) -->
+
+<!-- tm3.fcov6_df$newcolumn<-c( "p.start.position.x",   "p.diff.avg.shot.and.match.movement.speed", "lag.oppo.height.off.net") -->
+
+<!-- names(tm3.fcov6_df) <- c("convergence.loglik", "Variables") -->
+
+<!-- #print variable with the highest convergence log likelihood -->
+<!-- tm3.fcov6_df %>% -->
+<!--    slice(which.max(convergence.loglik)) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- #sixth best variable is p.diff.avg.shot.and.match.movement.speed -->
+
+<!-- tm3.fcov7 <- lapply(stry_scale[c( "p.start.position.x", "lag.oppo.height.off.net")], function(w) fit((depmix(list(winner.return.error ~ 1, p.advantage ~ 1), data = stry_scale, transition = ~  oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + oppo.start.position.y + diff.p.avg.and.current.shot.speed + p.start.position.y + p.diff.avg.shot.and.match.movement.speed + w, nstates = 2, family=list(multinomial("identity"),gaussian()))), verbose = FALSE, emc=em.control(rand=TRUE))) -->
+
+
+<!-- #Pulling covergence log likelihoods into a dataframe -->
+<!-- tm3.fcov7_df <-  as.data.frame( -->
+<!--   c(logLik(tm3.fcov7$p.start.position.x), -->
+<!--     logLik(tm3.fcov7$lag.oppo.height.off.net)  ) -->
+<!--   ) -->
+
+<!-- tm3.fcov7_df$newcolumn<-c( "p.start.position.x", "lag.oppo.height.off.net") -->
+
+<!-- names(tm3.fcov7_df) <- c("convergence.loglik", "Variables") -->
+
+<!-- #print variable with the highest convergence log likelihood -->
+<!-- tm3.fcov7_df %>% -->
+<!--    slice(which.max(convergence.loglik)) -->
+
+<!-- #Model stops improving at this point -->
+<!-- ``` -->
+
+
+##Visualisation
+###Exploring visualisations of player movement
+```{r}
+library(grid)
+
+# ggplot(fed16_longest, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y, z=winner))   + stat_summary_hex(fun = function(winner) sum(winner)) + geom_segment(arrow = arrow(angle = 15,))  + xlab("Federer Position X ") + ylab("Federer Position Y") + ggtitle("Federer positions in longest rally") 
+
+ # ggplot(fed16_longest, aes(x=p.start.position.x, xend=p.end.position.x, y=p.start.position.y, yend=p.end.position.y, z=winner))   + 
+ #   stat_summary_hex(fun = function(winner) sum(winner)) + 
+ #   geom_text(aes(label=shot)) +
+ #   geom_path(arrow = arrow(angle = 15))  + 
+ #   xlab("Federer Position X ") + 
+ #   ylab("Federer Position Y") + 
+ #   ggtitle("Federer positions in longest rally") 
+```
+
+```{r }
+
+#static player positions
+trial_df <- filter(fed16_pos, final.shot >= 14)
+
+ p.rally.paths <- ggplot(trial_df, aes(x=p.start.position.x,  y=p.start.position.y))    + 
+   scale_x_continuous(breaks = axis_labels$x.break) +
+    scale_y_continuous(breaks = axis_labels$y.break) +
+    geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+    geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+    coord_fixed() +
+   geom_point(aes(alpha = shot))  + 
+   geom_path(  arrow = arrow(angle = 15)) + 
+   facet_wrap(~rally.number) + 
+   xlab("Federer Position X ") + 
+   ylab("Federer Position Y") + 
+   ggtitle("Federer start and end positions for rallies 14 shots or longer") 
+ p.rally.paths <- ggplotly(p.rally.paths)
+   
+ p.rally.paths
+
+
+```
+
+```{r}
+ 
+oppo.rally.paths <- ggplot(trial_df, aes(x=oppo.start.position.x,  y=oppo.start.position.y ))    + 
+  scale_x_continuous(breaks = axis_labels$x.break) +
+  scale_y_continuous(breaks = axis_labels$y.break) +
+  geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) +
+  geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') +
+  coord_fixed() +
+  geom_point(aes(alpha = shot))  + 
+  geom_path(  arrow = arrow(angle = 15)) +   
+  facet_wrap(~rally.number) + xlab("Opponent Position X ") + ylab("Opponent Position Y") +
+  ggtitle("Opponent start and end positions for for rallies 14 shots or longer")  
+oppo.rally.paths <- ggplotly(oppo.rally.paths)
+oppo.rally.paths
+```
+
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+stry_plot1<- stry_scale %>%
+  gather(key = vars, value = measurement, p.start.position.x, oppo.start.position.x, p.diff.avg.shot.and.match.movement.speed)
+
+stry_plot2<- stry_scale %>%
+  gather(key = vars, value = measurement, p.start.position.y, lag.oppo.height.off.net)
+
+stry_plot3<- stry_scale %>%
+  gather(key = vars, value = measurement, oppo.start.position.y, oppo.diff.avg.shot.and.match.movement.speed, diff.p.avg.and.current.shot.speed )
+
+stry_plot4<- stry_scale %>%
+  gather(key = vars, value = measurement, winner.return.error, p.advantage)
+
+ggplot(stry_plot1, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+
+ggplot(stry_plot2, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+
+ggplot(stry_plot3, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+
+ggplot(stry_plot4, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
+```
+```{r }
+#player baseline/centre distance differentials
+
+
+ggplot(longral_pos, aes(x=shot,y=p.start.position.base.diff)) +
+  geom_point() +
+  geom_path() + 
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Difference in distance from baseline Federer Vs Opponent") + 
+  ggtitle("Federer vs Opponent difference in baseline distance in rallies 10 shots or more")
+
+ggplot() + 
+  geom_path(data=longral_pos, aes(x = shot, y = p.start.position.y, col="blue")) +
+  geom_path(data=longral_pos, aes(x = shot, y = oppo.start.position.y, col="red")) +
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Distance from centre for Federer and Opponent") + 
+  ggtitle("Federer vs Opponent distance from centre in rallies 10 shots or more") +
+  scale_colour_manual(name = "Player", values=c("blue","red"), labels= c("Federer","Berdych"))
+  
+  
+ggplot() + 
+  geom_path(data=longral_pos, aes(x = shot, y = p.start.position.base.dist, 
+                                  yend =p.end.position.base.dist, col="blue")) +
+  geom_path(data=longral_pos, aes(x = shot, y = oppo.start.position.base.dist,
+                                  yend =oppo.end.position.base.dist,col="red")) +
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Distance from baseline for Federer and Opponent") + 
+  ggtitle("Federer vs Opponent distance from baseline in rallies 10 shots or more") +
+  scale_colour_manual(name = "Player", values=c("blue","red"), labels= c("Federer","Berdych"))
+```
+```{r }
+#speed/acceleration differentials
+ggplot() + 
+  geom_path(data=longral_df, aes(x = shot, y = p.avg.speed, col="blue")) +
+  geom_path(data=longral_df, aes(x = shot, y = oppo.avg.speed, col="red")) + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Avg Movement Speed m/s  Federer and Opponent") + 
+  ggtitle("Federer vs Opponent Avg Movement Speed in Rallies 10 shots or more") +
+  scale_colour_manual(name = "Player", values=c("blue","red"), labels= c("Federer","Berdych"))
+
+ggplot(longral_pos, aes(x=shot,y=avg.player.speed.diff)) +
+  geom_path() + 
+  geom_hline(yintercept = 0, linetype = "dotdash") + 
+  facet_wrap(~rally.number) + 
+  xlab("Shot Number")  + 
+  ylab("Difference Avg Movement Speed m/s  Federer vs Opponent") + 
+  ggtitle("Federer vs Opponent difference in Avg Movement Speed m/s  Federer and Opponent in rallies 10 shots or more")
+
+```
+###Additional animations
+We can also split the animation by rallies here is some code for that which has commented out for the report. 
+
+<!-- ```{r} -->
+<!-- p.rally.anim8 <- ggplot() +  -->
+<!--   scale_x_continuous(breaks = axis_labels$x.break) + -->
+<!--     scale_y_continuous(breaks = axis_labels$y.break) + -->
+<!--     geom_path(data = court_trace, aes(x = x, y = y), color = 'black', size = 1, alpha = 0.75) + -->
+<!--     geom_path(data = net_trace, aes(x = x, y = y), color = 'grey40', size = 1, lineend = 'round') + -->
+<!--     coord_fixed() + -->
+<!--   geom_point(data= longral_pos, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, colour="red")) + -->
+<!--   geom_path(data= longral_pos, aes(x=p.start.position.x, y=p.start.position.y,  group = rally.number, alpha = shot)) + -->
+<!--   geom_point(data= longral_pos, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, colour="blue")) + -->
+<!--   geom_path(data= longral_pos, aes(x=oppo.start.position.x, y=oppo.start.position.y,  group = rally.number, alpha = shot)) + -->
+<!--   geom_point(data= longral_pos, aes(x=start.x, y=start.y, group = rally.number, colour="green")) + -->
+<!--   transition_reveal(pos.rally.count) + -->
+<!--   facet_wrap(~rally.number ) + -->
+<!--   xlab("Player Position X ") +  -->
+<!--   ylab("Player Position Y") +  -->
+<!--   ggtitle("Animation for Federer 2016 rallies 10 shots or more")+ -->
+<!--   scale_colour_manual(name = "", values=c("red","green","blue"), labels= c("Berdych","Ball","Federer")) -->
+
+<!-- #had to reverse geom_point colour labels for some reason -->
+
+<!-- animate(p.rally.anim8, duration = 30, fps = 10) -->
+<!-- ``` -->
