@@ -3393,7 +3393,7 @@ summary(t2.fm1)
 ```
 
 
-#Rallies From Matches at The Australian Open
+#Analysing Rallies From Matches at The Australian Open using the Hidden Markov Model
 This project uses Hidden Markov Models to identify player shot intentions from matches at the Australian Open. 
 
 The match data analysed contains information for all rallies 3 shots or longer. Serves and returns of serves have been excluded from the data. The analysis looks at two and three hidden state models to attempt to identify player intentions. 
@@ -3411,7 +3411,7 @@ The covariates chosen are...(just try out shot index first)
 
 To identify the best covariates for predicting hidden states of many different players; training models have been created using a step-wise approach to identify the best combination of covariates in a chosen match data set. These training models have then been tested on a different data sets for a comparison of results. The limitation of this step wise approach is that some potentially important covariates have been ommited from the model because of correlation with other covariates. 
 
-#Training Models
+##Training Models
 For Stepwise, begin the model running all the covariates to find the covariate which lowers the log Likelihood of the model the most. Then add this covariate to the model and run all the remaining covariates to find the next best covariate which improves the model the most. Repeat this until the model is no longer being improved through the addition of new covariates or until there are no more covariates.  
 
 The first training model(Training Model 1) has been made using step-wise for two hidden states for the match data Federer vs Berdych 2016.
@@ -3459,7 +3459,7 @@ THis indicates that Federer has a high probability of hitting a winner if Berdyc
 Unforrtunately there were some issues with my models. 
 Repeated running of the depmix models  in this report can see the attacking state alternate between being defined as state 1 or state 2. The results remain the same for the probability of hitting a winner, but the corresponding states are flipped. 
 We have to be careful in intepreting the results. The attacking state is the one which has a higher value for Re1.1. 
-The results are consistent but sometimes flipped. 
+
 
 ```{r}
 #Data set 2, Training Model 2, 2 states.
@@ -3471,6 +3471,16 @@ ds2.mod2.2s <- depmix(winner ~ 1, transition = ~p.movement.angle.1 + oppo.diff.a
 
 
 ##3 State Models
+
+
+```{r}
+#oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, oppo.start.position.y, diff.p.avg.and.current.shot.speed, p.start.position.y, p.diff.avg.shot.and.match.movement.speed, lag.oppo.height.off.net
+
+ds3.mod3.3s <- depmix(list(winner.return.error ~ 1, p.advantage ~ 1), transition = ~ oppo.diff.avg.shot.and.match.movement.speed + oppo.start.position.x + oppo.start.position.y + diff.p.avg.and.current.shot.speed + p.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = stry_scale, nstates = 3, family=list(multinomial("identity"),gaussian()))
+ ds3.fm3.3s <- fit(ds3.mod3.3s)
+ 
+ summary(ds3.fm3.3s)
+```
 
 
 #Building the Animation
@@ -3486,11 +3496,9 @@ To run transition_reveal, a single column was created for the player's start & e
 #Variable creation
 
 #Choosing variables for the model
+Confirming choices through visualisation of all variabls described in glossary
 
-```{r}
-#Confirming choices through visualisation of all variabls described in glossary
-
-```
+###Player Start Position Coordinates
 p.start.position.x-
 When compared to similar start position x coordinates, Federer appears more likely to hit a winner as he starts the shot closer to the net. Choosing this variable for HMM as we might expect that the probability of Federer being in an attacking state increases as he moves closer to the net( x value increases). 
 
@@ -3513,7 +3521,7 @@ ggplot(fed16_only, aes(x=p.start.position.y,winner)) + geom_smooth() + xlab("Dis
 ```
 
 
-
+###Player Shot Position Coordinates
 p.start.shot.x-
 Similar to Federer's start position x coordinates, the x coordinates of his shot hit point appears more likely to result in a winner compared to similarly distanced shots as he moves closer to the net.
 
@@ -3530,7 +3538,7 @@ ggplot(fed16_only_plots, aes(x=p.start.shot.x,  y=p.start.shot.y ))    +
 ```
 
 
-
+###opponent Start Position Coordinates
 oppo.start.position.x-
 Federer appears more likely to hit a winner as Berdych start position x coordinates are closer to the net. (As we are analysing the rallies with all of Berdych's having positive coordinates in the HMM we would expect a decrease in Berdych's start position x coordinates to increase The probability of Federer being in an attacking state. 
 oppo.start.position.y
@@ -3552,7 +3560,7 @@ ggplot(fed16_only, aes(x=oppo.start.position.y,winner)) + geom_smooth() + xlab("
 
 ```
 
-
+###Difference in player movement speed from the match average
 p.diff.avg.shot.and.match.movement.speed - 
 When Federer runs approximately more than 1m/s above or below his average movement speed for match he tends to hit more winners. This variable therefore appears suitable for the HMM. (Using an absolute value of the difference we would expect an increase in difference to increase the probability of Federer being in a attacking state. (add in more info)
 When Considering winners, errors and returns we move back to relative difference as Federer tends to hit more errors than winners when moving approximately 1m/s slower than his average match movement speed 
@@ -3565,7 +3573,7 @@ ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.moveme
 ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=(p.diff.avg.shot.and.match.movement.speed), fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by absolute difference in Federer's current/match avg movement speed")
 ```
 
-
+###Difference in opponent movement speed from the match average
 oppo.diff.avg.shot.and.match.movement.speed - 
 Federer tends to hit more winners as Berdych runs more than 1m/s faster than his average match movement speed. This is a suitable variable for the HMM we would expect an increase in the difference to increase Federer's probability of being in an attacking state. 
 ```{r}
@@ -3576,14 +3584,14 @@ ggplot(fed16_only_plots, aes(x=factor(winner),y=oppo.diff.avg.shot.and.match.mov
 # ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=oppo.diff.avg.shot.and.match.movement.speed, fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Opponent current/match avg movement speed")
 
 ```
-
+###Number of times the player changes side during the rally
 p.rally.side.change.count - 
 Not suitable
 ```{r}
 ggplot(fed16_only_plots, aes(x=p.rally.side.change.count, y=winner)) + geom_bar(stat="identity") + xlab("Rally Side Change Count") + ylab("Proportion of Winners") + ggtitle("Winners By Number of Times Federer Changes Side in Rally")
 ```
 
-
+###Number of times the opponent changes sides during the rally
 oppo.rally.side.change.count - 
 Might be suitable when looking at a greater number of rallies. 
 ```{r}
@@ -3591,7 +3599,7 @@ ggplot(fed16_only_plots, aes(x=oppo.rally.side.change.count, y=winner)) + geom_b
 
 ```
 
-
+###The angle the player runs from the starrt to the end of the shot
 p.movement.angle.1 - 
  more than 75% of Federer's Winners come when he is running less than 100 degrees in relation to the baseline. This variable appears suitable for HMM we would expect as Federer's movement angle increases beyond 100 degrees the probability the he is an attacking state decreases.
 ```{r}
@@ -3604,7 +3612,7 @@ ggplot(fed16_only, aes(x=factor(winner),y=p.movement.angle.1, fill=factor(winner
 # ggplot(fed16_only, aes(x=factor(winner.return.error),y=p.movement.angle.1, fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by Federer's start to end movement angle")
 ```
 
-
+###The angle the opponent runs from the start to the end of the shot
 oppo.movement.angle.1 - 
 Need more evidence to include in model
 ```{r}
@@ -3616,7 +3624,7 @@ ggplot(fed16_only, aes(x=factor(winner),y=oppo.movement.angle.1, fill=factor(win
 
 ```
 
-
+###The height the opponent hit the ball over the net with their previous shot
 lag.oppo.height.off.net - 
 Federer tends to hit more winners when incoming shot approaches 50cm off the height of the net. This decreases as the height of the incoming shot increases or decreases. Including this variable in the HMM. Expect the coefficient to be small. 
 
@@ -3625,7 +3633,7 @@ ggplot(fed16_only_plots, aes(x=lag.oppo.height.off.net,y=winner)) + geom_smooth(
 
 
 ```
-
+###The difference in players current shot speed from the match average
 diff.p.avg.and.current.shot.speed
 ```{r}
 
