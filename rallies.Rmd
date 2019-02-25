@@ -3418,7 +3418,7 @@ The first training model(Training Model 1) has been made using step-wise for two
 The best combination of covariates is:
 p.start.position.x, lag.oppo.height.off.net, oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, diff.p.avg.and.current.shot.speed, p.movement.angle.1
 
-The second training model (Training Model 2) has been made using step-wise for two hidden states forthe match data Federer vs Berdych 2016/17/18.
+The second training model (Training Model 2) has been made using step-wise for two hidden states for the match data Federer vs Berdych 2016/17/18.
 The best combination of covariates is:
 p.movement.angle.1, oppo.diff.avg.shot.and.match.movement.speed, p.start.position.y, oppo.start.position.x, oppo.start.position.y, p.diff.avg.shot.and.match.movement.speed,  lag.oppo.height.off.net
 
@@ -3429,6 +3429,33 @@ oppo.diff.avg.shot.and.match.movement.speed, oppo.start.position.x, oppo.start.p
 #Intepreting the output
 
 ##2 state Model
+The best two state model by comparing total change in -logLik is running Training Model 2 the match data Federer vs Berdych 2016/17/18.
+Repeated running of the model can see what is defined as the attacking state alternate between state 1 and state 2. The results remain the same.
+
+In the attacking state for this model the probability of hitting a winner is 0.255.
+
+
+
+In the returning state the probability of hitting a winner is 0.022.
+
+
+
+
+
+ p.movement.angle.1                            0   6.120072
+oppo.diff.avg.shot.and.match.movement.speed   0  -3.724463
+p.start.position.y                            0   5.003489
+oppo.start.position.x                         0  58.530250
+oppo.start.position.y                         0   3.603292
+p.diff.avg.shot.and.match.movement.speed      0   5.408894
+lag.oppo.height.off.net                       0 -15.730913
+```{r}
+#Data set 2, Training Model 2, 2 states.
+ds2.mod2.2s <- depmix(winner ~ 1, transition = ~p.movement.angle.1 + oppo.diff.avg.shot.and.match.movement.speed + p.start.position.y + oppo.start.position.x + oppo.start.position.y + p.diff.avg.shot.and.match.movement.speed + lag.oppo.height.off.net , data = fed_scale, nstates = 2, family=multinomial("identity"), verbose = FALSE)
+ ds2.fm2.2s <- fit(ds2.mod2.2s)
+ 
+ summary(ds2.fm2.2s)
+```
 
 
 ##3 State Models
