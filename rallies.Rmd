@@ -3474,22 +3474,29 @@ ds2.mod2.2s <- depmix(winner ~ 1, transition = ~p.movement.angle.1 + oppo.diff.a
 In attempting to create a three state model:
 Firstly I ran Training Model 1 and Training Model 2 as three state models with 'winner.return.error' as the response variable. This was unsuccessful in identifying three states, at the zero values of the covariates only two states can be clearly identified.
 
-I then ran the three state models with the player's advantage variable as the second response variable. At the zero values of the covariates, three clear states can be seen. However with repeated running of these model the results are not repeatable.
+I then ran the three state models with the player's advantage variable as the second response variable. At the zero values of the covariates, three clear states can be seen. However with repeated running of these models, the results are not repeatable.
 
-The three state model would be useful for identifying the probability of the player hitting a winner or an error from and attacking, returning or a defenisve state. A large probability of hitting a winner from a defensive state may be an indicator of player risk taking. 
+The three state model would be useful for identifying the probability of the player hitting a winner or an error from an attacking, returning or a defenisve state. A larger probability of hitting a winner from a defensive state compared to other players, may be an indicator of player risk taking. 
+
 
 ```{r}
+ggplot(fed16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2016 Winners by by Player Advantage")
 
+ggplot(fed17_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2017 Winners by by Player Advantage")
+
+ggplot(fed18_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2018 Winners by by Player Advantage")
+
+ggplot(stry16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Strycova 2016 Winners by Player Advantage")
 ```
 
 
-#Building the Animation
+#Building an Animation of Rallies
 
 Using the package GGAnimate and a top-down court outline taken from "https://github.com/mvparrot/vis-serve/blob/master/report file helper basic plots".
 The variables p.start.position.x, p.end.position.x, oppo.start.position.x, oppo.end.position.x, p.start.position.y, p.end.position.y, oppo.start.position.y, oppo.end.position.y, start.x, start.y, projected.ballmark.x and projected.ballmark.y
 
 transition_reveal has been used for filling in gaps in the player and ball position data. 
-To run transition_reveal, a single column was created for the player's start & end position x coordinates, they are grouped by rally number and shot number and alternate between start and end position. The same thing is done for the player's position y coordinates. As well as for the opponent's start and end position x and y coordinates. For animating the ball position, similar columns are created alternating between the start position of the ball and the projected ballmark for both x and y coordinates.
+To run transition_reveal, a single column was created for the player's start & end position x coordinates. They are grouped by rally number and shot number and alternate between start and end position. The same thing is done for the player's position y coordinates. As well as for the opponent's start and end position x and y coordinates. For animating the ball position, similar columns are created alternating between the start position of the ball and the projected ballmark for both x and y coordinates.
 
 ##Visualising player state change in the animation
 
@@ -3556,6 +3563,7 @@ ggplot(fed16_only_plots, aes(x=oppo.start.position.x,  y=oppo.start.position.y )
 ggplot(fed16_only, aes(x=oppo.start.position.x,winner)) + geom_smooth() + xlab("X Coordinate of Opponent") + ylab("Proportion of Federer Winners") + ggtitle("Federer Winners By Opponent X Co-Ordinate")
 
 ggplot(fed16_only, aes(x=oppo.start.position.y,winner)) + geom_smooth() + xlab("Distance from Centre of Opponent") + ylab("Proportion of Winners") + ggtitle("Federer Winners by Opponent Distance from Centre")
+
 
 
 ```
