@@ -42,7 +42,7 @@ The match data analysed contains information for all rallies 3 shots or longer. 
 
 The two hidden state model extends Jeremy Forbes' research project. The player shot intentions are: attacking or 'winner', where the players aim is to win the point on that shot. And 'return' where the player's aim is just to get the ball back into play. 
 
-The three hidden states model extends this model to include 'errors' where the player unsuccessfully tries to win the point or return the ball into play with that shot.
+The three hidden states model extends this model to include 'errors', where the player unsuccessfully tries to win the point or return the ball into play with that shot.
 
 This analysis is done using the dependent mixture model contained in the depmixS4 package. 
 
@@ -194,15 +194,7 @@ I then ran the three state models with the player's advantage variable as the se
 The three state model would be useful for identifying the probability of the player hitting a winner or an error from an attacking, returning or a defenisve state. A larger probability of hitting a winner from a defensive state compared to other players, may be an indicator of player risk taking. 
 
 
-```{r}
-ggplot(fed16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2016 Winners by by Player Advantage")
 
-ggplot(fed17_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2017 Winners by by Player Advantage")
-
-ggplot(fed18_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2018 Winners by by Player Advantage")
-
-ggplot(stry16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Strycova 2016 Winners by Player Advantage")
-```
 
 
 #Building an Animation of Rallies
@@ -215,7 +207,7 @@ To run transition_reveal, a single column was created for the player's start & e
 
 ##Visualising player state change in the animation
 We can take the implied states from the Depmix Model probs and overlay them into the animation to visualise when the player is in an attacking state. In this casewe are looking at the longest rally between Federer and Berdych in 2016. Federer will get larger to indicate when he is an attacking state.
-#Top down court view
+
 
 ```{r}
 library(gganimate)
@@ -223,6 +215,7 @@ library(tweenr)
 library(transformr)
 ```
 ```{r }
+#Top Down Court View
 #
 library(plotly)
 #--- Packages Required
@@ -264,7 +257,7 @@ court_topdown <- ggplot() +
 ```
 
 ```{r}
-
+#For the simplicity of the example I have taken the state probabilities from the Depmix model for Federer vs Berdych 2016 and created a vector for the longest rally
 p.state <- c(1,1,1,1,1,1,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,1,1,2,2)
 p.state <- as.data.frame(p.state)
 
@@ -1576,6 +1569,16 @@ ggplot(longral_pos, aes(x=shot,y=avg.player.speed.diff)) +
   ggtitle("Federer vs Opponent difference in Avg Movement Speed m/s  Federer and Opponent in rallies 10 shots or more")
 
 ```
+```{r}
+ggplot(fed16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2016 Winners by by Player Advantage")
+
+ggplot(fed17_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2017 Winners by by Player Advantage")
+
+ggplot(fed18_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2018 Winners by by Player Advantage")
+
+ggplot(stry16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Strycova 2016 Winners by Player Advantage")
+```
+
 ###Additional animations
 We can also split the animation by rallies here is some code for that which has commented out for the report. 
 
