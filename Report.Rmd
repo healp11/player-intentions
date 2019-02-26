@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 #reading .csv files needed to run the report without code to shape variables
-I have seperated out the code which shapes the variables in the player data.
+I have seperated out the code which shapes the variables in the player data and creates the data files needed to run this report.
 Before running this file, run the file reportcode.Rmd to create all of the data files neccesary to knit this report. 
 ```{r}
 #Reading in data files
