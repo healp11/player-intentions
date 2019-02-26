@@ -489,9 +489,12 @@ The appendix contains:
 
 -Additional visual analysis of variables.
 
-##Visualisations of Shot Patterns
+##Visualisations of Shot Patterns for Federer vs Berdych 2016
+Here is a series of plots showin:
 
-###Federer vs Berdych 2016
+-Shot type by shot x/y coordinates
+
+-A recreation of plots from the winter project on different match data.
 
 
 ```{r }
@@ -528,16 +531,6 @@ ggplot(dlw_fedonly, aes(x=start.x,y=start.y)) +
   xlab("X Coordinate") + 
   ylab("Y Coordinate") + 
   ggtitle("Federer Down the Line Winners By Shot Co-Ordinates")
-```
-```{r}
-#Angle of movement
-ggplot(fed16_only, aes(x=oppo.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Opponents movement") + ylab("Proportion of Winners") + ggtitle("Winners By Opponent movement angle 1")
-
-ggplot(fed16_only, aes(x=p.movement.angle.1,y=winner)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Proportion of Winners") + ggtitle("Winners By Federer's movement angle 1")
-
-ggplot(fed16_only, aes(x=p.movement.angle.1,y=p.peak.speed)) + geom_smooth() + xlab("Angle Made By Federer's movement") + ylab("Federers Peak Speed") + ggtitle("Winners By Federer's movement angle 1")
-
-
 ```
 
 
@@ -620,6 +613,8 @@ ggplot(fed16_only) + geom_density(aes(speed.ratio, group = factor(winner), color
 ggplot(fed16_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + geom_boxplot() + ggtitle("Winner by Speed Ratio")
 ```
 ##Depmix Models
+All of the depmix models run.
+Some three state models and stepwise analysis have been commented out because of cuasing issues with the knit. The code can still be run in Rmarkdown by uncommenting. 
 Examined three data sets:
 Data Set One: Federer vs Berdych 2016
 Data Set Two: Federer vs Berdych 2016/17/17
@@ -1473,7 +1468,16 @@ commented out to due to causing errors with knit.
 
 
 ##Visualisation
-###Exploring visualisations of player movement
+###Exploring visualisations of player movement and covariates
+Below are:
+
+-some of the visualisations I created when figuring out how to create the animation. 
+
+-Analysis of how the covariates and response variables move over time
+
+-Visualisation in the differences between player positions and movement speeds.
+
+####Static player position paths
 ```{r}
 library(grid)
 
@@ -1529,7 +1533,7 @@ oppo.rally.paths
 ```
 
 
-
+####Movement of covariates and response variables over time
 ```{r}
 library(dplyr)
 library(tidyr)
@@ -1553,6 +1557,7 @@ ggplot(stry_plot3, aes(x=player.total.shot.number,y=measurement)) + geom_line(co
 
 ggplot(stry_plot4, aes(x=player.total.shot.number,y=measurement)) + geom_line(color="blue") + facet_grid(vars~., scale="free_y") + xlab("Time") + ggtitle("Federer vs. Berdych 2016: Looking at how variables move together over the match")
 ```
+####Player/Opponent position & speed differentials
 ```{r }
 #player baseline/centre distance differentials
 
