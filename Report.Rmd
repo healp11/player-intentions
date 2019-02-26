@@ -11,8 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 #reading .csv files needed to run the report without code to shape variables
-I have seperated out the code which shapes the variables in the player data and creates the data files needed to run this report.
-Before running this file, run the file reportcode.Rmd to create all of the data files neccesary to knit this report. 
+I have separated out the code which shapes the variables in the player data and creates the data files needed to run this report.
+Before running this file, run the file reportcode.Rmd to create all of the data files necessary to knit this report. 
 ```{r}
 #Reading in data files
 stry_scale <- read.csv(file = "data/stry_scale.csv")
@@ -181,7 +181,7 @@ An increase in oppo.start.position.y decreases the probability of hitting a winn
 
 An Increase in p.diff.avg.shot.and.match.movement.speed decreases the probability of hitting a winner. If Federer is running faster to hit the shot, he is less likely to hit a winner. 
 
-An increase in lag.oppo.height.off.net increases the probability of hitting a winner. If Berdych's shot ipasses higher over the net, then Federer is more likely to hit a winner.  
+An increase in lag.oppo.height.off.net increases the probability of hitting a winner. If Berdych's shot passes higher over the net, then Federer is more likely to hit a winner.  
 
 The covariate with the greatest impact on Federer being in an attacking state is oppo.start.position.y
 This indicates that Federer has a high probability of hitting a winner if Berdych starts close to the net. 
@@ -238,8 +238,10 @@ transition_reveal has been used for filling in gaps in the player and ball posit
 To run transition_reveal, a single column was created for the player's start & end position x coordinates. They are grouped by rally number and shot number and alternate between start and end position. The same thing is done for the player's position y coordinates. As well as for the opponent's start and end position x and y coordinates. For animating the ball position, similar columns are created alternating between the start position of the ball and the projected ballmark for both x and y coordinates.
 
 ##Visualising player state change in the animation
-We can take the implied states from the Depmix Model probs and overlay them into the animation to visualise when the player is in an attacking or returning state. In this case we are looking at the longest rally between Federer and Berdych in 2016. Federer's icon will get larger to vey clearly indicate when he is an attacking state. State 2 indicates the player being in an attacking state and State 1 a returning state. 
-For the simplicity of the example I have taken the state probabilities from the Fitted Depmix model for Federer vs Berdych 2016 and created a vector of implied states for the longest rally. I have defined Federer's implied states when Berdych is hitting the ball as state 1. 
+We can take the implied states from the Depmix Model probs and overlay them into the animation to visualise when the player is in an attacking or returning state. In this case we are looking at the longest rally between Federer and Berdych in 2016. Federer's icon will get larger to very clearly indicate when he is an attacking state. State 2 indicates the player being in an attacking state and State 1 a returning state. 
+
+
+For this example I have taken the state probabilities from the Fitted Depmix model for Federer vs Berdych 2016 and created a vector of implied states for the longest rally. I have defined Federer's implied states when Berdych is hitting the ball as state 1. As we are running the animation using columns that contain start and end positions, the player state for each shot is duplicated for start and end position. 
 
 ```{r}
 library(gganimate)
@@ -321,7 +323,7 @@ p.rally.anim10 <- ggplot() +
 
 animate(p.rally.anim10, duration = 30, fps = 10)
 ```
-#Variable creation
+
 
 #Choosing variables for the model
 Confirming choices of covariates through visualising covariates relationship to the response variable.  
@@ -399,7 +401,6 @@ ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.moveme
 ggplot(fed16_only_plots, aes(x=factor(winner),y=p.diff.avg.shot.and.match.movement.speed, fill=factor(winner))) + geom_violin(scale = "area") + ggtitle("Winner by difference in Federer's current and match avg movement speed")
 
 
-ggplot(fed16_only_plots, aes(x=factor(winner.return.error),y=(p.diff.avg.shot.and.match.movement.speed), fill=factor(winner.return.error))) + geom_violin(scale = "area") + ggtitle("Winner by absolute difference in Federer's current/match avg movement speed")
 ```
 
 ###Difference in opponent movement speed from the match average
@@ -490,7 +491,7 @@ The appendix contains:
 -Additional visual analysis of variables.
 
 ##Visualisations of Shot Patterns for Federer vs Berdych 2016
-Here is a series of plots showin:
+Here is a series of plots showing:
 
 -Shot type by shot x/y coordinates
 
@@ -614,7 +615,7 @@ ggplot(fed16_only, aes(x=factor(winner),y=speed.ratio,fill=factor(winner))) + ge
 ```
 ##Depmix Models
 All of the depmix models run.
-Some three state models and stepwise analysis have been commented out because of cuasing issues with the knit. The code can still be run in Rmarkdown by uncommenting. 
+Some three state models and step-wise analysis have been commented out because of causing issues with the knit. The code can still be run in Rmarkdown by uncommenting. 
 Examined three data sets:
 Data Set One: Federer vs Berdych 2016
 Data Set Two: Federer vs Berdych 2016/17/17
