@@ -11,9 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 #reading .csv files needed to run the report without code to shape variables
-Before running run rallies.Rmd
-Specifically to line 3176
+I have seperated out the code which shapes the variables in the player data.
+Before running this file, run the file reportcode.Rmd to create all of the data files neccesary to knit this report. 
 ```{r}
+#Reading in data files
 stry_scale <- read.csv(file = "data/stry_scale.csv")
 longral_pos <- read.csv(file = "data/longral_pos.csv")
 fed16_longest <- read.csv(file = "data/fed16_longest.csv")
@@ -174,20 +175,20 @@ An increase in oppo.diff.avg.shot.and.match.movement.speed increases the probabi
 
 An increases in p.start.position.y decreases the probability of hitting a winner. As Federer moves further away from the centre of the court he is less likely to hit a winner.
 
-An increases oppo.start.position.x decreases the probability of hitting a winner. As Berdych starts further away from the net Federer is more likely to hit a winner. 
+An increases oppo.start.position.x decreases the probability of hitting a winner. Federer is more likely to hit a winner when Berdych starts closer to the net.  
 
 An increase in oppo.start.position.y decreases the probability of hitting a winner. As Berdych starts further away from the centre of the court Federer is less likely to hit a winner. This is the opposite of what we were expecting.  
 
-An Increase in p.diff.avg.shot.and.match.movement.speed decreases the probability of hitting a winner. If Federer is running faster to hit the shot he is less likely to hit a winner. 
+An Increase in p.diff.avg.shot.and.match.movement.speed decreases the probability of hitting a winner. If Federer is running faster to hit the shot, he is less likely to hit a winner. 
 
-An increase in lag.oppo.height.off.net increases the probability of hitting a winner. If Berdych's shot is coming higher over the net then Federer is more likely to hit a winner.  
+An increase in lag.oppo.height.off.net increases the probability of hitting a winner. If Berdych's shot ipasses higher over the net, then Federer is more likely to hit a winner.  
 
 The covariate with the greatest impact on Federer being in an attacking state is oppo.start.position.y
 This indicates that Federer has a high probability of hitting a winner if Berdych starts close to the net. 
 
 
-Unfortunately there were some issues with my models. 
-Repeated running of the depmix models  in this report can see the attacking state alternate between being defined as state 1 or state 2. The results remain the same for the probability of hitting a winner, but the corresponding states are flipped. 
+There were some issues with this model. 
+Repeated running of the depmix model in this report can see the attacking state alternate between being defined as state 1 or state 2. The results remain the same for the probability of hitting a winner, but the corresponding states are flipped. 
 We have to be careful in interpreting the results. The attacking state is the one which has a higher value for Re1.1. 
 
 
@@ -204,17 +205,27 @@ ds2.mod2.2s <- depmix(winner ~ 1, transition = ~p.movement.angle.1 + oppo.diff.a
 
 ##3 State Models
 In attempting to create a three state model:
+
 Firstly I ran Training Model 1 and Training Model 2 as three state models with 'winner.return.error' as the response variable. This was unsuccessful in identifying three states, at the zero values of the covariates only two states can be clearly identified.
 
-I then ran the three state models with the p.advantage as the second response variable. The reasoning for this is to observe the intercept of player advantage in different states. This may provide more insight into player shot intentions. 
+I then ran the three state models with the p.advantage as the second response variable. The reasoning for this is to observe the intercept of player advantage in different states and to identify players who try to hit a winner when at a disadvantage. This may provide more insight into player shot intentions. 
 
-At the zero values of the covariates, three clear states can be seen. However with repeated running of these models, the results are not repeatable.
-
-
+I created a new three state test model with these two response variables for the data set Strycova vs Garcia 2016/17. For the model summaries, at the zero values of the covariates, three clear states can be seen. However with repeated running of these models, the results are not repeatable. The models can be viewed in the appendix. 
 
 The three state model may be useful for identifying the probability of the player hitting a winner or an error from an attacking, returning or a defensive state. A larger probability of hitting a winner from a defensive state compared to other players may be an indicator of player risk taking. 
 
+We can see from the plots below that players are hitting winners when at a disadvantage. For the purpose of interpreting the intercept of player advantage as a response variable, I left the data unscaled when running the model. 
 
+```{r}
+#Plotting proportion of winners by player advantage. 
+ggplot(fed16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2016 Winners by by Player Advantage")
+
+ggplot(fed17_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2017 Winners by by Player Advantage")
+
+ggplot(fed18_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2018 Winners by by Player Advantage")
+
+ggplot(stry16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Strycova 2016 Winners by Player Advantage")
+```
 
 
 
@@ -227,8 +238,8 @@ transition_reveal has been used for filling in gaps in the player and ball posit
 To run transition_reveal, a single column was created for the player's start & end position x coordinates. They are grouped by rally number and shot number and alternate between start and end position. The same thing is done for the player's position y coordinates. As well as for the opponent's start and end position x and y coordinates. For animating the ball position, similar columns are created alternating between the start position of the ball and the projected ballmark for both x and y coordinates.
 
 ##Visualising player state change in the animation
-We can take the implied states from the Depmix Model probs and overlay them into the animation to visualise when the player is in an attacking state. In this case we are looking at the longest rally between Federer and Berdych in 2016. Federer will get larger to indicate when he is an attacking state.
-
+We can take the implied states from the Depmix Model probs and overlay them into the animation to visualise when the player is in an attacking or returning state. In this case we are looking at the longest rally between Federer and Berdych in 2016. Federer's icon will get larger to vey clearly indicate when he is an attacking state. State 2 indicates the player being in an attacking state and State 1 a returning state. 
+For the simplicity of the example I have taken the state probabilities from the Fitted Depmix model for Federer vs Berdych 2016 and created a vector of implied states for the longest rally. I have defined Federer's implied states when Berdych is hitting the ball as state 1. 
 
 ```{r}
 library(gganimate)
@@ -278,7 +289,7 @@ court_topdown <- ggplot() +
 ```
 
 ```{r}
-#For the simplicity of the example I have taken the state probabilities from the Depmix model for Federer vs Berdych 2016 and created a vector for the longest rally
+
 p.state <- c(1,1,1,1,1,1,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,1,1,2,2)
 p.state <- as.data.frame(p.state)
 
@@ -313,7 +324,7 @@ animate(p.rally.anim10, duration = 30, fps = 10)
 #Variable creation
 
 #Choosing variables for the model
-Confirming choices through visualisation of all variables described in glossary
+Confirming choices of covariates through visualising covariates relationship to the response variable.  
 
 ###Player Start Position Coordinates
 p.start.position.x-
@@ -470,7 +481,16 @@ ggplot(fed16_only, aes(x=factor(winner),y=diff.p.avg.and.current.shot.speed, fil
 
 
 #Appendix
+The appendix contains:
+
+-The Depmix models and visual analysis of the state probabilities of these models. 
+
+-The step-wise analysis to find the best covariates for the Depmix models. 
+
+-Additional visual analysis of variables.
+
 ##Visualisations of Shot Patterns
+
 ###Federer vs Berdych 2016
 
 
@@ -1589,15 +1609,7 @@ ggplot(longral_pos, aes(x=shot,y=avg.player.speed.diff)) +
   ggtitle("Federer vs Opponent difference in Avg Movement Speed m/s  Federer and Opponent in rallies 10 shots or more")
 
 ```
-```{r}
-ggplot(fed16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2016 Winners by by Player Advantage")
 
-ggplot(fed17_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2017 Winners by by Player Advantage")
-
-ggplot(fed18_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Federer 2018 Winners by by Player Advantage")
-
-ggplot(stry16_only, aes(x=p.advantage, y=winner)) + geom_smooth() + xlab("Player Advantage") + ylab("Proportion of Winners") + ggtitle("Strycova 2016 Winners by Player Advantage")
-```
 
 ###Additional animations
 We can also facet the animation by rallies. Code commented out to reduce size of html.
