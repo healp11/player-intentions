@@ -206,9 +206,13 @@ ds2.mod2.2s <- depmix(winner ~ 1, transition = ~p.movement.angle.1 + oppo.diff.a
 In attempting to create a three state model:
 Firstly I ran Training Model 1 and Training Model 2 as three state models with 'winner.return.error' as the response variable. This was unsuccessful in identifying three states, at the zero values of the covariates only two states can be clearly identified.
 
-I then ran the three state models with the player's advantage variable as the second response variable. At the zero values of the covariates, three clear states can be seen. However with repeated running of these models, the results are not repeatable.
+I then ran the three state models with the p.advantage as the second response variable. The reasoning for this is to observe the intercept of player advantage in different states. This may provide more insight into player shot intentions. 
 
-The three state model would be useful for identifying the probability of the player hitting a winner or an error from an attacking, returning or a defensive state. A larger probability of hitting a winner from a defensive state compared to other players, may be an indicator of player risk taking. 
+At the zero values of the covariates, three clear states can be seen. However with repeated running of these models, the results are not repeatable.
+
+
+
+The three state model may be useful for identifying the probability of the player hitting a winner or an error from an attacking, returning or a defensive state. A larger probability of hitting a winner from a defensive state compared to other players may be an indicator of player risk taking. 
 
 
 
